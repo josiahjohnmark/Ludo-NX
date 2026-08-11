@@ -18,7 +18,7 @@ public class TokenMovement : MonoBehaviour
     public Transform homeBaseSlot;
 
     [Header("Animation Settings")]
-    public float hopDuration = 0.15f;
+    public float hopDuration = 0.32f;
     public float hopHeight = 0.35f;
 
     private SpriteRenderer spriteRenderer;
