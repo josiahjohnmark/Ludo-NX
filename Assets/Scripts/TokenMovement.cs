@@ -129,7 +129,7 @@ public class TokenMovement : MonoBehaviour
         Transform targetTile = GetCurrentTileTransform();
         if (targetTile != null)
         {
-            yield return StartCoroutine(HopToPosition(targetTile.position));
+            yield return StartCoroutine(VerticalHopToPosition(targetTile.position, hopHeight));
         }
         else
         {
@@ -174,7 +174,9 @@ public class TokenMovement : MonoBehaviour
 
             if (tileTf != null)
             {
-                yield return StartCoroutine(HopToPosition(tileTf.position));
+                // Calculate jump height escalation if approaching a capture
+                float currentHopHeight = GetEscalatedHopHeight(intermediateIndex, steps - i);
+                yield return StartCoroutine(VerticalHopToPosition(tileTf.position, currentHopHeight));
             }
         }
 
@@ -187,6 +189,14 @@ public class TokenMovement : MonoBehaviour
         {
             isFinished = true;
             if (AudioManager.Instance != null) AudioManager.Instance.PlayVictory();
+            if (PointsManager.Instance != null)
+            {
+                PointsManager.Instance.OnTokenReachedHome(tokenColor);
+            }
+            if (FloatingTextFX.Instance != null)
+            {
+                FloatingTextFX.Instance.SpawnFloatingText(transform.position, 5);
+            }
             if (GameManager.Instance != null) GameManager.Instance.CheckForPlayerWin(tokenColor);
             Debug.Log($"{tokenColor} token FINISHED!");
         }
@@ -207,35 +217,84 @@ public class TokenMovement : MonoBehaviour
     }
 
     /// <summary>
-    /// Smoothly hops the token to a target position with a small arc.
+    /// Uniform vertical raise, horizontal slide, and vertical drop hop animation.
+    /// Eliminates unnatural sideways curving on turns.
     /// </summary>
-    private IEnumerator HopToPosition(Vector3 target)
+    private IEnumerator VerticalHopToPosition(Vector3 target, float currentHeight)
     {
         Vector3 start = transform.position;
-        // Keep the token's Z so it stays in front of the board
         target.z = start.z;
 
-        float elapsed = 0f;
+        float totalDuration = hopDuration;
+        float raiseDuration = totalDuration * 0.25f;
+        float slideDuration = totalDuration * 0.50f;
+        float dropDuration = totalDuration * 0.25f;
 
-        while (elapsed < hopDuration)
+        Vector3 raisedStart = start + Vector3.up * currentHeight;
+        Vector3 raisedTarget = target + Vector3.up * currentHeight;
+
+        // Phase 1: Vertical Lift
+        float elapsed = 0f;
+        while (elapsed < raiseDuration)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / hopDuration);
+            float t = Mathf.Clamp01(elapsed / raiseDuration);
+            transform.position = Vector3.Lerp(start, raisedStart, t);
+            yield return null;
+        }
 
-            // Smooth ease-in-out
-            float smooth = t * t * (3f - 2f * t);
+        // Phase 2: Horizontal Slide across tile gap
+        elapsed = 0f;
+        while (elapsed < slideDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / slideDuration);
+            transform.position = Vector3.Lerp(raisedStart, raisedTarget, t);
+            yield return null;
+        }
 
-            // Parabolic arc for the hop (peaks at t=0.5)
-            float arc = hopHeight * 4f * t * (1f - t);
-
-            Vector3 pos = Vector3.Lerp(start, target, smooth);
-            pos.y += arc;
-
-            transform.position = pos;
+        // Phase 3: Vertical Drop onto target tile
+        elapsed = 0f;
+        while (elapsed < dropDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / dropDuration);
+            transform.position = Vector3.Lerp(raisedTarget, target, t);
             yield return null;
         }
 
         transform.position = target;
+    }
+
+    private float GetEscalatedHopHeight(int checkIndex, int remainingSteps)
+    {
+        if (pathScript == null) return hopHeight;
+
+        int absIndex = pathScript.GetAbsoluteMainIndex(tokenColor, checkIndex);
+        if (absIndex < 0 || pathScript.IsAbsoluteTileSafe(absIndex)) return hopHeight;
+
+        // Check if an enemy token is on this tile or coming up
+        TokenMovement[] allTokens = Object.FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude);
+
+        foreach (var other in allTokens)
+        {
+            if (other == this || other.tokenColor == tokenColor || other.isHome || other.isFinished) continue;
+            if (other.pathScript == null) continue;
+
+            int otherAbs = other.pathScript.GetAbsoluteMainIndex(other.tokenColor, other.currentTileIndex);
+            if (otherAbs == absIndex)
+            {
+                // Landing on capture tile -> Dramatic slam height!
+                return 0.6f;
+            }
+        }
+
+        return remainingSteps switch
+        {
+            1 => 0.5f,
+            2 => 0.4f,
+            _ => hopHeight
+        };
     }
 
     #endregion
@@ -265,11 +324,47 @@ public class TokenMovement : MonoBehaviour
             if (otherAbsolute == myAbsolute)
             {
                 other.SendHome();
+
+                if (PointsManager.Instance != null)
+                {
+                    PointsManager.Instance.OnTokenCaptured(tokenColor, other.tokenColor);
+                }
+
+                if (FloatingTextFX.Instance != null)
+                {
+                    FloatingTextFX.Instance.SpawnFloatingText(transform.position, 3);
+                    FloatingTextFX.Instance.SpawnFloatingText(other.transform.position, -1);
+                }
+
                 if (AudioManager.Instance != null) AudioManager.Instance.PlayCapture();
                 if (GameManager.Instance != null) GameManager.Instance.GrantCaptureBonusTurn();
+
+                StartCoroutine(CaptureCameraShake());
                 Debug.Log($"{tokenColor} captured {other.tokenColor}'s token!");
             }
         }
+    }
+
+    private IEnumerator CaptureCameraShake()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) yield break;
+
+        Vector3 origPos = cam.transform.position;
+        float duration = 0.15f;
+        float elapsed = 0f;
+        float magnitude = 0.08f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float x = Random.Range(-1f, 1f) * magnitude;
+            float y = Random.Range(-1f, 1f) * magnitude;
+            cam.transform.position = new Vector3(origPos.x + x, origPos.y + y, origPos.z);
+            yield return null;
+        }
+
+        cam.transform.position = origPos;
     }
 
     public void SendHome()

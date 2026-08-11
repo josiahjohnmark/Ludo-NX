@@ -105,9 +105,15 @@ public class GameManager : MonoBehaviour
         leaderBoard.Clear();
         ResetDiceState();
 
+        if (PointsManager.Instance != null)
+        {
+            PointsManager.Instance.InitializeForMatch(activePlayers);
+        }
+
         if (UIManager.Instance != null)
         {
             UIManager.Instance.UpdateTurnUI(currentTurnColor, "ROLL DICE");
+            UIManager.Instance.StartTurnTimer();
         }
 
         Debug.Log($"Match initialized. Players: {string.Join(", ", activePlayers)}. Starting: {currentTurnColor}");
@@ -166,10 +172,16 @@ public class GameManager : MonoBehaviour
             {
                 consecutiveDoublesCount++;
                 Debug.Log($"DOUBLES ROLLED [{dice1Value}-{dice2Value}] by {currentTurnColor}! Streak: {consecutiveDoublesCount}");
+                if (PointsManager.Instance != null) PointsManager.Instance.OnDoublesRolled(currentTurnColor);
             }
             else
             {
                 consecutiveDoublesCount = 0;
+            }
+
+            if (dice1Value == 6 || dice2Value == 6)
+            {
+                if (PointsManager.Instance != null) PointsManager.Instance.OnSixRolled(currentTurnColor);
             }
 
             if (consecutiveDoublesCount >= 3)
@@ -439,6 +451,7 @@ public class GameManager : MonoBehaviour
         if (UIManager.Instance != null)
         {
             UIManager.Instance.UpdateTurnUI(currentTurnColor, "ROLL DICE");
+            UIManager.Instance.StartTurnTimer();
         }
     }
 
@@ -468,6 +481,10 @@ public class GameManager : MonoBehaviour
 
             if (UIManager.Instance != null && activePlayers.Count > 0 && leaderBoard.Count >= activePlayers.Count)
             {
+                if (PointsManager.Instance != null)
+                {
+                    PointsManager.Instance.AwardPlacementBonuses(leaderBoard);
+                }
                 UIManager.Instance.ShowGameOverUI(leaderBoard);
             }
         }
