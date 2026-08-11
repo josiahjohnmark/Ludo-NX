@@ -1,239 +1,234 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections;
 
 public class TokenMovement : MonoBehaviour
 {
-    [Header("Token Identity")]
     public GameManager.PlayerColor tokenColor;
+    public bool isHome = true;
+    public int currentTileIndex = -1;
+    public int stepsTaken = 0;
 
-    [Header("Path References")]
-    public LudoPath mainPath;             
-    public LudoPath homeStretchPath;      
-    
-    [Header("Home Base Position")]
-    public Transform homeBasePosition;    
-    
-    [Header("Movement Settings")]
-    public float stepDuration = 0.20f;
-    public int startWaypointIndex = 0; 
-    
-    public bool isInHomeBase { get; private set; } = true;
-    public bool isFinished { get; private set; } = false;
-    
-    public int stepsTaken { get; private set; } = 0;
-    public bool isOnHomeStretch { get; private set; } = false;
-    public int currentPathIndex { get; private set; } = -1;
-    
-    private TileNode currentTileNode = null;
-    private bool isMoving = false;
+    public bool isFinished = false;
+    public bool isInHomeBase => isHome;
 
-    private void Start()
+    [Header("Movement References")]
+    public LudoPath pathScript;
+
+    [Header("Assign this token's empty home-base slot (for capture reset)")]
+    public Transform homeBaseSlot;
+
+    private SpriteRenderer spriteRenderer;
+    private Color originalColor;
+    private bool isHighlighted = false;
+
+    private void Awake()
     {
-        ResetToHome();
-    }
-
-    public void ResetToHome()
-    {
-        if (currentTileNode != null)
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
         {
-            currentTileNode.RemoveToken(this);
-            currentTileNode = null;
+            originalColor = spriteRenderer.color;
         }
 
-        isInHomeBase = true;
-        isFinished = false;
-        isOnHomeStretch = false;
-        stepsTaken = 0;
-        currentPathIndex = -1;
-
-        if (homeBasePosition != null)
+        if (pathScript == null)
         {
-            transform.position = new Vector3(homeBasePosition.position.x, homeBasePosition.position.y, -1f);
+            pathScript = Object.FindAnyObjectByType<LudoPath>();
         }
     }
 
     private void OnMouseDown()
     {
-        if (!GameManager.Instance.IsMyTurn(tokenColor))
+        if (GameManager.Instance == null) return;
+        if (GameManager.Instance.currentTurnColor != tokenColor) return;
+        if (isFinished) return;
+
+        int selectedValue = GameManager.Instance.GetSelectedDiceValue();
+        if (selectedValue <= 0)
         {
-            Debug.Log("It is " + GameManager.Instance.currentTurn + "'s turn right now!");
+            Debug.LogWarning("Select a valid dice first!");
             return;
         }
 
-        if (!isMoving && DiceRoll.lastRolledValue > 0)
+        if (isHome)
         {
-            TryMove(DiceRoll.lastRolledValue);
-        }
-    }
-
-    public void TryMove(int diceRoll)
-    {
-        if (isMoving || isFinished) return;
-
-        if (isInHomeBase)
-        {
-            if (diceRoll == 6)
+            if (selectedValue == 6)
             {
-                StartCoroutine(LeaveHomeBase());
+                MoveOutOfHome();
+                GameManager.Instance.ConsumeSelectedDice();
+            }
+            else
+            {
+                Debug.Log("You need a 6 to bring this token out!");
             }
         }
         else
         {
-            int totalPathLength = 50 + homeStretchPath.waypoints.Count;
-            if (stepsTaken + diceRoll <= totalPathLength)
+            bool moved = AdvanceToken(selectedValue);
+            if (moved)
             {
-                StartCoroutine(MoveRoutine(diceRoll));
+                GameManager.Instance.ConsumeSelectedDice();
             }
         }
     }
 
-    private IEnumerator LeaveHomeBase()
+    public void MoveSteps(int steps)
     {
-        isMoving = true;
-        currentPathIndex = startWaypointIndex;
-        stepsTaken = 0;
-        isOnHomeStretch = false;
-        isInHomeBase = false;
+        if (isFinished) return;
+
+        if (isHome)
+        {
+            if (steps == 6)
+            {
+                MoveOutOfHome();
+            }
+        }
+        else
+        {
+            AdvanceToken(steps);
+        }
+    }
+
+    public void SetHighlight(bool enable)
+    {
+        isHighlighted = enable;
+        if (spriteRenderer == null) return;
+
+        if (enable)
+        {
+            StopAllCoroutines();
+            StartCoroutine(PulseHighlight());
+        }
+        else
+        {
+            StopAllCoroutines();
+            spriteRenderer.color = originalColor;
+        }
+    }
+
+    private IEnumerator PulseHighlight()
+    {
+        while (isHighlighted)
+        {
+            float pingPong = Mathf.PingPong(Time.time * 4f, 0.5f) + 0.5f;
+            spriteRenderer.color = new Color(originalColor.r * pingPong, originalColor.g * pingPong, originalColor.b * pingPong, originalColor.a);
+            yield return null;
+        }
+    }
+
+    private void MoveOutOfHome()
+    {
+        isHome = false;
+        currentTileIndex = 0;
+        stepsTaken = 1;
+
+        UpdatePhysicalPosition();
 
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySpawn();
 
-        TileNode targetNode = mainPath.waypoints[currentPathIndex];
-        yield return StartCoroutine(HopToNode(targetNode));
+        CheckForCaptures();
 
-        SetOccupiedNode(targetNode);
-        CheckForCaptureOnNode(targetNode);
-
-        GameManager.Instance.hasBonusRoll = true; 
-        DiceRoll.lastRolledValue = 0; 
-        isMoving = false;
-        
-        GameManager.Instance.NextTurn();
+        Debug.Log($"{tokenColor} Token moved OUT of home base!");
     }
 
-    private IEnumerator MoveRoutine(int steps)
+    private bool AdvanceToken(int steps)
     {
-        isMoving = true;
-
-        for (int i = 0; i < steps; i++)
+        if (pathScript == null)
         {
-            if (currentTileNode != null)
-            {
-                currentTileNode.RemoveToken(this);
-            }
-
-            if (!isOnHomeStretch && stepsTaken >= 50)
-            {
-                isOnHomeStretch = true;
-                currentPathIndex = 0; 
-                stepsTaken++;
-            }
-            else if (!isOnHomeStretch)
-            {
-                stepsTaken++;
-                currentPathIndex = (currentPathIndex + 1) % mainPath.waypoints.Count;
-            }
-            else
-            {
-                stepsTaken++;
-                currentPathIndex++;
-            }
-
-            TileNode targetNode;
-            if (isOnHomeStretch)
-            {
-                int safeIndex = Mathf.Clamp(currentPathIndex, 0, homeStretchPath.waypoints.Count - 1);
-                targetNode = homeStretchPath.waypoints[safeIndex];
-
-                if (AudioManager.Instance != null) 
-                    AudioManager.Instance.PlayHomeStretchHop(safeIndex, homeStretchPath.waypoints.Count);
-            }
-            else
-            {
-                targetNode = mainPath.waypoints[currentPathIndex];
-
-                if (AudioManager.Instance != null) AudioManager.Instance.PlayHop();
-            }
-
-            yield return StartCoroutine(HopToNode(targetNode));
-            SetOccupiedNode(targetNode);
+            pathScript = Object.FindAnyObjectByType<LudoPath>();
+            if (pathScript == null) return false;
         }
 
-        if (isOnHomeStretch && currentPathIndex == homeStretchPath.waypoints.Count - 1)
+        int pathLength = pathScript.GetPathLength(tokenColor);
+        int newIndex = currentTileIndex + steps;
+
+        if (newIndex > pathLength - 1)
+        {
+            Debug.Log($"{tokenColor} token needs an exact roll to finish — move blocked (overshoot).");
+            return false;
+        }
+
+        currentTileIndex = newIndex;
+        stepsTaken += steps;
+
+        UpdatePhysicalPosition();
+
+        int mainLoopLength = pathLength - 6;
+
+        if (currentTileIndex == pathLength - 1)
         {
             isFinished = true;
-            Debug.Log(gameObject.name + " reached the final home triangle!");
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayVictory();
+            if (GameManager.Instance != null) GameManager.Instance.CheckForPlayerWin(tokenColor);
+            Debug.Log($"{tokenColor} token FINISHED!");
         }
-
-        bool capturedSomeone = CheckForCaptureOnNode(currentTileNode);
-
-        if (DiceRoll.lastRolledValue == 6 || capturedSomeone)
+        else if (currentTileIndex < mainLoopLength)
         {
-            GameManager.Instance.hasBonusRoll = true;
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayHop();
+            CheckForCaptures();
+        }
+        else
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayHomeStretchHop(currentTileIndex - mainLoopLength, 6);
         }
 
-        DiceRoll.lastRolledValue = 0; 
-        isMoving = false;
-        
-        GameManager.Instance.NextTurn();
+        Debug.Log($"{tokenColor} Token moved {steps} steps to tile {currentTileIndex} (Total steps: {stepsTaken})");
+        return true;
     }
 
-    private IEnumerator HopToNode(TileNode targetNode)
+    private void CheckForCaptures()
     {
-        Vector3 startPos = transform.position;
-        Vector3 endPos = targetNode.transform.position;
-        float elapsed = 0f;
+        if (pathScript == null) return;
 
-        while (elapsed < stepDuration)
+        int myAbsolute = pathScript.GetAbsoluteMainIndex(tokenColor, currentTileIndex);
+        if (myAbsolute < 0) return;
+
+        if (pathScript.IsAbsoluteTileSafe(myAbsolute)) return;
+
+        TokenMovement[] allTokens = Object.FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+        foreach (TokenMovement other in allTokens)
         {
-            elapsed += Time.deltaTime;
-            float t = elapsed / stepDuration;
+            if (other == this) continue;
+            if (other.tokenColor == tokenColor) continue;
+            if (other.isHome || other.isFinished) continue;
 
-            Vector3 currentPos = Vector3.Lerp(startPos, endPos, t);
-            float hopFactor = Mathf.Sin(t * Mathf.PI);
-            currentPos.z = -1f - (hopFactor * 0.3f);
-            
-            transform.position = currentPos;
-            yield return null;
-        }
+            int otherAbsolute = pathScript.GetAbsoluteMainIndex(other.tokenColor, other.currentTileIndex);
+            if (otherAbsolute < 0) continue;
 
-        transform.position = new Vector3(endPos.x, endPos.y, -1f);
-    }
-
-    private void SetOccupiedNode(TileNode targetNode)
-    {
-        if (currentTileNode != null)
-        {
-            currentTileNode.RemoveToken(this);
-        }
-
-        currentTileNode = targetNode;
-        if (currentTileNode != null)
-        {
-            currentTileNode.AddToken(this);
-        }
-    }
-
-    private bool CheckForCaptureOnNode(TileNode targetNode)
-    {
-        if (isOnHomeStretch || targetNode == null || targetNode.isSafeZone) return false;
-
-        bool didCapture = false;
-        List<TokenMovement> occupants = new List<TokenMovement>(targetNode.tokensOnTile);
-
-        foreach (TokenMovement enemyToken in occupants)
-        {
-            if (enemyToken != this && enemyToken.tokenColor != this.tokenColor)
+            if (otherAbsolute == myAbsolute)
             {
-                Debug.Log("💥 " + gameObject.name + " captured " + enemyToken.gameObject.name + " on Tile " + targetNode.tileIndex + "!");
-                
+                other.SendHome();
                 if (AudioManager.Instance != null) AudioManager.Instance.PlayCapture();
-                
-                enemyToken.ResetToHome();
-                didCapture = true;
+                Debug.Log($"{tokenColor} captured {other.tokenColor}'s token!");
             }
         }
+    }
 
-        return didCapture;
+    public void SendHome()
+    {
+        isHome = true;
+        currentTileIndex = -1;
+        stepsTaken = 0;
+
+        if (homeBaseSlot != null)
+        {
+            transform.position = homeBaseSlot.position;
+        }
+    }
+
+    private void UpdatePhysicalPosition()
+    {
+        if (pathScript == null)
+        {
+            pathScript = Object.FindAnyObjectByType<LudoPath>();
+        }
+
+        if (pathScript != null)
+        {
+            Transform targetTile = pathScript.GetTileTransform(tokenColor, currentTileIndex);
+            if (targetTile != null)
+            {
+                transform.position = targetTile.position;
+            }
+        }
     }
 }

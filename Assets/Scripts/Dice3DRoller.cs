@@ -1,66 +1,71 @@
-using System.Collections;
 using UnityEngine;
-using UnityEngine.UI;
+using System.Collections;
 
 public class Dice3DRoller : MonoBehaviour
 {
-    [Header("UI Reference")]
-    [SerializeField] private Button rollButton;
+    [Header("3D Dice Objects")]
+    public Transform dice1Transform;
+    public Transform dice2Transform;
 
-    [Header("3D Dice References")]
-    [SerializeField] private Rigidbody dice1Rigidbody;
-    [SerializeField] private Rigidbody dice2Rigidbody;
+    [Header("Spin Settings")]
+    public float spinDuration = 0.8f;
+    public float spinSpeed = 1200f;
 
-    [Header("Spawn / Roll Positions")]
-    [SerializeField] private Transform rollSpawnPoint; // Position in air where dice spawn/throw from
+    [Header("State")]
+    public bool isRolling = false;
 
-    [Header("Physics Settings")]
-    [SerializeField] private float throwForce = 12f;
-    [SerializeField] private float torqueForce = 20f;
-
-    private void Start()
+    // Standard face rotations for landing 1 through 6
+    private readonly Vector3[] faceRotations = new Vector3[]
     {
-        if (rollButton != null)
-        {
-            rollButton.onClick.AddListener(Roll3DDice);
-        }
+        new Vector3(0, 0, 0),       // Face 1
+        new Vector3(90, 0, 0),      // Face 2
+        new Vector3(0, 90, 0),      // Face 3
+        new Vector3(0, -90, 0),     // Face 4
+        new Vector3(-90, 0, 0),     // Face 5
+        new Vector3(180, 0, 0)      // Face 6
+    };
+
+    public void TriggerInPlaceRoll(int targetResult1, int targetResult2)
+    {
+        if (isRolling) return;
+        StartCoroutine(AnimateInPlaceSpin(targetResult1, targetResult2));
     }
 
-    public void Roll3DDice()
+    private IEnumerator AnimateInPlaceSpin(int res1, int res2)
     {
-        // 1. Reset Dice Positions above the board
-        ResetDice(dice1Rigidbody);
-        ResetDice(dice2Rigidbody);
+        isRolling = true;
 
-        // 2. Add random directional impulse forces
-        Vector3 forceDirection1 = new Vector3(Random.Range(-2f, 2f), Random.Range(-1f, 1f), Random.Range(-2f, 2f)) * throwForce;
-        Vector3 forceDirection2 = new Vector3(Random.Range(-2f, 2f), Random.Range(-1f, 1f), Random.Range(-2f, 2f)) * throwForce;
+        float elapsedTime = 0f;
 
-        dice1Rigidbody.AddForce(forceDirection1, ForceMode.Impulse);
-        dice2Rigidbody.AddForce(forceDirection2, ForceMode.Impulse);
-
-        // 3. Add heavy rotational spin (torque)
-        Vector3 randomTorque1 = new Vector3(Random.Range(-500, 500), Random.Range(-500, 500), Random.Range(-500, 500)) * torqueForce;
-        Vector3 randomTorque2 = new Vector3(Random.Range(-500, 500), Random.Range(-500, 500), Random.Range(-500, 500)) * torqueForce;
-
-        dice1Rigidbody.AddTorque(randomTorque1, ForceMode.Impulse);
-        dice2Rigidbody.AddTorque(randomTorque2, ForceMode.Impulse);
-    }
-
-    private void ResetDice(Rigidbody rb)
-    {
-        if (rb == null) return;
-        
-        rb.linearVelocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
-
-        // Position slightly above board
-        if (rollSpawnPoint != null)
+        // Rapid 3D tumble on all axes right in position
+        while (elapsedTime < spinDuration)
         {
-            rb.transform.position = rollSpawnPoint.position + new Vector3(Random.Range(-0.5f, 0.5f), 0, Random.Range(-0.5f, 0.5f));
+            elapsedTime += Time.deltaTime;
+
+            if (dice1Transform != null)
+            {
+                dice1Transform.Rotate(new Vector3(spinSpeed, spinSpeed * 0.7f, spinSpeed * 0.3f) * Time.deltaTime);
+            }
+
+            if (dice2Transform != null)
+            {
+                dice2Transform.Rotate(new Vector3(spinSpeed * 0.5f, spinSpeed, spinSpeed * 0.8f) * Time.deltaTime);
+            }
+
+            yield return null;
         }
 
-        // Random starting orientation
-        rb.transform.rotation = Random.rotation;
+        // Snap smoothly to calculated target face angles
+        if (dice1Transform != null)
+        {
+            dice1Transform.localRotation = Quaternion.Euler(faceRotations[Mathf.Clamp(res1 - 1, 0, 5)]);
+        }
+
+        if (dice2Transform != null)
+        {
+            dice2Transform.localRotation = Quaternion.Euler(faceRotations[Mathf.Clamp(res2 - 1, 0, 5)]);
+        }
+
+        isRolling = false;
     }
 }

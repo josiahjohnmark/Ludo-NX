@@ -1,269 +1,383 @@
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    public enum PlayerColor { RED, GREEN, YELLOW, BLUE }
+    public enum PlayerColor
+    {
+        RED,
+        GREEN,
+        YELLOW,
+        BLUE
+    }
 
-    [Header("Match Setup")]
-    [Range(2, 4)]
-    public int totalPlayers = 4;
+    [Header("Script References")]
+    public Dice3DRoller physicsRoller;
+
+    [Header("Turn & Player State")]
+    public PlayerColor currentTurnColor = PlayerColor.RED;
     public List<PlayerColor> activePlayers = new List<PlayerColor>();
 
-    [Header("Turn Tracking")]
-    public PlayerColor currentTurn = PlayerColor.RED;
-    public bool hasBonusRoll = false;
-
-    [Header("Rules & Ranking Settings")]
-    public int consecutiveSixesCount = 0;
-    public bool isGameOver = false;
-
+    [Header("Leaderboard & Match State")]
     public List<PlayerColor> leaderBoard = new List<PlayerColor>();
+
+    [Header("Dice GameObjects (assign the 3D dice meshes here)")]
+    public GameObject dice1Object;
+    public GameObject dice2Object;
+
+    [Header("Roll Values & Selection States")]
+    public int dice1Value = 1;
+    public int dice2Value = 1;
+
+    public int dice1 { get => dice1Value; set => dice1Value = value; }
+    public int dice2 { get => dice2Value; set => dice2Value = value; }
+
+    public bool isDice1Selected = false;
+    public bool isDice2Selected = false;
+    public int selectedDiceValue = 0;
+
+    [Header("Roll States")]
+    public bool isRolling = false;
+    public bool hasRolled = false;
+
+    private bool grantExtraTurn = false;
 
     private void Awake()
     {
-        if (Instance == null)
+        if (Instance != null && Instance != this)
         {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space) && !isRolling && !hasRolled)
+        {
+            OnRollButtonClicked();
+        }
+    }
+
+    #region Match Initialization
+
+    public void InitializeMatchWithPlayerCount(int playerCount)
+    {
+        List<PlayerColor> players = new List<PlayerColor>();
+
+        if (playerCount >= 4)
+        {
+            players.Add(PlayerColor.RED);
+            players.Add(PlayerColor.GREEN);
+            players.Add(PlayerColor.YELLOW);
+            players.Add(PlayerColor.BLUE);
         }
         else
         {
-            Destroy(gameObject);
+            players.Add(PlayerColor.RED);
+            players.Add(PlayerColor.YELLOW);
         }
+
+        InitializeMatch(players, PlayerColor.RED);
     }
 
-    private void Start()
+    public void InitializeMatch(List<PlayerColor> players, PlayerColor startingColor)
     {
-        InitializeMatch(totalPlayers);
-    }
-
-    public void InitializeMatch(int numberOfPlayers)
-    {
-        totalPlayers = Mathf.Clamp(numberOfPlayers, 2, 4);
-        activePlayers.Clear();
+        activePlayers = new List<PlayerColor>(players);
+        currentTurnColor = activePlayers.Contains(startingColor) ? startingColor : activePlayers[0];
         leaderBoard.Clear();
-        isGameOver = false;
-
-        switch (totalPlayers)
-        {
-            case 2:
-                activePlayers.Add(PlayerColor.RED);
-                activePlayers.Add(PlayerColor.YELLOW);
-                break;
-
-            case 3:
-                activePlayers.Add(PlayerColor.RED);
-                activePlayers.Add(PlayerColor.GREEN);
-                activePlayers.Add(PlayerColor.YELLOW);
-                break;
-
-            case 4:
-            default:
-                activePlayers.Add(PlayerColor.RED);
-                activePlayers.Add(PlayerColor.GREEN);
-                activePlayers.Add(PlayerColor.YELLOW);
-                activePlayers.Add(PlayerColor.BLUE);
-                break;
-        }
-
-        currentTurn = activePlayers[0];
-        ConfigureSceneTokens();
+        ResetDiceState();
 
         if (UIManager.Instance != null)
         {
-            UIManager.Instance.UpdateTurnUI(currentTurn, "ROLL DICE");
+            UIManager.Instance.UpdateTurnUI(currentTurnColor, "ROLL DICE");
         }
 
-        Debug.Log("🎮 MATCH INITIALIZED FOR " + totalPlayers + " PLAYERS.");
-        Debug.Log("--- FIRST TURN: " + currentTurn + " ---");
+        Debug.Log($"Match initialized. Players: {string.Join(", ", activePlayers)}. Starting: {currentTurnColor}");
     }
 
-    private void ConfigureSceneTokens()
+    public void InitializeMatch(PlayerColor startingColor)
     {
-        TokenMovement[] allTokens = Object.FindObjectsByType<TokenMovement>(FindObjectsInactive.Include);
-
-        foreach (TokenMovement token in allTokens)
+        if (activePlayers == null || activePlayers.Count == 0)
         {
-            bool isActiveColor = activePlayers.Contains(token.tokenColor);
-            token.gameObject.SetActive(isActiveColor);
-
-            if (isActiveColor)
-            {
-                token.ResetToHome();
-            }
+            activePlayers = new List<PlayerColor> { PlayerColor.RED, PlayerColor.GREEN, PlayerColor.YELLOW, PlayerColor.BLUE };
         }
+        InitializeMatch(activePlayers, startingColor);
     }
 
-    public bool IsMyTurn(PlayerColor color)
+    public void InitializeMatch(int colorIndex)
     {
-        return !isGameOver && (color == currentTurn) && !HasPlayerFinished(color);
+        PlayerColor targetColor = (PlayerColor)Mathf.Clamp(colorIndex, 0, 3);
+        InitializeMatch(targetColor);
     }
 
-    public void RegisterRoll(int rollValue)
+    public void InitializeMatch(string startingColorStr)
     {
-        if (rollValue == 6)
+        if (System.Enum.TryParse(startingColorStr, true, out PlayerColor parsedColor))
         {
-            consecutiveSixesCount++;
-            Debug.Log(currentTurn + " rolled a 6! Consecutive 6s: " + consecutiveSixesCount);
-
-            if (consecutiveSixesCount >= 3)
-            {
-                Debug.Log("⚠️ 3 SIXES IN A ROW! Turn forfeited for " + currentTurn);
-                hasBonusRoll = false;
-                consecutiveSixesCount = 0;
-                DiceRoll.lastRolledValue = 0;
-                NextTurn();
-                return;
-            }
+            InitializeMatch(parsedColor);
         }
         else
         {
-            consecutiveSixesCount = 0;
+            InitializeMatch(PlayerColor.RED);
         }
     }
 
-    public void ProcessRollResult(int rollValue)
+    #endregion
+
+    #region Dice Rolling & Selection Logic
+
+    public void OnRollButtonClicked()
     {
-        RegisterRoll(rollValue);
-
-        if (DiceRoll.lastRolledValue == 0) return;
-
-        if (!HasValidMove(rollValue))
-        {
-            Debug.Log("⚠️ No valid moves for " + currentTurn + " with roll " + rollValue + ". Auto-skipping turn!");
-            
-            DiceRoll.lastRolledValue = 0;
-            hasBonusRoll = false;
-            NextTurn();
-        }
+        if (isRolling || hasRolled) return;
+        StartCoroutine(RollDiceRoutine());
     }
 
-    public bool HasValidMove(int diceValue)
+    private IEnumerator RollDiceRoutine()
     {
-        TokenMovement[] allTokens = Object.FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude);
-        int totalPathLength = 56;
+        isRolling = true;
+        ResetDiceSelection();
 
-        foreach (TokenMovement token in allTokens)
+        dice1Value = Random.Range(1, 7);
+        dice2Value = Random.Range(1, 7);
+        grantExtraTurn = (dice1Value == 6 || dice2Value == 6);
+
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayDiceRoll();
+
+        if (physicsRoller != null)
         {
-            if (token.tokenColor == currentTurn && !token.isFinished)
-            {
-                if (token.isInHomeBase && diceValue == 6)
-                {
-                    return true;
-                }
-
-                if (!token.isInHomeBase && (token.stepsTaken + diceValue <= totalPathLength))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    public void NextTurn()
-    {
-        if (isGameOver) return;
-
-        CheckCurrentPlayerCompletion();
-
-        if (isGameOver) return;
-
-        // Recalculate Live Win Percentages
-        if (WinCalculator.Instance != null)
-        {
-            WinCalculator.Instance.CalculateLiveWinPercentages();
-        }
-
-        if (hasBonusRoll && !HasPlayerFinished(currentTurn))
-        {
-            Debug.Log("🎲 BONUS ROLL for " + currentTurn + "!");
-            hasBonusRoll = false;
-
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.UpdateTurnUI(currentTurn, "BONUS ROLL!");
-            }
+            physicsRoller.TriggerInPlaceRoll(dice1Value, dice2Value);
+            yield return new WaitUntil(() => !physicsRoller.isRolling);
         }
         else
         {
-            hasBonusRoll = false;
-            consecutiveSixesCount = 0;
-            
-            AdvanceToNextActivePlayer();
-            Debug.Log("--- NEXT TURN: " + currentTurn + " ---");
+            yield return new WaitForSeconds(0.8f);
+        }
+
+        hasRolled = true;
+        isRolling = false;
+
+        Debug.Log($"Rolled [{dice1Value}] and [{dice2Value}] for {currentTurnColor}");
+
+        if (!PlayerHasAnyLegalMove(currentTurnColor, dice1Value, dice2Value))
+        {
+            Debug.Log($"{currentTurnColor} has no legal move — turn passes.");
 
             if (UIManager.Instance != null)
             {
-                UIManager.Instance.UpdateTurnUI(currentTurn, "ROLL DICE");
+                UIManager.Instance.UpdateTurnUI(currentTurnColor, "NO MOVE — PASSING");
             }
+
+            yield return new WaitForSeconds(1.0f);
+
+            ResetDiceState();
+            AdvanceToNextPlayer();
+        }
+        else if (UIManager.Instance != null)
+        {
+            UIManager.Instance.UpdateTurnUI(currentTurnColor, "SELECT A DIE");
         }
     }
 
-    private void AdvanceToNextActivePlayer()
+    private bool PlayerHasAnyLegalMove(PlayerColor color, int d1, int d2)
     {
-        if (activePlayers.Count == 0) return;
+        TokenMovement[] allTokens = FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
-        int currentIndex = activePlayers.IndexOf(currentTurn);
-        int safetyCounter = 0;
-
-        do
+        bool hasTokenInPlay = false;
+        foreach (TokenMovement t in allTokens)
         {
-            currentIndex = (currentIndex + 1) % activePlayers.Count;
-            currentTurn = activePlayers[currentIndex];
-            safetyCounter++;
-        } 
-        while (HasPlayerFinished(currentTurn) && safetyCounter < activePlayers.Count);
-    }
-
-    private bool HasPlayerFinished(PlayerColor color)
-    {
-        return leaderBoard.Contains(color);
-    }
-
-    public void CheckCurrentPlayerCompletion()
-    {
-        if (HasPlayerFinished(currentTurn)) return;
-
-        TokenMovement[] allTokens = Object.FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude);
-        int finishedTokensCount = 0;
-
-        foreach (TokenMovement token in allTokens)
-        {
-            if (token.tokenColor == currentTurn && token.isFinished)
+            if (t.tokenColor == color && !t.isHome && !t.isFinished)
             {
-                finishedTokensCount++;
+                hasTokenInPlay = true;
+                break;
             }
         }
 
-        if (finishedTokensCount == 4)
+        // If any token is already out, any roll is a legal move
+        if (hasTokenInPlay) return true;
+
+        // Otherwise, only a 6 lets the player do anything
+        return d1 == 6 || d2 == 6;
+    }
+
+    // Called when the player clicks a physical die in the tray
+    public void ToggleDiceSelection(GameObject diceObject)
+    {
+        if (!hasRolled) return;
+
+        if (diceObject == dice1Object && dice1Value > 0)
         {
-            leaderBoard.Add(currentTurn);
-            int rank = leaderBoard.Count;
-
-            string positionSuffix = rank == 1 ? "1st PLACE 🏆" : (rank == 2 ? "2nd PLACE 🥈" : "3rd PLACE 🥉");
-            Debug.Log("🎉 " + currentTurn + " HAS FINISHED ALL TOKENS AND TAKES " + positionSuffix + "! 🎉");
-
-            if (leaderBoard.Count >= activePlayers.Count - 1)
+            if (isDice1Selected)
             {
-                isGameOver = true;
+                isDice1Selected = false;
+                selectedDiceValue = 0;
+            }
+            else
+            {
+                isDice1Selected = true;
+                isDice2Selected = false;
+                selectedDiceValue = dice1Value;
+            }
+        }
+        else if (diceObject == dice2Object && dice2Value > 0)
+        {
+            if (isDice2Selected)
+            {
+                isDice2Selected = false;
+                selectedDiceValue = 0;
+            }
+            else
+            {
+                isDice2Selected = true;
+                isDice1Selected = false;
+                selectedDiceValue = dice2Value;
+            }
+        }
 
-                if (UIManager.Instance != null)
-                {
-                    UIManager.Instance.ShowGameOverUI(leaderBoard);
-                }
+        RefreshDiceVisuals();
+    }
 
-                Debug.Log("🏁 GAME OVER! FINAL LEADERBOARD:");
-                for (int i = 0; i < leaderBoard.Count; i++)
-                {
-                    Debug.Log((i + 1) + " Position: " + leaderBoard[i]);
-                }
+    private void RefreshDiceVisuals()
+    {
+        if (dice1Object != null)
+        {
+            DiceRoll d1 = dice1Object.GetComponent<DiceRoll>();
+            if (d1 != null) d1.UpdateVisualState();
+        }
+        if (dice2Object != null)
+        {
+            DiceRoll d2 = dice2Object.GetComponent<DiceRoll>();
+            if (d2 != null) d2.UpdateVisualState();
+        }
+    }
+
+    public int GetSelectedDiceValue()
+    {
+        return selectedDiceValue;
+    }
+
+    public void SelectDice(int diceNumber)
+    {
+        if (diceNumber == 1 && dice1Value > 0)
+        {
+            isDice1Selected = true;
+            isDice2Selected = false;
+            selectedDiceValue = dice1Value;
+        }
+        else if (diceNumber == 2 && dice2Value > 0)
+        {
+            isDice1Selected = false;
+            isDice2Selected = true;
+            selectedDiceValue = dice2Value;
+        }
+        RefreshDiceVisuals();
+    }
+
+    public void ConsumeSelectedDice()
+    {
+        if (isDice1Selected || selectedDiceValue == dice1Value)
+        {
+            dice1Value = 0;
+            isDice1Selected = false;
+        }
+        else if (isDice2Selected || selectedDiceValue == dice2Value)
+        {
+            dice2Value = 0;
+            isDice2Selected = false;
+        }
+
+        selectedDiceValue = 0;
+        RefreshDiceVisuals();
+
+        if (dice1Value == 0 && dice2Value == 0)
+        {
+            ResetTurnForNextPlayer();
+        }
+
+        Debug.Log("Selected dice consumed successfully.");
+    }
+
+    public void ResetDiceSelection()
+    {
+        isDice1Selected = false;
+        isDice2Selected = false;
+        selectedDiceValue = 0;
+    }
+
+    public void ResetDiceState()
+    {
+        hasRolled = false;
+        isRolling = false;
+        dice1Value = 0;
+        dice2Value = 0;
+        ResetDiceSelection();
+    }
+
+    public void ResetTurnForNextPlayer()
+    {
+        ResetDiceState();
+
+        if (!grantExtraTurn)
+        {
+            AdvanceToNextPlayer();
+        }
+        else
+        {
+            if (UIManager.Instance != null)
+                UIManager.Instance.UpdateTurnUI(currentTurnColor, "ROLL AGAIN (rolled a 6)");
+        }
+
+        grantExtraTurn = false;
+    }
+
+    public void AdvanceToNextPlayer()
+    {
+        if (activePlayers == null || activePlayers.Count == 0) return;
+
+        int currentIndex = activePlayers.IndexOf(currentTurnColor);
+        int nextIndex = (currentIndex + 1) % activePlayers.Count;
+        currentTurnColor = activePlayers[nextIndex];
+
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.UpdateTurnUI(currentTurnColor, "ROLL DICE");
+        }
+    }
+
+    #endregion
+
+    #region Win Tracking
+
+    public void CheckForPlayerWin(PlayerColor color)
+    {
+        TokenMovement[] allTokens = FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        int total = 0;
+        int finished = 0;
+
+        foreach (TokenMovement t in allTokens)
+        {
+            if (t.tokenColor == color)
+            {
+                total++;
+                if (t.isFinished) finished++;
+            }
+        }
+
+        if (total > 0 && finished == total && !leaderBoard.Contains(color))
+        {
+            leaderBoard.Add(color);
+            Debug.Log($"{color} has finished all tokens! Placed #{leaderBoard.Count}");
+
+            if (UIManager.Instance != null && activePlayers.Count > 0 && leaderBoard.Count >= activePlayers.Count)
+            {
+                UIManager.Instance.ShowGameOverUI(leaderBoard);
             }
         }
     }
+
+    #endregion
 }

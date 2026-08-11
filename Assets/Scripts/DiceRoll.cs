@@ -1,65 +1,59 @@
-using System.Collections;
 using UnityEngine;
 
 public class DiceRoll : MonoBehaviour
 {
-    public static DiceRoll Instance { get; private set; }
-
-    public static int lastRolledValue = 0;
-    public bool isRolling = false;
-
-    [Header("3D Roll Settings")]
-    public float rollDuration = 0.5f;
+    [Header("Visual Feedback")]
+    public Vector3 defaultScale = Vector3.one;
+    public Vector3 selectedScale = new Vector3(1.15f, 1.15f, 1.15f);
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        defaultScale = transform.localScale;
     }
 
     private void OnMouseDown()
     {
-        // Prevent rolling if already rolling or if a move is pending
-        if (isRolling || lastRolledValue > 0) return;
-
-        StartCoroutine(Roll3DDiceRoutine());
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.ToggleDiceSelection(gameObject);
+        }
     }
 
-    public IEnumerator Roll3DDiceRoutine()
+    public void Roll()
     {
-        isRolling = true;
+        transform.localScale = defaultScale;
+        Update3DDiceRotation();
+    }
 
-        float elapsed = 0f;
+    public void Update3DDiceRotation()
+    {
+        if (GameManager.Instance == null) return;
 
-        // Tumble 3D cube randomly during roll duration
-        while (elapsed < rollDuration)
+        int value = 0;
+        if (gameObject == GameManager.Instance.dice1Object) value = GameManager.Instance.dice1Value;
+        else if (gameObject == GameManager.Instance.dice2Object) value = GameManager.Instance.dice2Value;
+
+        switch (value)
         {
-            elapsed += Time.deltaTime;
-            transform.Rotate(new Vector3(
-                Random.Range(180f, 360f) * Time.deltaTime * 5f,
-                Random.Range(180f, 360f) * Time.deltaTime * 5f,
-                Random.Range(180f, 360f) * Time.deltaTime * 5f
-            ));
-            yield return null;
+            case 1: transform.localRotation = Quaternion.Euler(0, 0, 0); break;
+            case 2: transform.localRotation = Quaternion.Euler(0, 0, 180); break;
+            case 3: transform.localRotation = Quaternion.Euler(0, 0, 90); break;
+            case 4: transform.localRotation = Quaternion.Euler(0, 0, -90); break;
+            case 5: transform.localRotation = Quaternion.Euler(90, 0, 0); break;
+            case 6: transform.localRotation = Quaternion.Euler(-90, 0, 0); break;
         }
+    }
 
-        // Reset rotation alignment
-        transform.eulerAngles = Vector3.zero;
+    public void UpdateVisualState()
+    {
+        if (GameManager.Instance == null) return;
 
-        // Generate final roll outcome (1 to 6)
-        lastRolledValue = Random.Range(1, 7);
+        bool isSelected = false;
+        if (gameObject == GameManager.Instance.dice1Object)
+            isSelected = GameManager.Instance.isDice1Selected;
+        else if (gameObject == GameManager.Instance.dice2Object)
+            isSelected = GameManager.Instance.isDice2Selected;
 
-        Debug.Log("🎲 " + GameManager.Instance.currentTurn + " rolled a " + lastRolledValue + "!");
-
-        isRolling = false;
-
-        // Send outcome to GameManager to validate and process
-        GameManager.Instance.ProcessRollResult(lastRolledValue);
+        transform.localScale = isSelected ? selectedScale : defaultScale;
     }
 }

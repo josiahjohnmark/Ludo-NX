@@ -84,8 +84,8 @@ public class UIManager : MonoBehaviour
     public void OnSelectPlayerCount(int playerCount)
     {
         if (playerSetupPanel != null) playerSetupPanel.SetActive(false);
-        GameManager.Instance.InitializeMatch(playerCount);
-        UpdateTurnUI(GameManager.Instance.currentTurn, "ROLL DICE");
+        GameManager.Instance.InitializeMatchWithPlayerCount(playerCount);
+        UpdateTurnUI(GameManager.Instance.currentTurnColor, "ROLL DICE");
     }
 
     public void OnClickRestartMatch()
