@@ -39,9 +39,10 @@ public class GameManager : MonoBehaviour
     public bool isDice2Selected = false;
     public int selectedDiceValue = 0;
 
-    [Header("Roll States")]
+    [Header("Roll States & Doubles Penalty")]
     public bool isRolling = false;
     public bool hasRolled = false;
+    public int consecutiveDoublesCount = 0;
 
     private bool grantExtraTurn = false;
 
@@ -53,6 +54,17 @@ public class GameManager : MonoBehaviour
             return;
         }
         Instance = this;
+    }
+
+    private void Start()
+    {
+        // Auto-initialize a 4-player match so the game is playable immediately.
+        // Later this will be replaced by the player-setup UI flow.
+        if (activePlayers == null || activePlayers.Count == 0)
+        {
+            InitializeMatchWithPlayerCount(4);
+            Debug.Log("Auto-initialized 4-player match.");
+        }
     }
 
     private void Update()
@@ -144,7 +156,39 @@ public class GameManager : MonoBehaviour
 
         dice1Value = Random.Range(1, 7);
         dice2Value = Random.Range(1, 7);
-        grantExtraTurn = (dice1Value == 6 || dice2Value == 6);
+
+        bool isDouble = (dice1Value == dice2Value);
+
+        if (isDouble)
+        {
+            consecutiveDoublesCount++;
+            Debug.Log($"DOUBLES ROLLED [{dice1Value}-{dice2Value}] by {currentTurnColor}! Streak: {consecutiveDoublesCount}");
+        }
+        else
+        {
+            consecutiveDoublesCount = 0;
+        }
+
+        if (consecutiveDoublesCount >= 3)
+        {
+            Debug.Log($"3 CONSECUTIVE DOUBLES ROLLED by {currentTurnColor}! Turn forfeited!");
+            consecutiveDoublesCount = 0;
+            grantExtraTurn = false;
+            hasRolled = true;
+            isRolling = false;
+
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.UpdateTurnUI(currentTurnColor, "3 DOUBLES — TURN FORFEITED");
+            }
+
+            yield return new WaitForSeconds(1.2f);
+            ResetDiceState();
+            AdvanceToNextPlayer();
+            yield break;
+        }
+
+        grantExtraTurn = isDouble;
 
         if (AudioManager.Instance != null) AudioManager.Instance.PlayDiceRoll();
 
@@ -179,29 +223,49 @@ public class GameManager : MonoBehaviour
         }
         else if (UIManager.Instance != null)
         {
-            UIManager.Instance.UpdateTurnUI(currentTurnColor, "SELECT A DIE");
+            UIManager.Instance.UpdateTurnUI(currentTurnColor, isDouble ? "DOUBLES! SELECT A DIE" : "SELECT A DIE");
         }
     }
 
     private bool PlayerHasAnyLegalMove(PlayerColor color, int d1, int d2)
     {
-        TokenMovement[] allTokens = FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        TokenMovement[] allTokens = FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude);
 
-        bool hasTokenInPlay = false;
         foreach (TokenMovement t in allTokens)
         {
-            if (t.tokenColor == color && !t.isHome && !t.isFinished)
-            {
-                hasTokenInPlay = true;
-                break;
-            }
+            if (t.tokenColor != color || t.isFinished) continue;
+
+            if (d1 > 0 && TokenMovement.CanTokenMove(t, d1)) return true;
+            if (d2 > 0 && TokenMovement.CanTokenMove(t, d2)) return true;
         }
 
-        // If any token is already out, any roll is a legal move
-        if (hasTokenInPlay) return true;
+        return false;
+    }
 
-        // Otherwise, only a 6 lets the player do anything
-        return d1 == 6 || d2 == 6;
+    public bool PlayerHasLegalMoveForSingleDie(PlayerColor color, int dieValue)
+    {
+        if (dieValue <= 0) return false;
+
+        TokenMovement[] allTokens = FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude);
+
+        foreach (TokenMovement t in allTokens)
+        {
+            if (t.tokenColor != color || t.isFinished) continue;
+
+            if (TokenMovement.CanTokenMove(t, dieValue)) return true;
+        }
+
+        return false;
+    }
+
+    public void GrantCaptureBonusTurn()
+    {
+        grantExtraTurn = true;
+        Debug.Log($"{currentTurnColor} earned a BONUS TURN for capturing an opponent token!");
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.UpdateTurnUI(currentTurnColor, "BONUS TURN (CAPTURE)");
+        }
     }
 
     // Called when the player clicks a physical die in the tray
@@ -279,12 +343,15 @@ public class GameManager : MonoBehaviour
 
     public void ConsumeSelectedDice()
     {
-        if (isDice1Selected || selectedDiceValue == dice1Value)
+        // Use the isDiceXSelected flags as primary discriminator.
+        // This prevents the wrong die being consumed when both dice
+        // show the same value (doubles).
+        if (isDice1Selected)
         {
             dice1Value = 0;
             isDice1Selected = false;
         }
-        else if (isDice2Selected || selectedDiceValue == dice2Value)
+        else if (isDice2Selected)
         {
             dice2Value = 0;
             isDice2Selected = false;
@@ -296,6 +363,18 @@ public class GameManager : MonoBehaviour
         if (dice1Value == 0 && dice2Value == 0)
         {
             ResetTurnForNextPlayer();
+        }
+        else
+        {
+            int remainingDie = (dice1Value > 0) ? dice1Value : dice2Value;
+            if (!PlayerHasLegalMoveForSingleDie(currentTurnColor, remainingDie))
+            {
+                Debug.Log($"{currentTurnColor} cannot use remaining die [{remainingDie}] — forfeiting remaining die.");
+                dice1Value = 0;
+                dice2Value = 0;
+                RefreshDiceVisuals();
+                ResetTurnForNextPlayer();
+            }
         }
 
         Debug.Log("Selected dice consumed successfully.");
@@ -338,9 +417,19 @@ public class GameManager : MonoBehaviour
     {
         if (activePlayers == null || activePlayers.Count == 0) return;
 
+        consecutiveDoublesCount = 0;
+
+        // Skip players who have already finished all their tokens
+        int attempts = 0;
         int currentIndex = activePlayers.IndexOf(currentTurnColor);
-        int nextIndex = (currentIndex + 1) % activePlayers.Count;
-        currentTurnColor = activePlayers[nextIndex];
+        do
+        {
+            currentIndex = (currentIndex + 1) % activePlayers.Count;
+            attempts++;
+        }
+        while (leaderBoard.Contains(activePlayers[currentIndex]) && attempts < activePlayers.Count);
+
+        currentTurnColor = activePlayers[currentIndex];
 
         if (UIManager.Instance != null)
         {
@@ -354,7 +443,7 @@ public class GameManager : MonoBehaviour
 
     public void CheckForPlayerWin(PlayerColor color)
     {
-        TokenMovement[] allTokens = FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        TokenMovement[] allTokens = FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude);
         int total = 0;
         int finished = 0;
 

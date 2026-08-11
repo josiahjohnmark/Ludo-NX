@@ -36,11 +36,11 @@ public class DiceRoll : MonoBehaviour
         switch (value)
         {
             case 1: transform.localRotation = Quaternion.Euler(0, 0, 0); break;
-            case 2: transform.localRotation = Quaternion.Euler(0, 0, 180); break;
-            case 3: transform.localRotation = Quaternion.Euler(0, 0, 90); break;
-            case 4: transform.localRotation = Quaternion.Euler(0, 0, -90); break;
-            case 5: transform.localRotation = Quaternion.Euler(90, 0, 0); break;
-            case 6: transform.localRotation = Quaternion.Euler(-90, 0, 0); break;
+            case 2: transform.localRotation = Quaternion.Euler(180, 0, 0); break;
+            case 3: transform.localRotation = Quaternion.Euler(-90, 0, 0); break;
+            case 4: transform.localRotation = Quaternion.Euler(90, 0, 0); break;
+            case 5: transform.localRotation = Quaternion.Euler(0, -90, 0); break;
+            case 6: transform.localRotation = Quaternion.Euler(0, 90, 0); break;
         }
     }
 

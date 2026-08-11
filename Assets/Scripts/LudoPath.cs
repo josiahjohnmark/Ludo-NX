@@ -19,10 +19,46 @@ public class LudoPath : MonoBehaviour
     private const int YELLOW_START_INDEX = 26;
     private const int BLUE_START_INDEX = 39;
 
+    // Each colour walks 51 of the 52 main-loop tiles (it never re-visits its
+    // own start tile).  After those 51 tiles it enters its 6-tile home stretch.
+    private int MainTilesPerColor => mainLoop != null && mainLoop.Count > 0
+        ? mainLoop.Count - 1   // 52 - 1 = 51
+        : 0;
+
     private void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        // Only the instance with ALL 4 home stretches populated (MainBoardPath)
+        // should become the singleton.  The per-colour HomeStretch objects each
+        // have only 1 of the 4 filled, so they must yield.
+        bool iAmComplete = redHomeStretch.Count > 0
+                        && greenHomeStretch.Count > 0
+                        && yellowHomeStretch.Count > 0
+                        && blueHomeStretch.Count > 0;
+
+        if (Instance == null)
+        {
+            if (iAmComplete)
+            {
+                Instance = this;
+            }
+            else
+            {
+                // Partial instance loaded first — keep searching, don't destroy yet
+                // (MainBoardPath hasn't loaded yet; it will claim the slot)
+                Instance = this;  // temporary holder
+            }
+        }
+        else if (iAmComplete && Instance != this)
+        {
+            // MainBoardPath arrived after a partial instance already claimed the slot
+            Destroy(Instance.gameObject);
+            Instance = this;
+        }
+        else if (!iAmComplete)
+        {
+            // A partial instance after MainBoardPath — just destroy it
+            Destroy(gameObject);
+        }
     }
 
     public List<Transform> GetPathForColor(GameManager.PlayerColor color)
@@ -33,7 +69,9 @@ public class LudoPath : MonoBehaviour
 
         if (mainLoop != null && mainLoop.Count > 0)
         {
-            for (int i = 0; i < mainLoop.Count; i++)
+            // Walk 51 main-loop tiles (relative 0 = start, relative 50 = last
+            // tile before the home-stretch entrance).
+            for (int i = 0; i < MainTilesPerColor; i++)
             {
                 int loopIndex = (startIndex + i) % mainLoop.Count;
                 path.Add(mainLoop[loopIndex]);
@@ -60,10 +98,10 @@ public class LudoPath : MonoBehaviour
 
     public int GetPathLength(GameManager.PlayerColor color)
     {
-        int mainCount = mainLoop != null ? mainLoop.Count : 0;
+        int mainCount = MainTilesPerColor;  // 51
         List<Transform> homeStretch = GetHomeStretch(color);
         int homeCount = homeStretch != null ? homeStretch.Count : 0;
-        return mainCount + homeCount;
+        return mainCount + homeCount;       // 51 + 6 = 57
     }
 
     public int GetStartIndex(GameManager.PlayerColor color)
@@ -95,7 +133,7 @@ public class LudoPath : MonoBehaviour
     public int GetAbsoluteMainIndex(GameManager.PlayerColor color, int relativeIndex)
     {
         if (mainLoop == null || mainLoop.Count == 0) return -1;
-        if (relativeIndex >= mainLoop.Count) return -1;
+        if (relativeIndex >= MainTilesPerColor) return -1;  // 51+ = home stretch
         return (GetStartIndex(color) + relativeIndex) % mainLoop.Count;
     }
 

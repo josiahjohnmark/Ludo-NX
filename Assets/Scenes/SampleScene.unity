@@ -188,6 +188,8 @@ MonoBehaviour:
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 1529307315}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &56551692
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -337,6 +339,8 @@ MonoBehaviour:
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 1275221443}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &75350691
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -852,7 +856,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 149601895}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 1578027174}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -931,7 +935,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 149601895}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.76000005, y: -8.82, z: -0.9}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
@@ -1023,6 +1027,8 @@ MonoBehaviour:
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 1744947154}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &154915290
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -1823,6 +1829,8 @@ MonoBehaviour:
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 703869321}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &248445059
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -2194,6 +2202,8 @@ MonoBehaviour:
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 314134444}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &287312600
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -2743,6 +2753,8 @@ MonoBehaviour:
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 953833969}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &354015350
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -3242,6 +3254,8 @@ MonoBehaviour:
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 801491706}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &421678709
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -3451,12 +3465,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TokenMovement
   tokenColor: 1
-  isHome: 1
-  currentTileIndex: -1
+  isHome: 0
+  currentTileIndex: 0
   stepsTaken: 0
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 2068495229}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &439043724
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -3800,12 +3816,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TokenMovement
   tokenColor: 1
-  isHome: 1
-  currentTileIndex: -1
+  isHome: 0
+  currentTileIndex: 0
   stepsTaken: 0
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 215827935}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &499395773
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -4884,6 +4902,8 @@ MonoBehaviour:
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 453134881}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &635753731
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -5031,13 +5051,14 @@ MonoBehaviour:
   leaderBoard: 
   dice1Object: {fileID: 149601895}
   dice2Object: {fileID: 1546971391}
-  dice1Value: 0
-  dice2Value: 0
+  dice1Value: 6
+  dice2Value: 6
   isDice1Selected: 0
   isDice2Selected: 0
   selectedDiceValue: 0
   isRolling: 0
   hasRolled: 0
+  consecutiveDoublesCount: 2
 --- !u!4 &636356588
 Transform:
   m_ObjectHideFlags: 0
@@ -5348,6 +5369,8 @@ MonoBehaviour:
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 622866514}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &687597748
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -6446,6 +6469,8 @@ MonoBehaviour:
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 1881083535}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &999777319
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -6868,12 +6893,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TokenMovement
   tokenColor: 0
-  isHome: 1
-  currentTileIndex: 0
+  isHome: 0
+  currentTileIndex: 55
   stepsTaken: 0
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 1340579658}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &1086521250
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -7147,6 +7174,8 @@ MonoBehaviour:
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 1116840736}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &1235333125
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -7721,6 +7750,8 @@ MonoBehaviour:
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 855664862}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &1360336358
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -8654,7 +8685,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1546971391}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0.44, y: -8.82, z: -0.9}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
@@ -8782,6 +8813,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 165490604}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!134 &1578027174
+PhysicsMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ' (Instance)'
+  serializedVersion: 2
+  m_DynamicFriction: 0.6
+  m_StaticFriction: 0.6
+  m_Bounciness: 0
+  m_FrictionCombine: 0
+  m_BounceCombine: 0
 --- !u!1 &1590072312
 GameObject:
   m_ObjectHideFlags: 0
@@ -10835,6 +10879,8 @@ MonoBehaviour:
   isFinished: 0
   pathScript: {fileID: 337698871}
   homeBaseSlot: {fileID: 108280443}
+  hopDuration: 0.15
+  hopHeight: 0.35
 --- !u!58 &2137145350
 CircleCollider2D:
   m_ObjectHideFlags: 0

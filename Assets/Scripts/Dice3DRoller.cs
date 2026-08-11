@@ -14,15 +14,15 @@ public class Dice3DRoller : MonoBehaviour
     [Header("State")]
     public bool isRolling = false;
 
-    // Standard face rotations for landing 1 through 6
-    private readonly Vector3[] faceRotations = new Vector3[]
+    // Standard face rotations for landing 1 through 6 (calibrated for 3D dice mesh)
+    private static readonly Vector3[] faceRotations = new Vector3[]
     {
-        new Vector3(0, 0, 0),       // Face 1
-        new Vector3(90, 0, 0),      // Face 2
-        new Vector3(0, 90, 0),      // Face 3
-        new Vector3(0, -90, 0),     // Face 4
-        new Vector3(-90, 0, 0),     // Face 5
-        new Vector3(180, 0, 0)      // Face 6
+        new Vector3(0, 0, 0),       // Face 1 -> Face_1
+        new Vector3(180, 0, 0),     // Face 2 -> Face_2
+        new Vector3(-90, 0, 0),     // Face 3 -> Face_3
+        new Vector3(90, 0, 0),      // Face 4 -> Face_4
+        new Vector3(0, -90, 0),     // Face 5 -> Face_5
+        new Vector3(0, 90, 0)       // Face 6 -> Face_6
     };
 
     public void TriggerInPlaceRoll(int targetResult1, int targetResult2)

@@ -23,7 +23,7 @@ public class WinCalculator : MonoBehaviour
 
     // Core Constants: 100% / 4 tokens = 25% max per token
     private const float MAX_TOKEN_PERCENTAGE = 25f;
-    private const float TOTAL_STEPS_TO_FINISH = 58f;
+    private const float TOTAL_STEPS_TO_FINISH = 57f;
 
     // State Modifiers
     private const float ALL_FOUR_ACTIVE_BONUS = 3f;  // +3% if all 4 pieces are out on board
