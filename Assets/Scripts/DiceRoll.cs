@@ -11,6 +11,12 @@ public class DiceRoll : MonoBehaviour
         defaultScale = transform.localScale;
     }
 
+    private void Start()
+    {
+        transform.localRotation = Quaternion.identity;
+        Update3DDiceRotation();
+    }
+
     private void OnMouseDown()
     {
         if (GameManager.Instance != null)

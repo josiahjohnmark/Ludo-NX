@@ -54,6 +54,7 @@ public class GameManager : MonoBehaviour
             return;
         }
         Instance = this;
+        Application.runInBackground = true;
     }
 
     private void Start()
@@ -152,78 +153,82 @@ public class GameManager : MonoBehaviour
     private IEnumerator RollDiceRoutine()
     {
         isRolling = true;
-        ResetDiceSelection();
-
-        dice1Value = Random.Range(1, 7);
-        dice2Value = Random.Range(1, 7);
-
-        bool isDouble = (dice1Value == dice2Value);
-
-        if (isDouble)
+        try
         {
-            consecutiveDoublesCount++;
-            Debug.Log($"DOUBLES ROLLED [{dice1Value}-{dice2Value}] by {currentTurnColor}! Streak: {consecutiveDoublesCount}");
-        }
-        else
-        {
-            consecutiveDoublesCount = 0;
-        }
+            ResetDiceSelection();
 
-        if (consecutiveDoublesCount >= 3)
-        {
-            Debug.Log($"3 CONSECUTIVE DOUBLES ROLLED by {currentTurnColor}! Turn forfeited!");
-            consecutiveDoublesCount = 0;
-            grantExtraTurn = false;
+            dice1Value = Random.Range(1, 7);
+            dice2Value = Random.Range(1, 7);
+
+            bool isDouble = (dice1Value == dice2Value);
+
+            if (isDouble)
+            {
+                consecutiveDoublesCount++;
+                Debug.Log($"DOUBLES ROLLED [{dice1Value}-{dice2Value}] by {currentTurnColor}! Streak: {consecutiveDoublesCount}");
+            }
+            else
+            {
+                consecutiveDoublesCount = 0;
+            }
+
+            if (consecutiveDoublesCount >= 3)
+            {
+                Debug.Log($"3 CONSECUTIVE DOUBLES ROLLED by {currentTurnColor}! Turn forfeited!");
+                consecutiveDoublesCount = 0;
+                grantExtraTurn = false;
+                hasRolled = true;
+
+                if (UIManager.Instance != null)
+                {
+                    UIManager.Instance.UpdateTurnUI(currentTurnColor, "3 DOUBLES — TURN FORFEITED");
+                }
+
+                yield return new WaitForSeconds(1.2f);
+                ResetDiceState();
+                AdvanceToNextPlayer();
+                yield break;
+            }
+
+            grantExtraTurn = isDouble;
+
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayDiceRoll();
+
+            if (physicsRoller != null)
+            {
+                yield return physicsRoller.AnimateSpinRoutine(dice1Value, dice2Value);
+            }
+            else
+            {
+                yield return new WaitForSeconds(0.8f);
+            }
+
             hasRolled = true;
+
+            Debug.Log($"Rolled [{dice1Value}] and [{dice2Value}] for {currentTurnColor}");
+
+            if (!PlayerHasAnyLegalMove(currentTurnColor, dice1Value, dice2Value))
+            {
+                Debug.Log($"{currentTurnColor} has no legal move — turn passes.");
+
+                if (UIManager.Instance != null)
+                {
+                    UIManager.Instance.UpdateTurnUI(currentTurnColor, "NO MOVE — PASSING");
+                }
+
+                yield return new WaitForSeconds(1.0f);
+
+                ResetDiceState();
+                AdvanceToNextPlayer();
+            }
+            else if (UIManager.Instance != null)
+            {
+                UIManager.Instance.UpdateTurnUI(currentTurnColor, isDouble ? "DOUBLES! SELECT A DIE" : "SELECT A DIE");
+            }
+        }
+        finally
+        {
             isRolling = false;
-
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.UpdateTurnUI(currentTurnColor, "3 DOUBLES — TURN FORFEITED");
-            }
-
-            yield return new WaitForSeconds(1.2f);
-            ResetDiceState();
-            AdvanceToNextPlayer();
-            yield break;
-        }
-
-        grantExtraTurn = isDouble;
-
-        if (AudioManager.Instance != null) AudioManager.Instance.PlayDiceRoll();
-
-        if (physicsRoller != null)
-        {
-            physicsRoller.TriggerInPlaceRoll(dice1Value, dice2Value);
-            yield return new WaitUntil(() => !physicsRoller.isRolling);
-        }
-        else
-        {
-            yield return new WaitForSeconds(0.8f);
-        }
-
-        hasRolled = true;
-        isRolling = false;
-
-        Debug.Log($"Rolled [{dice1Value}] and [{dice2Value}] for {currentTurnColor}");
-
-        if (!PlayerHasAnyLegalMove(currentTurnColor, dice1Value, dice2Value))
-        {
-            Debug.Log($"{currentTurnColor} has no legal move — turn passes.");
-
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.UpdateTurnUI(currentTurnColor, "NO MOVE — PASSING");
-            }
-
-            yield return new WaitForSeconds(1.0f);
-
-            ResetDiceState();
-            AdvanceToNextPlayer();
-        }
-        else if (UIManager.Instance != null)
-        {
-            UIManager.Instance.UpdateTurnUI(currentTurnColor, isDouble ? "DOUBLES! SELECT A DIE" : "SELECT A DIE");
         }
     }
 

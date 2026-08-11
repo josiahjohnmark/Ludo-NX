@@ -27,45 +27,49 @@ public class Dice3DRoller : MonoBehaviour
 
     public void TriggerInPlaceRoll(int targetResult1, int targetResult2)
     {
-        if (isRolling) return;
-        StartCoroutine(AnimateInPlaceSpin(targetResult1, targetResult2));
+        StartCoroutine(AnimateSpinRoutine(targetResult1, targetResult2));
     }
 
-    private IEnumerator AnimateInPlaceSpin(int res1, int res2)
+    public IEnumerator AnimateSpinRoutine(int res1, int res2)
     {
         isRolling = true;
-
-        float elapsedTime = 0f;
-
-        // Rapid 3D tumble on all axes right in position
-        while (elapsedTime < spinDuration)
+        try
         {
-            elapsedTime += Time.deltaTime;
+            float elapsedTime = 0f;
 
+            // Rapid 3D tumble on all axes right in position
+            while (elapsedTime < spinDuration)
+            {
+                float dt = Time.unscaledDeltaTime;
+                elapsedTime += dt;
+
+                if (dice1Transform != null)
+                {
+                    dice1Transform.Rotate(new Vector3(spinSpeed, spinSpeed * 0.7f, spinSpeed * 0.3f) * dt);
+                }
+
+                if (dice2Transform != null)
+                {
+                    dice2Transform.Rotate(new Vector3(spinSpeed * 0.5f, spinSpeed, spinSpeed * 0.8f) * dt);
+                }
+
+                yield return null;
+            }
+
+            // Snap smoothly to calculated target face angles
             if (dice1Transform != null)
             {
-                dice1Transform.Rotate(new Vector3(spinSpeed, spinSpeed * 0.7f, spinSpeed * 0.3f) * Time.deltaTime);
+                dice1Transform.localRotation = Quaternion.Euler(faceRotations[Mathf.Clamp(res1 - 1, 0, 5)]);
             }
 
             if (dice2Transform != null)
             {
-                dice2Transform.Rotate(new Vector3(spinSpeed * 0.5f, spinSpeed, spinSpeed * 0.8f) * Time.deltaTime);
+                dice2Transform.localRotation = Quaternion.Euler(faceRotations[Mathf.Clamp(res2 - 1, 0, 5)]);
             }
-
-            yield return null;
         }
-
-        // Snap smoothly to calculated target face angles
-        if (dice1Transform != null)
+        finally
         {
-            dice1Transform.localRotation = Quaternion.Euler(faceRotations[Mathf.Clamp(res1 - 1, 0, 5)]);
+            isRolling = false;
         }
-
-        if (dice2Transform != null)
-        {
-            dice2Transform.localRotation = Quaternion.Euler(faceRotations[Mathf.Clamp(res2 - 1, 0, 5)]);
-        }
-
-        isRolling = false;
     }
 }
