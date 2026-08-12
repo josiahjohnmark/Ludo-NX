@@ -27,38 +27,54 @@ public class LudoPath : MonoBehaviour
 
     private void Awake()
     {
-        // Only the instance with ALL 4 home stretches populated (MainBoardPath)
-        // should become the singleton.  The per-colour HomeStretch objects each
-        // have only 1 of the 4 filled, so they must yield.
-        bool iAmComplete = redHomeStretch.Count > 0
+        // Only the instance with the full main loop AND all 4 home stretches populated
+        // (MainBoardPath) may ever become the singleton. Some per-colour HomeStretch
+        // objects in the scene carry their own partial LudoPath component (only their
+        // own list filled) — those must never claim Instance, and must never destroy
+        // another GameObject, since Awake() order across objects isn't guaranteed and
+        // destroying the wrong one would delete real waypoint Transforms other tokens
+        // depend on.
+        bool iAmComplete = mainLoop != null && mainLoop.Count > 0
+                        && redHomeStretch.Count > 0
                         && greenHomeStretch.Count > 0
                         && yellowHomeStretch.Count > 0
                         && blueHomeStretch.Count > 0;
 
-        if (Instance == null)
+        if (!iAmComplete) return;
+
+        if (Instance != null && Instance != this)
         {
-            if (iAmComplete)
+            Debug.LogWarning("Multiple complete LudoPath instances found in the scene — keeping the first one.", this);
+            return;
+        }
+
+        Instance = this;
+    }
+
+    /// <summary>
+    /// Fallback lookup for a complete LudoPath when Instance hasn't been set yet
+    /// (e.g. this is queried from another object's Awake() before LudoPath's own
+    /// Awake() has run). Unlike a plain FindAnyObjectByType&lt;LudoPath&gt;() call,
+    /// this specifically filters out partial per-colour LudoPath components.
+    /// </summary>
+    public static LudoPath FindComplete()
+    {
+        if (Instance != null) return Instance;
+
+        LudoPath[] all = Object.FindObjectsByType<LudoPath>(FindObjectsInactive.Exclude);
+        foreach (LudoPath candidate in all)
+        {
+            if (candidate.mainLoop != null && candidate.mainLoop.Count > 0
+                && candidate.redHomeStretch.Count > 0
+                && candidate.greenHomeStretch.Count > 0
+                && candidate.yellowHomeStretch.Count > 0
+                && candidate.blueHomeStretch.Count > 0)
             {
-                Instance = this;
-            }
-            else
-            {
-                // Partial instance loaded first — keep searching, don't destroy yet
-                // (MainBoardPath hasn't loaded yet; it will claim the slot)
-                Instance = this;  // temporary holder
+                return candidate;
             }
         }
-        else if (iAmComplete && Instance != this)
-        {
-            // MainBoardPath arrived after a partial instance already claimed the slot
-            Destroy(Instance.gameObject);
-            Instance = this;
-        }
-        else if (!iAmComplete)
-        {
-            // A partial instance after MainBoardPath — just destroy it
-            Destroy(gameObject);
-        }
+
+        return null;
     }
 
     public List<Transform> GetPathForColor(GameManager.PlayerColor color)

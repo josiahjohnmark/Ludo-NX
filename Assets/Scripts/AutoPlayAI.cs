@@ -87,6 +87,29 @@ public class AutoPlayAI : MonoBehaviour
             }
         }
 
+        // Priority 5: a combined-sum move on a single on-board token. Needed so a turn isn't
+        // wrongly force-passed on timeout when neither individual die is legal but the sum is
+        // (matches the player's own "tap both dice to combine" option). Combined dice can never
+        // exit the yard, so only on-board tokens are considered.
+        if (die1 > 0 && die2 > 0)
+        {
+            int combined = die1 + die2;
+            List<TokenMovement> onBoardTokens = myTokens.FindAll(t => !t.isHome);
+
+            TokenMovement combinedTarget = FindCaptureMove(onBoardTokens, combined)
+                ?? FindFurthestToken(onBoardTokens, combined)
+                ?? FindAnyLegalToken(onBoardTokens, combined);
+
+            if (combinedTarget != null)
+            {
+                GameManager gm = GameManager.Instance;
+                if (gm != null) gm.SelectCombinedDice();
+                combinedTarget.MoveSteps(combined);
+                Debug.Log($"[AutoPlayAI] Auto-moved {combinedTarget.tokenColor} token using COMBINED dice value {combined}");
+                return true;
+            }
+        }
+
         Debug.Log($"[AutoPlayAI] No legal moves found for {color}.");
         return false;
     }

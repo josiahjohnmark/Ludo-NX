@@ -33,8 +33,14 @@ public class AudioManager : MonoBehaviour
     // Standard Hop Sound
     public void PlayHop()
     {
+        PlayHop(1.0f);
+    }
+
+    // Hop with an explicit pitch, so a multi-tile move can climb instead of repeating one flat click.
+    public void PlayHop(float pitch)
+    {
         if (tokenHopClip == null) return;
-        audioSource.pitch = 1.0f;
+        audioSource.pitch = pitch;
         audioSource.PlayOneShot(tokenHopClip);
     }
 

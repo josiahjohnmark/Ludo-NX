@@ -38,6 +38,11 @@ public class UIManager : MonoBehaviour
     public Button rollButton;
     public Image rollButtonImage;
     public TextMeshProUGUI rollButtonText;
+    // The scene currently has a second, duplicate Roll_Button (in BottomBar_Panel) that isn't
+    // wired to UIManager at all, so it never reflects enabled/disabled state. Assign it (and any
+    // other stray roll buttons) here so its visuals stay in sync until the scene duplicate is
+    // cleaned up.
+    public Button[] extraRollButtons;
     public Color rollButtonActiveColor = new Color(0.96f, 0.65f, 0.14f);     // #F5A623
     public Color rollButtonDisabledColor = new Color(0.4f, 0.4f, 0.4f);
 
@@ -92,6 +97,13 @@ public class UIManager : MonoBehaviour
         if (quitButton != null) quitButton.onClick.AddListener(OnQuitClicked);
         if (soundToggleButton != null) soundToggleButton.onClick.AddListener(OnSoundToggleClicked);
         if (rollButton != null) rollButton.onClick.AddListener(OnRollClicked);
+        if (extraRollButtons != null)
+        {
+            foreach (Button extra in extraRollButtons)
+            {
+                if (extra != null) extra.onClick.AddListener(OnRollClicked);
+            }
+        }
         if (chatButton != null) chatButton.onClick.AddListener(OnChatClicked);
         if (emojiButton != null) emojiButton.onClick.AddListener(OnEmojiClicked);
 
@@ -102,10 +114,14 @@ public class UIManager : MonoBehaviour
     // TURN UI
     // ===========================
 
+    /// <summary>
+    /// Drives every per-turn visual: banner text/colour, player card highlighting, background
+    /// ambience and roll-button state. Each concern is guarded independently on purpose — an
+    /// unassigned Inspector reference must only disable its own piece, never silently take down
+    /// the other three (which is exactly what a single early-return here used to do).
+    /// </summary>
     public void UpdateTurnUI(GameManager.PlayerColor color, string actionMessage = "")
     {
-        if (turnStatusText == null) return;
-
         Color bannerColor = GetColorForPlayer(color);
 
         if (turnBannerHeader != null)
@@ -113,13 +129,11 @@ public class UIManager : MonoBehaviour
             turnBannerHeader.color = bannerColor;
         }
 
-        if (string.IsNullOrEmpty(actionMessage))
+        if (turnStatusText != null)
         {
-            turnStatusText.text = color.ToString() + "'S TURN";
-        }
-        else
-        {
-            turnStatusText.text = color.ToString() + ": " + actionMessage;
+            turnStatusText.text = string.IsNullOrEmpty(actionMessage)
+                ? color.ToString() + "'S TURN"
+                : color.ToString() + ": " + actionMessage;
         }
 
         // Update player cards — activate current, dim others
@@ -132,7 +146,7 @@ public class UIManager : MonoBehaviour
         }
 
         // Update roll button state
-        SetRollButtonEnabled(actionMessage.Contains("ROLL"));
+        SetRollButtonEnabled(actionMessage != null && actionMessage.Contains("ROLL"));
     }
 
     /// <summary>
@@ -315,6 +329,14 @@ public class UIManager : MonoBehaviour
         {
             rollButtonImage.color = enabled ? rollButtonActiveColor : rollButtonDisabledColor;
         }
+
+        if (extraRollButtons != null)
+        {
+            foreach (Button extra in extraRollButtons)
+            {
+                if (extra != null) extra.interactable = enabled;
+            }
+        }
     }
 
     // ===========================
@@ -429,7 +451,10 @@ public class UIManager : MonoBehaviour
 
         if (statsText != null)
         {
-            string stats = "MATCH STATS\n\n";
+            // <mspace> forces fixed-width character cells so the padded columns below
+            // actually line up — TMP's fonts (Lilita One / Plus Jakarta Sans) are
+            // proportional, so plain padding alone renders as a ragged, non-aligned table.
+            string stats = "<mspace=0.6em>MATCH STATS\n\n";
             GameManager.PlayerColor[] colors = {
                 GameManager.PlayerColor.RED,
                 GameManager.PlayerColor.GREEN,
@@ -451,7 +476,7 @@ public class UIManager : MonoBehaviour
 
             // Luckiest roller
             var luckiest = PointsManager.Instance.GetLuckiestRoller();
-            stats += $"\n🎲 Luckiest Roller: {luckiest}";
+            stats += $"\n🎲 Luckiest Roller: {luckiest}</mspace>";
 
             statsText.text = stats;
         }

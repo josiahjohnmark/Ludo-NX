@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class TokenMovement : MonoBehaviour
 {
@@ -20,11 +21,33 @@ public class TokenMovement : MonoBehaviour
     [Header("Animation Settings")]
     public float hopDuration = 0.32f;
     public float hopHeight = 0.35f;
+    // How much the token grows at the apex of a hop. In a 2D top-down board this scale change is
+    // what actually reads as "lifted off the board" — a Y offset alone just reads as moving to a
+    // different tile.
+    public float hopScalePunch = 0.12f;
+    public float penultimateRampHeight = 0.45f;
+    public float captureSlamHeight = 0.6f;
+
+    [Header("Landing Squash")]
+    public float landingSquashDuration = 0.09f;
+    public float landingSquashAmount = 0.12f;
+
+    [Header("Sorting")]
+    // Added to the token's sorting order while airborne so it passes over other tokens.
+    public int airborneSortingBoost = 20;
+
+    [Header("Flow")]
+    // 0 = perfectly even tile rhythm, 1 = full ease-in-out across the whole move. A small amount
+    // softens the start and stop without making the middle hops noticeably uneven.
+    [Range(0f, 1f)] public float flowEasing = 0.35f;
 
     private SpriteRenderer spriteRenderer;
     private Color originalColor;
+    private Vector3 originalScale = Vector3.one;
+    private int baseSortingOrder;
     private bool isHighlighted = false;
     private bool isMoving = false;
+    private Coroutine highlightCoroutine;
 
     private void Awake()
     {
@@ -32,11 +55,14 @@ public class TokenMovement : MonoBehaviour
         if (spriteRenderer != null)
         {
             originalColor = spriteRenderer.color;
+            baseSortingOrder = spriteRenderer.sortingOrder;
         }
+
+        originalScale = transform.localScale;
 
         if (pathScript == null)
         {
-            pathScript = Object.FindAnyObjectByType<LudoPath>();
+            pathScript = LudoPath.FindComplete();
         }
     }
 
@@ -51,6 +77,12 @@ public class TokenMovement : MonoBehaviour
         if (selectedValue <= 0)
         {
             Debug.LogWarning("Select a valid dice first!");
+            return;
+        }
+
+        if (isHome && GameManager.Instance.isDiceCombined)
+        {
+            Debug.LogWarning("Cannot exit the yard with combined dice — you need a single die showing 6.");
             return;
         }
 
@@ -93,14 +125,20 @@ public class TokenMovement : MonoBehaviour
         isHighlighted = enable;
         if (spriteRenderer == null) return;
 
+        // Scoped to just the pulse coroutine — StopAllCoroutines() here would also kill an
+        // in-flight hop, stranding the token mid-air with isMoving stuck true.
+        if (highlightCoroutine != null)
+        {
+            StopCoroutine(highlightCoroutine);
+            highlightCoroutine = null;
+        }
+
         if (enable)
         {
-            StopAllCoroutines();
-            StartCoroutine(PulseHighlight());
+            highlightCoroutine = StartCoroutine(PulseHighlight());
         }
         else
         {
-            StopAllCoroutines();
             spriteRenderer.color = originalColor;
         }
     }
@@ -125,11 +163,12 @@ public class TokenMovement : MonoBehaviour
         currentTileIndex = 0;
         stepsTaken = 1;
 
-        // Animate hop from home base to start tile
+        // Animate hop from home base to start tile. The start tile is always a safe zone,
+        // so this landing is never a capture.
         Transform targetTile = GetCurrentTileTransform();
         if (targetTile != null)
         {
-            yield return StartCoroutine(VerticalHopToPosition(targetTile.position, hopHeight));
+            yield return StartCoroutine(AnimateHopSequence(new List<Vector3> { targetTile.position }, false));
         }
         else
         {
@@ -149,7 +188,7 @@ public class TokenMovement : MonoBehaviour
     {
         if (pathScript == null)
         {
-            pathScript = Object.FindAnyObjectByType<LudoPath>();
+            pathScript = LudoPath.FindComplete();
             if (pathScript == null) yield break;
         }
 
@@ -166,18 +205,22 @@ public class TokenMovement : MonoBehaviour
 
         int startIndex = currentTileIndex;
 
-        // Hop tile-by-tile so the player can see each step
+        // Collect every tile this move crosses, then animate them as one continuous sequence.
+        List<Vector3> waypoints = new List<Vector3>();
         for (int i = 1; i <= steps; i++)
         {
-            int intermediateIndex = startIndex + i;
-            Transform tileTf = pathScript.GetTileTransform(tokenColor, intermediateIndex);
+            Transform tileTf = pathScript.GetTileTransform(tokenColor, startIndex + i);
+            if (tileTf != null) waypoints.Add(tileTf.position);
+        }
 
-            if (tileTf != null)
-            {
-                // Calculate jump height escalation if approaching a capture
-                float currentHopHeight = GetEscalatedHopHeight(intermediateIndex, steps - i);
-                yield return StartCoroutine(VerticalHopToPosition(tileTf.position, currentHopHeight));
-            }
+        int finalAbsIndex = pathScript.GetAbsoluteMainIndex(tokenColor, newIndex);
+        bool landingIsCapture = finalAbsIndex >= 0
+            && !pathScript.IsAbsoluteTileSafe(finalAbsIndex)
+            && IsEnemyPresentOnAbsoluteTile(finalAbsIndex);
+
+        if (waypoints.Count > 0)
+        {
+            yield return StartCoroutine(AnimateHopSequence(waypoints, landingIsCapture));
         }
 
         currentTileIndex = newIndex;
@@ -202,7 +245,7 @@ public class TokenMovement : MonoBehaviour
         }
         else if (currentTileIndex < mainLoopLength)
         {
-            if (AudioManager.Instance != null) AudioManager.Instance.PlayHop();
+            // Hop ticks already fired per-tile inside AnimateHopSequence.
             CheckForCaptures();
         }
         else
@@ -217,84 +260,146 @@ public class TokenMovement : MonoBehaviour
     }
 
     /// <summary>
-    /// Uniform vertical raise, horizontal slide, and vertical drop hop animation.
-    /// Eliminates unnatural sideways curving on turns.
+    /// Animates a whole multi-tile move as ONE continuous timeline rather than a chain of
+    /// separate per-tile coroutines.
+    ///
+    /// Horizontal motion is a straight lerp along the tile-to-tile polyline (so it can never
+    /// swing sideways at a corner) advancing at a near-constant rate — there is a single
+    /// acceleration at the start and a single deceleration at the end, instead of the token
+    /// braking to a dead stop on every tile, which is what made the old version stutter.
+    ///
+    /// The raise-and-drop comes from a full sine hump per tile: sin() departs and lands steeply
+    /// and hangs at the apex, which reads as a real hop. A synchronised scale punch sells the
+    /// height in 2D, where a Y offset alone just looks like sliding further up the board.
     /// </summary>
-    private IEnumerator VerticalHopToPosition(Vector3 target, float currentHeight)
+    private IEnumerator AnimateHopSequence(List<Vector3> waypoints, bool landingIsCapture)
     {
+        if (waypoints == null || waypoints.Count == 0) yield break;
+
+        int tileCount = waypoints.Count;
         Vector3 start = transform.position;
-        target.z = start.z;
+        float z = start.z;
 
-        float totalDuration = hopDuration;
-        float raiseDuration = totalDuration * 0.25f;
-        float slideDuration = totalDuration * 0.50f;
-        float dropDuration = totalDuration * 0.25f;
+        Vector3[] points = new Vector3[tileCount + 1];
+        points[0] = start;
+        for (int i = 0; i < tileCount; i++)
+        {
+            Vector3 p = waypoints[i];
+            p.z = z;
+            points[i + 1] = p;
+        }
 
-        Vector3 raisedStart = start + Vector3.up * currentHeight;
-        Vector3 raisedTarget = target + Vector3.up * currentHeight;
+        // Per-tile hop heights. Ordinary moves stay at a steady height; only a run that actually
+        // ends in a capture ramps up, so the escalation reads as intent rather than randomness.
+        float[] heights = new float[tileCount];
+        for (int i = 0; i < tileCount; i++)
+        {
+            if (!landingIsCapture) heights[i] = hopHeight;
+            else if (i == tileCount - 1) heights[i] = captureSlamHeight;
+            else if (i == tileCount - 2) heights[i] = penultimateRampHeight;
+            else heights[i] = hopHeight;
+        }
 
-        // Phase 1: Vertical Lift
+        float totalDuration = hopDuration * tileCount;
+        if (landingIsCapture) totalDuration += hopDuration * 0.5f;  // let the slam land heavier
+
+        if (spriteRenderer != null) spriteRenderer.sortingOrder = baseSortingOrder + airborneSortingBoost;
+
+        int lastSoundedTile = -1;
         float elapsed = 0f;
-        while (elapsed < raiseDuration)
+
+        while (elapsed < totalDuration)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / raiseDuration);
-            transform.position = Vector3.Lerp(start, raisedStart, t);
+            float rawT = Mathf.Clamp01(elapsed / totalDuration);
+
+            // One gentle ease across the ENTIRE move, not per tile.
+            float easedT = Mathf.Lerp(rawT, Mathf.SmoothStep(0f, 1f, rawT), flowEasing);
+
+            float travel = easedT * tileCount;
+            int seg = Mathf.Clamp(Mathf.FloorToInt(travel), 0, tileCount - 1);
+            float segT = Mathf.Clamp01(travel - seg);
+
+            Vector3 groundPos = Vector3.Lerp(points[seg], points[seg + 1], segT);
+            float arc = Mathf.Sin(segT * Mathf.PI);
+
+            transform.position = groundPos + Vector3.up * (arc * heights[seg]);
+            transform.localScale = originalScale * (1f + arc * hopScalePunch);
+
+            if (seg != lastSoundedTile)
+            {
+                lastSoundedTile = seg;
+                PlayHopSound(seg, tileCount);
+            }
+
             yield return null;
         }
 
-        // Phase 2: Horizontal Slide across tile gap
-        elapsed = 0f;
-        while (elapsed < slideDuration)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / slideDuration);
-            transform.position = Vector3.Lerp(raisedStart, raisedTarget, t);
-            yield return null;
-        }
+        transform.position = points[tileCount];
+        transform.localScale = originalScale;
 
-        // Phase 3: Vertical Drop onto target tile
-        elapsed = 0f;
-        while (elapsed < dropDuration)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / dropDuration);
-            transform.position = Vector3.Lerp(raisedTarget, target, t);
-            yield return null;
-        }
+        if (spriteRenderer != null) spriteRenderer.sortingOrder = baseSortingOrder;
 
-        transform.position = target;
+        yield return StartCoroutine(LandingSquash());
     }
 
-    private float GetEscalatedHopHeight(int checkIndex, int remainingSteps)
+    /// <summary>
+    /// A brief squash on arrival only. Squashing on every intermediate tile reads as noise.
+    /// </summary>
+    private IEnumerator LandingSquash()
     {
-        if (pathScript == null) return hopHeight;
+        if (landingSquashDuration <= 0f || landingSquashAmount <= 0f) yield break;
 
-        int absIndex = pathScript.GetAbsoluteMainIndex(tokenColor, checkIndex);
-        if (absIndex < 0 || pathScript.IsAbsoluteTileSafe(absIndex)) return hopHeight;
+        float elapsed = 0f;
+        while (elapsed < landingSquashDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / landingSquashDuration);
 
-        // Check if an enemy token is on this tile or coming up
+            // Squash hard on impact, then spring back out.
+            float squash = Mathf.Sin(t * Mathf.PI) * landingSquashAmount;
+            transform.localScale = new Vector3(
+                originalScale.x * (1f + squash),
+                originalScale.y * (1f - squash),
+                originalScale.z);
+
+            yield return null;
+        }
+
+        transform.localScale = originalScale;
+    }
+
+    /// <summary>
+    /// One hop tick per tile, rising slightly in pitch across the move so a long run reads as a
+    /// climbing run rather than a flat repeated click.
+    /// </summary>
+    private void PlayHopSound(int tileIndex, int tileCount)
+    {
+        if (AudioManager.Instance == null) return;
+
+        float progress = tileCount > 1 ? (float)tileIndex / (tileCount - 1) : 0f;
+        AudioManager.Instance.PlayHop(Mathf.Lerp(0.96f, 1.12f, progress));
+    }
+
+    /// <summary>
+    /// True if a non-home, non-finished enemy token currently occupies this absolute tile.
+    /// </summary>
+    private bool IsEnemyPresentOnAbsoluteTile(int absoluteTileIndex)
+    {
+        if (absoluteTileIndex < 0) return false;
+
         TokenMovement[] allTokens = Object.FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude);
 
-        foreach (var other in allTokens)
+        foreach (TokenMovement other in allTokens)
         {
             if (other == this || other.tokenColor == tokenColor || other.isHome || other.isFinished) continue;
             if (other.pathScript == null) continue;
 
             int otherAbs = other.pathScript.GetAbsoluteMainIndex(other.tokenColor, other.currentTileIndex);
-            if (otherAbs == absIndex)
-            {
-                // Landing on capture tile -> Dramatic slam height!
-                return 0.6f;
-            }
+            if (otherAbs == absoluteTileIndex) return true;
         }
 
-        return remainingSteps switch
-        {
-            1 => 0.5f,
-            2 => 0.4f,
-            _ => hopHeight
-        };
+        return false;
     }
 
     #endregion
@@ -383,7 +488,7 @@ public class TokenMovement : MonoBehaviour
     {
         if (pathScript == null)
         {
-            pathScript = Object.FindAnyObjectByType<LudoPath>();
+            pathScript = LudoPath.FindComplete();
         }
         if (pathScript != null)
         {
@@ -427,7 +532,7 @@ public class TokenMovement : MonoBehaviour
 
         if (token.pathScript == null)
         {
-            token.pathScript = Object.FindAnyObjectByType<LudoPath>();
+            token.pathScript = LudoPath.FindComplete();
             if (token.pathScript == null) return false;
         }
 

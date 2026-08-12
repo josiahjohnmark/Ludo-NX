@@ -37,6 +37,7 @@ public class GameManager : MonoBehaviour
 
     public bool isDice1Selected = false;
     public bool isDice2Selected = false;
+    public bool isDiceCombined = false;
     public int selectedDiceValue = 0;
 
     [Header("Roll States & Doubles Penalty")]
@@ -108,6 +109,11 @@ public class GameManager : MonoBehaviour
         if (PointsManager.Instance != null)
         {
             PointsManager.Instance.InitializeForMatch(activePlayers);
+        }
+
+        if (BackgroundAmbience.Instance != null)
+        {
+            BackgroundAmbience.Instance.TransitionToPlayerColor(currentTurnColor);
         }
 
         if (UIManager.Instance != null)
@@ -235,7 +241,12 @@ public class GameManager : MonoBehaviour
             }
             else if (UIManager.Instance != null)
             {
-                UIManager.Instance.UpdateTurnUI(currentTurnColor, isDouble ? "DOUBLES! SELECT A DIE" : "SELECT A DIE");
+                string baseMsg = isDouble ? "DOUBLES! SELECT A DIE" : "SELECT A DIE";
+                if (PlayerHasLegalCombinedMove(currentTurnColor))
+                {
+                    baseMsg += " (OR TAP BOTH TO COMBINE)";
+                }
+                UIManager.Instance.UpdateTurnUI(currentTurnColor, baseMsg);
             }
         }
         finally
@@ -254,6 +265,23 @@ public class GameManager : MonoBehaviour
 
             if (d1 > 0 && TokenMovement.CanTokenMove(t, d1)) return true;
             if (d2 > 0 && TokenMovement.CanTokenMove(t, d2)) return true;
+            // A combined-sum move is only ever legal for a token already on the board
+            // (exiting the yard requires a literal die face of 6, not an arithmetic sum).
+            if (d1 > 0 && d2 > 0 && !t.isHome && TokenMovement.CanTokenMove(t, d1 + d2)) return true;
+        }
+
+        return false;
+    }
+
+    public bool PlayerHasLegalCombinedMove(PlayerColor color)
+    {
+        if (dice1Value <= 0 || dice2Value <= 0) return false;
+
+        TokenMovement[] allTokens = FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude);
+        foreach (TokenMovement t in allTokens)
+        {
+            if (t.tokenColor != color || t.isFinished || t.isHome) continue;
+            if (TokenMovement.CanTokenMove(t, dice1Value + dice2Value)) return true;
         }
 
         return false;
@@ -290,12 +318,30 @@ public class GameManager : MonoBehaviour
     {
         if (!hasRolled) return;
 
+        // Tapping either die while combined cancels combine mode entirely.
+        if (isDiceCombined)
+        {
+            isDice1Selected = false;
+            isDice2Selected = false;
+            isDiceCombined = false;
+            selectedDiceValue = 0;
+            RefreshDiceVisuals();
+            return;
+        }
+
         if (diceObject == dice1Object && dice1Value > 0)
         {
             if (isDice1Selected)
             {
                 isDice1Selected = false;
                 selectedDiceValue = 0;
+            }
+            else if (isDice2Selected && dice2Value > 0)
+            {
+                // Second die tapped while the first is already selected -> combine both.
+                isDice1Selected = true;
+                isDiceCombined = true;
+                selectedDiceValue = dice1Value + dice2Value;
             }
             else
             {
@@ -310,6 +356,13 @@ public class GameManager : MonoBehaviour
             {
                 isDice2Selected = false;
                 selectedDiceValue = 0;
+            }
+            else if (isDice1Selected && dice1Value > 0)
+            {
+                // Second die tapped while the first is already selected -> combine both.
+                isDice2Selected = true;
+                isDiceCombined = true;
+                selectedDiceValue = dice1Value + dice2Value;
             }
             else
             {
@@ -341,8 +394,25 @@ public class GameManager : MonoBehaviour
         return selectedDiceValue;
     }
 
+    /// <summary>
+    /// Selects both dice as a combined sum move on a single token. Used by the player's
+    /// "tap both dice" gesture and by AutoPlayAI when only the combined move is legal.
+    /// </summary>
+    public void SelectCombinedDice()
+    {
+        if (dice1Value <= 0 || dice2Value <= 0) return;
+
+        isDice1Selected = true;
+        isDice2Selected = true;
+        isDiceCombined = true;
+        selectedDiceValue = dice1Value + dice2Value;
+        RefreshDiceVisuals();
+    }
+
     public void SelectDice(int diceNumber)
     {
+        isDiceCombined = false;
+
         if (diceNumber == 1 && dice1Value > 0)
         {
             isDice1Selected = true;
@@ -360,6 +430,21 @@ public class GameManager : MonoBehaviour
 
     public void ConsumeSelectedDice()
     {
+        if (isDiceCombined)
+        {
+            // Both dice were spent together on a single sum-move — consume atomically.
+            dice1Value = 0;
+            dice2Value = 0;
+            isDice1Selected = false;
+            isDice2Selected = false;
+            isDiceCombined = false;
+            selectedDiceValue = 0;
+            RefreshDiceVisuals();
+            ResetTurnForNextPlayer();
+            Debug.Log("Combined dice consumed successfully.");
+            return;
+        }
+
         // Use the isDiceXSelected flags as primary discriminator.
         // This prevents the wrong die being consumed when both dice
         // show the same value (doubles).
@@ -401,6 +486,7 @@ public class GameManager : MonoBehaviour
     {
         isDice1Selected = false;
         isDice2Selected = false;
+        isDiceCombined = false;
         selectedDiceValue = 0;
     }
 
@@ -424,7 +510,7 @@ public class GameManager : MonoBehaviour
         else
         {
             if (UIManager.Instance != null)
-                UIManager.Instance.UpdateTurnUI(currentTurnColor, "ROLL AGAIN (rolled a 6)");
+                UIManager.Instance.UpdateTurnUI(currentTurnColor, "ROLL AGAIN — BONUS TURN");
         }
 
         grantExtraTurn = false;
@@ -447,6 +533,13 @@ public class GameManager : MonoBehaviour
         while (leaderBoard.Contains(activePlayers[currentIndex]) && attempts < activePlayers.Count);
 
         currentTurnColor = activePlayers[currentIndex];
+
+        // Driven directly rather than only via UIManager: the background is a world-space effect
+        // and shouldn't stop working just because a HUD reference is unassigned.
+        if (BackgroundAmbience.Instance != null)
+        {
+            BackgroundAmbience.Instance.TransitionToPlayerColor(currentTurnColor);
+        }
 
         if (UIManager.Instance != null)
         {
