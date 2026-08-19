@@ -145,7 +145,41 @@ public class PlayerCardUI : MonoBehaviour
         if (cardCanvasGroup != null) cardCanvasGroup.alpha = active ? 1f : inactiveAlpha;
         transform.localScale = Vector3.one * (active ? activeScale : 1f);
         if (timerBarFill != null) timerBarFill.enabled = active;
+        ApplyCardTint(active ? 0f : 1f);
     }
+
+    /// <summary>
+    /// Mutes a waiting card by mixing its own colour toward a neutral grey, rather than by
+    /// fading it.
+    ///
+    /// Fading lets the page show through, and the page carries a wash of the current player's
+    /// colour — so a faded blue card sitting on a red turn rendered lavender, and green rendered
+    /// olive. Since the card's whole job is to say which house it belongs to, that is the one
+    /// thing the waiting state must not take away. Mixing toward grey holds the hue at any page
+    /// colour while still reading as clearly recessed.
+    /// </summary>
+    private void ApplyCardTint(float muted)
+    {
+        var clay = GetComponent<LudoNX.UI.ClayGraphic>();
+        if (clay == null) return;
+
+        if (!_baseColourCaptured)
+        {
+            _baseColour = clay.color;
+            _baseColourCaptured = true;
+        }
+
+        var grey = new Color(0.62f, 0.60f, 0.60f, _baseColour.a);
+        clay.color = Color.Lerp(_baseColour, grey, Mathf.Clamp01(muted) * inactiveMute);
+        clay.SetVerticesDirty();
+    }
+
+    [Tooltip("How far a waiting card's colour is mixed toward grey. 0 = untouched, 1 = fully grey.")]
+    [Range(0f, 1f)] public float inactiveMute = 0.42f;
+
+    private Color _baseColour;
+    private bool _baseColourCaptured;
+    private float _mute;
 
     /// <summary>Eases between states so turn changes glide rather than snap.</summary>
     private IEnumerator BlendState(bool active)
@@ -167,6 +201,10 @@ public class PlayerCardUI : MonoBehaviour
             float s = Mathf.MoveTowards(transform.localScale.x, targetScale, step * 0.15f);
             transform.localScale = Vector3.one * s;
             if (!Mathf.Approximately(s, targetScale)) done = false;
+
+            _mute = Mathf.MoveTowards(_mute, active ? 0f : 1f, step);
+            ApplyCardTint(_mute);
+            if (!Mathf.Approximately(_mute, active ? 0f : 1f)) done = false;
 
             if (done) break;
             yield return null;

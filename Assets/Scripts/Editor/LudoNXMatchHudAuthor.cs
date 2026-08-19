@@ -203,11 +203,13 @@ public static class LudoNXMatchHudAuthor
         ui.activeGlowColor = Color.white;
         ui.inactiveColor = new Color(1f, 1f, 1f, 0.55f);
 
-        // Waiting cards fade rather than recolour, so the page shows through them — at 0.55 over
-        // a coloured wash the blue card read as purple and the green as olive, which is exactly
-        // the identity the card exists to carry. Kept high enough for the house colour to survive;
-        // the scale bump, bright rim and running timer bar are what mark whose turn it is.
-        ui.inactiveAlpha = 0.72f;
+        // Waiting cards stay opaque and mute their own colour instead of fading. Any fade lets
+        // the page through, and the page carries a wash of the current player's colour, which
+        // turned the waiting blue card lavender and the green olive — the exact identity the
+        // card exists to carry. PlayerCardUI.inactiveMute handles the recede; the scale bump,
+        // bright rim and running timer bar mark whose turn it is.
+        ui.inactiveAlpha = 1f;
+        ui.inactiveMute = 0.42f;
 
         // Active-turn marker: a light rim PlayerCardUI brightens on this player's turn.
         ui.glowBorder = SolidImage(card.transform, "GlowBorder", new Vector2(CardW - 24f, 8f),
