@@ -51,9 +51,11 @@ public class PlayerCardUI : MonoBehaviour
         UpdateHomeTokens(0);
         SetFireStreak(0);
 
+        // Empty and hidden until this card's turn actually starts; see SetActiveTurn.
         if (timerBarFill != null)
         {
-            timerBarFill.fillAmount = 1f;
+            timerBarFill.fillAmount = 0f;
+            timerBarFill.enabled = false;
         }
     }
 
@@ -61,38 +63,116 @@ public class PlayerCardUI : MonoBehaviour
     /// Set this card as the active turn player (glow + full opacity)
     /// or inactive (dimmed).
     /// </summary>
+    [Header("Active Turn Feel")]
+    [Tooltip("Opacity of the card when it is not this player's turn.")]
+    [Range(0.3f, 1f)] public float inactiveAlpha = 0.55f;
+    [Tooltip("How much the active card lifts. Kept small on purpose.")]
+    public float activeScale = 1.03f;
+    [Tooltip("Peak opacity of the halo. Low by design — this is a hint, not an alarm.")]
+    [Range(0f, 0.6f)] public float glowMaxAlpha = 0.22f;
+    [Range(0f, 0.6f)] public float glowMinAlpha = 0.10f;
+    [Tooltip("Seconds for one full breath. Slow reads as cinematic; fast reads as a warning.")]
+    public float glowBreathPeriod = 3.2f;
+    public float stateBlendSpeed = 6f;
+
+    private Coroutine stateBlendCoroutine;
+
+    // Countdown ring palette. Near-white for most of the turn so it reads as a quiet sweep, then
+    // amber, then red only in the last few seconds.
+    private static readonly Color TimerCalm = new Color32(0xF2, 0xF6, 0xFA, 0xF0);
+    private static readonly Color TimerWarn = new Color32(0xF0, 0xB2, 0x3C, 0xFF);
+    private static readonly Color TimerUrgent = new Color32(0xE5, 0x4B, 0x41, 0xFF);
+
+    /// <summary>
+    /// Marks this card as the player to move. Deliberately understated: a soft halo that breathes
+    /// once every three seconds, a 3% lift, and the inactive cards falling back rather than this
+    /// one shouting. No hard pulse.
+    /// </summary>
     public void SetActiveTurn(bool active)
     {
+        if (isActiveTurn == active && Application.isPlaying) return;
         isActiveTurn = active;
 
-        if (cardCanvasGroup != null)
+        // A card for a house that is not in this match is switched off, and Unity throws if you
+        // start a coroutine on an inactive object. There is nothing to animate either way, so
+        // record the state and stop — the card picks it up if it is ever shown again.
+        if (!gameObject.activeInHierarchy)
         {
-            cardCanvasGroup.alpha = active ? 1f : 0.6f;
+            ApplyStateImmediate(active);
+            return;
         }
 
         if (glowBorder != null)
         {
             glowBorder.gameObject.SetActive(active);
+
             if (active)
             {
                 if (glowPulseCoroutine != null) StopCoroutine(glowPulseCoroutine);
-                glowPulseCoroutine = StartCoroutine(PulseGlow());
+                glowPulseCoroutine = StartCoroutine(BreatheGlow());
             }
-            else
+            else if (glowPulseCoroutine != null)
             {
-                if (glowPulseCoroutine != null)
-                {
-                    StopCoroutine(glowPulseCoroutine);
-                    glowPulseCoroutine = null;
-                }
+                StopCoroutine(glowPulseCoroutine);
+                glowPulseCoroutine = null;
             }
         }
 
-        // Reset timer bar when becoming active
-        if (active && timerBarFill != null)
+        if (!Application.isPlaying)
         {
-            timerBarFill.fillAmount = 1f;
+            ApplyStateImmediate(active);
         }
+        else
+        {
+            if (stateBlendCoroutine != null) StopCoroutine(stateBlendCoroutine);
+            stateBlendCoroutine = StartCoroutine(BlendState(active));
+        }
+
+        // The bar means "time left in THIS turn", so it only belongs on the card whose turn it
+        // is. Leaving it full on the other three drew four bright rails across the HUD that
+        // looked like progress meters for something that was not running. Hiding the renderer
+        // outright is what makes this reliable — fillAmount alone can be left behind at 1 by
+        // whichever code path last touched the card.
+        if (timerBarFill != null)
+        {
+            timerBarFill.fillAmount = active ? 1f : 0f;
+            timerBarFill.enabled = active;
+        }
+    }
+
+    private void ApplyStateImmediate(bool active)
+    {
+        if (cardCanvasGroup != null) cardCanvasGroup.alpha = active ? 1f : inactiveAlpha;
+        transform.localScale = Vector3.one * (active ? activeScale : 1f);
+        if (timerBarFill != null) timerBarFill.enabled = active;
+    }
+
+    /// <summary>Eases between states so turn changes glide rather than snap.</summary>
+    private IEnumerator BlendState(bool active)
+    {
+        float targetAlpha = active ? 1f : inactiveAlpha;
+        float targetScale = active ? activeScale : 1f;
+
+        while (true)
+        {
+            float step = Time.deltaTime * stateBlendSpeed;
+            bool done = true;
+
+            if (cardCanvasGroup != null)
+            {
+                cardCanvasGroup.alpha = Mathf.MoveTowards(cardCanvasGroup.alpha, targetAlpha, step);
+                if (!Mathf.Approximately(cardCanvasGroup.alpha, targetAlpha)) done = false;
+            }
+
+            float s = Mathf.MoveTowards(transform.localScale.x, targetScale, step * 0.15f);
+            transform.localScale = Vector3.one * s;
+            if (!Mathf.Approximately(s, targetScale)) done = false;
+
+            if (done) break;
+            yield return null;
+        }
+
+        stateBlendCoroutine = null;
     }
 
     /// <summary>
@@ -104,16 +184,10 @@ public class PlayerCardUI : MonoBehaviour
 
         if (pointsText != null)
         {
-            if (totalPoints < 0)
-            {
-                pointsText.text = $"{totalPoints} PTS";
-                pointsText.color = new Color(1f, 0.3f, 0.3f); // Red for negative
-            }
-            else
-            {
-                pointsText.text = $"{totalPoints} PTS";
-                pointsText.color = new Color(1f, 0.85f, 0.2f); // Gold for positive
-            }
+            // The card art already carries a "POINTS" label and a coin icon, so the value is just
+            // the number. Colour is left to the designer-set ink rather than being overridden
+            // per-frame — recolouring on every update is what made the card read as noisy.
+            pointsText.text = totalPoints.ToString("N0");
         }
     }
 
@@ -130,10 +204,11 @@ public class PlayerCardUI : MonoBehaviour
         {
             if (homeTokenDots[i] != null)
             {
-                // Filled = bright, Empty = dim
+                // Filled pips carry the player's colour; empty ones are a soft recess in the card
+                // rather than a grey dot floating on it.
                 homeTokenDots[i].color = (i < tokensHomeCount)
                     ? activeGlowColor
-                    : new Color(0.3f, 0.3f, 0.3f, 0.4f);
+                    : new Color(0f, 0f, 0f, 0.16f);
             }
         }
     }
@@ -145,7 +220,8 @@ public class PlayerCardUI : MonoBehaviour
     {
         if (winRateText != null)
         {
-            winRateText.text = $"WIN {winPercentage:F0}%";
+            // "WIN%" is baked into the card art — printing it again read as "WIN WIN% 26%".
+            winRateText.text = $"{winPercentage:F0}%";
         }
     }
 
@@ -170,13 +246,24 @@ public class PlayerCardUI : MonoBehaviour
             timerBarFill.fillAmount = Mathf.Clamp01(normalizedTime);
 
             // Color shifts from green → yellow → red as time runs out
-            if (normalizedTime > 0.5f)
+            // Calm by default, urgent only at the end. The old green-to-red traffic light put a
+            // bright green ring on the red player's card, which fought the house colours and read
+            // as an alarm for the whole turn rather than a countdown.
+            // Calm is the player's own colour rather than a fixed near-white. The old #F2F6FA
+            // was chosen for a dark HUD; on a white card it made the running bar invisible.
+            Color calm = activeGlowColor;
+
+            if (normalizedTime > 0.30f)
             {
-                timerBarFill.color = Color.Lerp(Color.yellow, Color.green, (normalizedTime - 0.5f) * 2f);
+                timerBarFill.color = calm;
+            }
+            else if (normalizedTime > 0.12f)
+            {
+                timerBarFill.color = Color.Lerp(TimerWarn, calm, (normalizedTime - 0.12f) / 0.18f);
             }
             else
             {
-                timerBarFill.color = Color.Lerp(Color.red, Color.yellow, normalizedTime * 2f);
+                timerBarFill.color = Color.Lerp(TimerUrgent, TimerWarn, normalizedTime / 0.12f);
             }
         }
     }
@@ -211,14 +298,16 @@ public class PlayerCardUI : MonoBehaviour
     /// <summary>
     /// Pulsing glow animation for the active turn player.
     /// </summary>
-    private IEnumerator PulseGlow()
+    private IEnumerator BreatheGlow()
     {
         while (isActiveTurn && glowBorder != null)
         {
-            float pulse = Mathf.PingPong(Time.time * 2f, 0.4f) + 0.6f;
-            Color glowColor = activeGlowColor;
-            glowColor.a = pulse;
-            glowBorder.color = glowColor;
+            // A slow sine breath between two low alphas. The old version ping-ponged 0.6-1.0 at
+            // 2 Hz, which read as a warning light rather than a turn indicator.
+            float t = (Mathf.Sin(Time.time * Mathf.PI * 2f / Mathf.Max(0.1f, glowBreathPeriod)) + 1f) * 0.5f;
+            Color c = activeGlowColor;
+            c.a = Mathf.Lerp(glowMinAlpha, glowMaxAlpha, t);
+            glowBorder.color = c;
             yield return null;
         }
     }

@@ -1,13 +1,12 @@
 using UnityEngine;
-using System.Collections.Generic;
 
 /// <summary>
-/// Simple AI for auto-play when the turn timer expires.
-/// Picks the best legal move based on priority:
-/// 1. Capture an enemy token
-/// 2. Spawn from yard (if rolled a 6)
-/// 3. Advance the furthest token along the path
-/// 4. Move any legal token
+/// Timeout auto-play. Previously carried its own priority-list move picker, which was a second,
+/// weaker set of Ludo rules living alongside the real one; it now delegates to <see cref="LudoAI"/>
+/// so there is a single brain in the project.
+///
+/// Kept as a component (rather than deleted) because the scene references it, and because the
+/// human player still needs something to move for them when their countdown expires.
 /// </summary>
 public class AutoPlayAI : MonoBehaviour
 {
@@ -17,229 +16,38 @@ public class AutoPlayAI : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            Destroy(gameObject);
+            Destroy(this);
             return;
         }
         Instance = this;
     }
 
     /// <summary>
-    /// Automatically selects a die and moves a token for the given player.
-    /// Returns true if a move was executed, false if no legal move exists.
+    /// Selects a die and moves a token for the given player. Returns false when nothing is legal,
+    /// which tells the caller to pass the turn.
     /// </summary>
     public bool AutoPlayBestMove(GameManager.PlayerColor color, int die1, int die2)
     {
-        Debug.Log($"[AutoPlayAI] Auto-playing for {color} with dice [{die1}] and [{die2}]");
-
-        TokenMovement[] allTokens = Object.FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude);
-        List<TokenMovement> myTokens = new List<TokenMovement>();
-
-        foreach (var t in allTokens)
-        {
-            if (t.tokenColor == color && !t.isFinished)
-            {
-                myTokens.Add(t);
-            }
-        }
-
-        if (myTokens.Count == 0) return false;
-
-        // Try each available die value
-        int[] diceValues = GetAvailableDice(die1, die2);
-
-        foreach (int dieValue in diceValues)
-        {
-            if (dieValue <= 0) continue;
-
-            // Priority 1: Can we capture an enemy?
-            TokenMovement captureToken = FindCaptureMove(myTokens, dieValue);
-            if (captureToken != null)
-            {
-                ExecuteMove(captureToken, dieValue, die1, die2);
-                return true;
-            }
-
-            // Priority 2: Can we spawn from yard? (requires 6)
-            if (dieValue == 6)
-            {
-                TokenMovement yardToken = FindYardToken(myTokens);
-                if (yardToken != null)
-                {
-                    ExecuteMove(yardToken, dieValue, die1, die2);
-                    return true;
-                }
-            }
-
-            // Priority 3: Advance the furthest token (closest to home)
-            TokenMovement furthestToken = FindFurthestToken(myTokens, dieValue);
-            if (furthestToken != null)
-            {
-                ExecuteMove(furthestToken, dieValue, die1, die2);
-                return true;
-            }
-
-            // Priority 4: Move any legal token
-            TokenMovement anyToken = FindAnyLegalToken(myTokens, dieValue);
-            if (anyToken != null)
-            {
-                ExecuteMove(anyToken, dieValue, die1, die2);
-                return true;
-            }
-        }
-
-        // Priority 5: a combined-sum move on a single on-board token. Needed so a turn isn't
-        // wrongly force-passed on timeout when neither individual die is legal but the sum is
-        // (matches the player's own "tap both dice to combine" option). Combined dice can never
-        // exit the yard, so only on-board tokens are considered.
-        if (die1 > 0 && die2 > 0)
-        {
-            int combined = die1 + die2;
-            List<TokenMovement> onBoardTokens = myTokens.FindAll(t => !t.isHome);
-
-            TokenMovement combinedTarget = FindCaptureMove(onBoardTokens, combined)
-                ?? FindFurthestToken(onBoardTokens, combined)
-                ?? FindAnyLegalToken(onBoardTokens, combined);
-
-            if (combinedTarget != null)
-            {
-                GameManager gm = GameManager.Instance;
-                if (gm != null) gm.SelectCombinedDice();
-                combinedTarget.MoveSteps(combined);
-                Debug.Log($"[AutoPlayAI] Auto-moved {combinedTarget.tokenColor} token using COMBINED dice value {combined}");
-                return true;
-            }
-        }
-
-        Debug.Log($"[AutoPlayAI] No legal moves found for {color}.");
-        return false;
-    }
-
-    private int[] GetAvailableDice(int die1, int die2)
-    {
-        // Prefer larger die first for better strategic moves
-        if (die1 >= die2)
-            return new int[] { die1, die2 };
-        else
-            return new int[] { die2, die1 };
-    }
-
-    /// <summary>
-    /// Find a token that can land on an enemy token (capture).
-    /// </summary>
-    private TokenMovement FindCaptureMove(List<TokenMovement> myTokens, int steps)
-    {
-        TokenMovement[] allTokens = Object.FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude);
-
-        foreach (var token in myTokens)
-        {
-            if (!TokenMovement.CanTokenMove(token, steps)) continue;
-            if (token.isHome) continue; // Can't capture from yard spawn
-
-            int newIndex = token.currentTileIndex + steps;
-            if (token.pathScript == null) continue;
-
-            int newAbsolute = token.pathScript.GetAbsoluteMainIndex(token.tokenColor, newIndex);
-            if (newAbsolute < 0) continue; // Home stretch — no capture possible
-
-            // Check if any enemy is on this tile
-            foreach (var other in allTokens)
-            {
-                if (other.tokenColor == token.tokenColor || other.isHome || other.isFinished) continue;
-                if (other.pathScript == null) continue;
-
-                int otherAbsolute = other.pathScript.GetAbsoluteMainIndex(other.tokenColor, other.currentTileIndex);
-                if (otherAbsolute == newAbsolute && !token.pathScript.IsAbsoluteTileSafe(newAbsolute))
-                {
-                    Debug.Log($"[AutoPlayAI] Found capture opportunity: {token.tokenColor} can capture {other.tokenColor} at tile {newAbsolute}");
-                    return token;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Find a token still in the yard/home base.
-    /// </summary>
-    private TokenMovement FindYardToken(List<TokenMovement> myTokens)
-    {
-        foreach (var token in myTokens)
-        {
-            if (token.isHome && TokenMovement.CanTokenMove(token, 6))
-            {
-                return token;
-            }
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// Find the token that is furthest along the path (closest to winning).
-    /// </summary>
-    private TokenMovement FindFurthestToken(List<TokenMovement> myTokens, int steps)
-    {
-        TokenMovement best = null;
-        int highestIndex = -1;
-
-        foreach (var token in myTokens)
-        {
-            if (token.isHome || !TokenMovement.CanTokenMove(token, steps)) continue;
-
-            if (token.currentTileIndex > highestIndex)
-            {
-                highestIndex = token.currentTileIndex;
-                best = token;
-            }
-        }
-
-        return best;
-    }
-
-    /// <summary>
-    /// Find any token that can legally move.
-    /// </summary>
-    private TokenMovement FindAnyLegalToken(List<TokenMovement> myTokens, int steps)
-    {
-        foreach (var token in myTokens)
-        {
-            if (TokenMovement.CanTokenMove(token, steps))
-            {
-                return token;
-            }
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// Execute the auto-play move by selecting the correct die and triggering token movement.
-    /// </summary>
-    private void ExecuteMove(TokenMovement token, int dieValue, int die1, int die2)
-    {
         GameManager gm = GameManager.Instance;
-        if (gm == null) return;
+        if (gm == null) return false;
 
-        // Select the correct die
-        if (gm.dice1Value == dieValue && !gm.isDice1Selected)
+        // Never fire into a move that is already running.
+        if (gm.IsAnyTokenMoving) return false;
+
+        LudoAI.MoveOption? choice = LudoAI.PickBestMove(color, die1, die2);
+        if (choice == null)
         {
-            gm.SelectDice(1);
-        }
-        else if (gm.dice2Value == dieValue && !gm.isDice2Selected)
-        {
-            gm.SelectDice(2);
-        }
-        else if (gm.dice1Value == dieValue)
-        {
-            gm.SelectDice(1);
-        }
-        else if (gm.dice2Value == dieValue)
-        {
-            gm.SelectDice(2);
+            Debug.Log($"[AutoPlayAI] No legal move for {color}.");
+            return false;
         }
 
-        // Trigger the move
-        token.MoveSteps(dieValue);
+        LudoAI.MoveOption move = choice.Value;
 
-        Debug.Log($"[AutoPlayAI] Auto-moved {token.tokenColor} token using die value {dieValue}");
+        if (move.useCombined) gm.SelectCombinedDice();
+        else gm.SelectDice(move.dieNumber);
+
+        Debug.Log($"[AutoPlayAI] Timeout — {color} plays {move.token.name} {move.steps} step(s).");
+        move.token.MoveSteps(move.steps);
+        return true;
     }
 }

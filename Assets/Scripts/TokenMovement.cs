@@ -18,36 +18,160 @@ public class TokenMovement : MonoBehaviour
     [Header("Assign this token's empty home-base slot (for capture reset)")]
     public Transform homeBaseSlot;
 
-    [Header("Animation Settings")]
-    public float hopDuration = 0.32f;
-    public float hopHeight = 0.35f;
-    // How much the token grows at the apex of a hop. In a 2D top-down board this scale change is
-    // what actually reads as "lifted off the board" — a Y offset alone just reads as moving to a
-    // different tile.
-    public float hopScalePunch = 0.12f;
-    public float penultimateRampHeight = 0.45f;
-    public float captureSlamHeight = 0.6f;
+    [Header("Hop Timing")]
+    // Per-tile hop duration, scaled down as the move gets longer. Ludo King sits around 0.13s per
+    // tile, which reads as hurried; these are deliberately slower and weightier while still
+    // capping a six-tile run so the player isn't left waiting.
+    public float hopDurationShort = 0.30f;   // 1 tile
+    public float hopDurationMedium = 0.24f;  // 2-3 tiles
+    public float hopDurationLong = 0.185f;   // 4+ tiles
+    public float maxTotalMoveDuration = 1.25f;
+
+    [Header("Hop Shape")]
+    public float hopHeight = 0.42f;
+    // Scale growth at the apex. In a top-down 2D board a Y offset alone is ambiguous with "moved
+    // further up the board", so the token also grows slightly as it rises.
+    public float hopScalePunch = 0.16f;
+    public float penultimateRampHeight = 0.52f;
+    public float captureSlamHeight = 0.7f;
+    public float captureHangTime = 0.18f;
+
+    [Header("Ground Shadow")]
+    // The single strongest height cue in 2D: a shadow that stays on the board while the token
+    // leaves it. Generated at runtime, so it needs no imported art.
+    public bool useGroundShadow = true;
+    public float shadowBaseScale = 0.55f;
+    public float shadowApexScale = 0.62f;   // multiplier applied to base at full height
+    public float shadowBaseAlpha = 0.45f;
+    public float shadowApexAlpha = 0.18f;
+    public Vector2 shadowOffset = new Vector2(0.02f, -0.06f);
 
     [Header("Landing Squash")]
     public float landingSquashDuration = 0.09f;
     public float landingSquashAmount = 0.12f;
+    // Lighter squash applied on every intermediate landing, so a run reads as a series of real
+    // impacts rather than one long glide with a bump at the end.
+    public float perHopSquashAmount = 0.06f;
 
     [Header("Sorting")]
     // Added to the token's sorting order while airborne so it passes over other tokens.
     public int airborneSortingBoost = 20;
 
     [Header("Flow")]
-    // 0 = perfectly even tile rhythm, 1 = full ease-in-out across the whole move. A small amount
-    // softens the start and stop without making the middle hops noticeably uneven.
+    // Eases the HORIZONTAL advance only. Hop gravity is deliberately kept on its own constant
+    // clock — driving the arc from eased progress stretched the first and last hops in time and
+    // was the main source of the uneven rhythm.
     [Range(0f, 1f)] public float flowEasing = 0.35f;
+
+    private Transform shadowTransform;
+    private SpriteRenderer shadowRenderer;
 
     private SpriteRenderer spriteRenderer;
     private Color originalColor;
     private Vector3 originalScale = Vector3.one;
     private int baseSortingOrder;
     private bool isHighlighted = false;
-    private bool isMoving = false;
     private Coroutine highlightCoroutine;
+
+    // ── Stack slot ──────────────────────────────────────────────────────────────────────────
+    // Assigned by TokenStackLayout when this token shares a tile. Everything that positions or
+    // scales the token at rest goes through RestingPosition/RestingScale rather than reading the
+    // tile and originalScale directly, so a token in a stack cannot drift back on top of its
+    // neighbours the next time it lands, squashes or is snapped.
+    private Vector3 stackOffset = Vector3.zero;
+    private float stackScale = 1f;
+    private Coroutine settleCoroutine;
+
+    /// <summary>True while this token is mid-hop and owns its own transform.</summary>
+    public bool IsMoving { get; private set; }
+
+    [Header("Stacking")]
+    [Tooltip("How quickly a token slides to its place when a tile's stack changes.")]
+    public float stackSettleDuration = 0.16f;
+
+    /// <summary>Scale this token should rest at, accounting for how crowded its tile is.</summary>
+    private Vector3 RestingScale => originalScale * stackScale;
+
+    /// <summary>Radius one token occupies at full size — the footprint a whole stack must fit inside.</summary>
+    public float StackFootprintRadius
+    {
+        get
+        {
+            if (spriteRenderer != null && spriteRenderer.sprite != null)
+            {
+                Vector3 ext = spriteRenderer.sprite.bounds.extents;
+                return Mathf.Max(ext.x, ext.y) * Mathf.Max(originalScale.x, originalScale.y);
+            }
+            return 0.5f * Mathf.Max(originalScale.x, originalScale.y);
+        }
+    }
+
+    /// <summary>The tile this token shares with others, or null when it is not on the path.</summary>
+    public Transform GetStackTile()
+    {
+        return isHome ? null : GetCurrentTileTransform();
+    }
+
+    /// <summary>
+    /// Takes a seat in its tile's stack. Animated by default so a token visibly shuffles aside to
+    /// make room when a neighbour arrives, which reads as the stack reacting rather than as
+    /// tokens teleporting.
+    /// </summary>
+    public void ApplyStackSlot(Vector3 offset, float scale, bool animate)
+    {
+        bool unchanged = (offset - stackOffset).sqrMagnitude < 0.000001f
+                         && Mathf.Abs(scale - stackScale) < 0.0001f;
+
+        stackOffset = offset;
+        stackScale = scale;
+
+        if (unchanged) return;
+
+        // A token mid-hop drives its own transform; it picks the new slot up when it lands.
+        if (IsMoving) return;
+
+        if (settleCoroutine != null) StopCoroutine(settleCoroutine);
+
+        if (!animate || !gameObject.activeInHierarchy)
+        {
+            ApplyRestingTransform();
+            return;
+        }
+
+        settleCoroutine = StartCoroutine(SettleIntoSlot());
+    }
+
+    private void ApplyRestingTransform()
+    {
+        Transform tile = GetCurrentTileTransform();
+        if (tile != null) transform.position = tile.position + stackOffset;
+        else if (isHome && homeBaseSlot != null) transform.position = homeBaseSlot.position;
+
+        transform.localScale = RestingScale;
+    }
+
+    private IEnumerator SettleIntoSlot()
+    {
+        Transform tile = GetCurrentTileTransform();
+        Vector3 from = transform.position;
+        Vector3 to = tile != null ? tile.position + stackOffset : from;
+        Vector3 scaleFrom = transform.localScale;
+        Vector3 scaleTo = RestingScale;
+
+        float elapsed = 0f;
+        while (elapsed < stackSettleDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / stackSettleDuration));
+            transform.position = Vector3.Lerp(from, to, t);
+            transform.localScale = Vector3.Lerp(scaleFrom, scaleTo, t);
+            yield return null;
+        }
+
+        transform.position = to;
+        transform.localScale = scaleTo;
+        settleCoroutine = null;
+    }
 
     private void Awake()
     {
@@ -68,32 +192,41 @@ public class TokenMovement : MonoBehaviour
 
     private void OnMouseDown()
     {
-        if (GameManager.Instance == null) return;
-        if (GameManager.Instance.currentTurnColor != tokenColor) return;
+        GameManager gm = GameManager.Instance;
+        if (gm == null) return;
+        if (gm.currentTurnColor != tokenColor) return;
         if (isFinished) return;
-        if (isMoving) return;
 
-        int selectedValue = GameManager.Instance.GetSelectedDiceValue();
+        // Tokens are only live while the player is choosing. This rejects taps during the dice
+        // spin, during another token's hop, and during post-move resolution.
+        if (gm.currentPhase != GameManager.TurnPhase.AwaitingSelection) return;
+
+        int selectedValue = gm.GetSelectedDiceValue();
         if (selectedValue <= 0)
         {
-            Debug.LogWarning("Select a valid dice first!");
+            Debug.Log("[Token] No die selected yet.");
+            NudgeRejected();
             return;
         }
 
-        if (isHome && GameManager.Instance.isDiceCombined)
+        if (isHome && gm.isDiceCombined)
         {
-            Debug.LogWarning("Cannot exit the yard with combined dice — you need a single die showing 6.");
+            Debug.Log("[Token] Combined dice cannot leave the yard — a single 6 is required.");
+            NudgeRejected();
             return;
         }
 
         if (!CanTokenMove(this, selectedValue))
         {
-            Debug.LogWarning($"{tokenColor} token cannot make this move (overshoot, blocked by enemy blockade, or invalid roll)!");
+            Debug.Log($"[Token] {tokenColor} cannot make this move (overshoot, blockade, or invalid roll).");
+            NudgeRejected();
             return;
         }
 
         if (isHome)
         {
+            // A 6 spent leaving the yard buys the yard exit and nothing else. The token lands on
+            // its start tile and the die is spent — it must never also advance six squares.
             StartCoroutine(AnimateMoveOutOfHome());
         }
         else
@@ -105,7 +238,9 @@ public class TokenMovement : MonoBehaviour
     public void MoveSteps(int steps)
     {
         if (isFinished) return;
-        if (isMoving) return;
+
+        GameManager gm = GameManager.Instance;
+        if (gm != null && gm.IsAnyTokenMoving) return;
 
         if (isHome)
         {
@@ -126,7 +261,7 @@ public class TokenMovement : MonoBehaviour
         if (spriteRenderer == null) return;
 
         // Scoped to just the pulse coroutine — StopAllCoroutines() here would also kill an
-        // in-flight hop, stranding the token mid-air with isMoving stuck true.
+        // in-flight hop, stranding the token mid-air part-way through a move.
         if (highlightCoroutine != null)
         {
             StopCoroutine(highlightCoroutine);
@@ -143,6 +278,40 @@ public class TokenMovement : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Feedback for a tap the rules won't allow. Replaces the console warnings these cases used
+    /// to log — an ordinary mis-tap is not a developer problem, so the player gets a small shake
+    /// instead of a yellow line in the console.
+    /// </summary>
+    private void NudgeRejected()
+    {
+        if (rejectShakeCoroutine != null) StopCoroutine(rejectShakeCoroutine);
+        rejectShakeCoroutine = StartCoroutine(RejectShake());
+    }
+
+    private Coroutine rejectShakeCoroutine;
+
+    private IEnumerator RejectShake()
+    {
+        Vector3 origin = transform.position;
+        const float duration = 0.22f;
+        const float amplitude = 0.07f;
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            // Three quick oscillations that decay to nothing.
+            float offset = Mathf.Sin(t * Mathf.PI * 6f) * amplitude * (1f - t);
+            transform.position = origin + Vector3.right * offset;
+            yield return null;
+        }
+
+        transform.position = origin;
+        rejectShakeCoroutine = null;
+    }
+
     private IEnumerator PulseHighlight()
     {
         while (isHighlighted)
@@ -157,11 +326,25 @@ public class TokenMovement : MonoBehaviour
 
     private IEnumerator AnimateMoveOutOfHome()
     {
-        isMoving = true;
+        GameManager gm = GameManager.Instance;
+
+        // Claim the match-wide lock. If another token already holds it, abandon quietly rather
+        // than running a second move that would consume a second die.
+        if (gm != null && !gm.TryBeginTokenMove()) yield break;
+
+        int mySequence = gm != null ? gm.TurnSequence : 0;
 
         isHome = false;
-        currentTileIndex = 0;
+        currentTileIndex = 0;   // start tile, and only the start tile
         stepsTaken = 1;
+
+        // currentTileIndex now points at the start tile, so this token counts as an occupant of it
+        // from here on. IsMoving marks the transform as owned by this hop, which keeps the stack
+        // layout from starting a settle coroutine that would fight the hop for the same transform.
+        IsMoving = true;
+        stackOffset = Vector3.zero;
+        stackScale = 1f;
+        if (settleCoroutine != null) { StopCoroutine(settleCoroutine); settleCoroutine = null; }
 
         // Animate hop from home base to start tile. The start tile is always a safe zone,
         // so this landing is never a capture.
@@ -175,13 +358,23 @@ public class TokenMovement : MonoBehaviour
             UpdatePhysicalPosition();
         }
 
+        IsMoving = false;
+
+        // A start tile is a safe zone, so it is the one square an enemy token can already be
+        // sitting on when this one arrives. Without this the two would stack invisibly.
+        TokenStackLayout.Refresh();
+
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySpawn();
         CheckForCaptures();
 
-        Debug.Log($"{tokenColor} Token moved OUT of home base!");
+        Debug.Log($"{tokenColor} Token moved OUT of home base onto its start tile.");
 
-        isMoving = false;
-        GameManager.Instance.ConsumeSelectedDice();
+        if (gm == null) yield break;
+
+        gm.EndTokenMove();
+        if (mySequence != gm.TurnSequence) yield break;
+
+        gm.ConsumeSelectedDice();
     }
 
     private IEnumerator AnimateAdvanceToken(int steps)
@@ -201,7 +394,10 @@ public class TokenMovement : MonoBehaviour
             yield break;
         }
 
-        isMoving = true;
+        GameManager gm = GameManager.Instance;
+        if (gm != null && !gm.TryBeginTokenMove()) yield break;
+
+        int mySequence = gm != null ? gm.TurnSequence : 0;
 
         int startIndex = currentTileIndex;
 
@@ -220,11 +416,25 @@ public class TokenMovement : MonoBehaviour
 
         if (waypoints.Count > 0)
         {
+            // Leaving the stack: back to full size for the flight, and the tokens left behind
+            // spread out again immediately rather than waiting for this one to land.
+            IsMoving = true;
+            stackOffset = Vector3.zero;
+            stackScale = 1f;
+            if (settleCoroutine != null) { StopCoroutine(settleCoroutine); settleCoroutine = null; }
+            TokenStackLayout.Refresh();
+
             yield return StartCoroutine(AnimateHopSequence(waypoints, landingIsCapture));
+            IsMoving = false;
         }
 
         currentTileIndex = newIndex;
         stepsTaken += steps;
+
+        // Occupancy has changed on both the tile just left and the one just reached, so the whole
+        // board is relaid. Doing it here — after currentTileIndex is committed but before captures
+        // are resolved — means the arriving token is already counted in its new tile's stack.
+        TokenStackLayout.Refresh();
 
         int mainLoopLength = pathLength - 6;
 
@@ -240,7 +450,12 @@ public class TokenMovement : MonoBehaviour
             {
                 FloatingTextFX.Instance.SpawnFloatingText(transform.position, 5);
             }
-            if (GameManager.Instance != null) GameManager.Instance.CheckForPlayerWin(tokenColor);
+            if (gm != null)
+            {
+                // Third route to another roll, alongside double six and capture.
+                gm.GrantHomeArrivalBonusTurn();
+                gm.CheckForPlayerWin(tokenColor);
+            }
             Debug.Log($"{tokenColor} token FINISHED!");
         }
         else if (currentTileIndex < mainLoopLength)
@@ -255,8 +470,12 @@ public class TokenMovement : MonoBehaviour
 
         Debug.Log($"{tokenColor} Token moved {steps} steps to tile {currentTileIndex} (Total steps: {stepsTaken})");
 
-        isMoving = false;
-        GameManager.Instance.ConsumeSelectedDice();
+        if (gm == null) yield break;
+
+        gm.EndTokenMove();
+        if (mySequence != gm.TurnSequence) yield break;
+
+        gm.ConsumeSelectedDice();
     }
 
     /// <summary>
@@ -300,12 +519,26 @@ public class TokenMovement : MonoBehaviour
             else heights[i] = hopHeight;
         }
 
-        float totalDuration = hopDuration * tileCount;
-        if (landingIsCapture) totalDuration += hopDuration * 0.5f;  // let the slam land heavier
+        // Longer runs use shorter individual hops, so a six-tile move reads as a confident dash
+        // rather than six deliberate jumps in a row.
+        float perHop = tileCount <= 1 ? hopDurationShort
+                     : tileCount <= 3 ? hopDurationMedium
+                     : hopDurationLong;
+
+        float totalDuration = perHop * tileCount;
+        if (totalDuration > maxTotalMoveDuration)
+        {
+            perHop = maxTotalMoveDuration / tileCount;
+            totalDuration = maxTotalMoveDuration;
+        }
+        if (landingIsCapture) totalDuration += captureHangTime;
 
         if (spriteRenderer != null) spriteRenderer.sortingOrder = baseSortingOrder + airborneSortingBoost;
 
+        EnsureGroundShadow();
+
         int lastSoundedTile = -1;
+        int lastLandedTile = -1;
         float elapsed = 0f;
 
         while (elapsed < totalDuration)
@@ -313,18 +546,23 @@ public class TokenMovement : MonoBehaviour
             elapsed += Time.deltaTime;
             float rawT = Mathf.Clamp01(elapsed / totalDuration);
 
-            // One gentle ease across the ENTIRE move, not per tile.
+            // HORIZONTAL: one gentle ease across the whole move so it starts and stops softly.
             float easedT = Mathf.Lerp(rawT, Mathf.SmoothStep(0f, 1f, rawT), flowEasing);
-
             float travel = easedT * tileCount;
             int seg = Mathf.Clamp(Mathf.FloorToInt(travel), 0, tileCount - 1);
             float segT = Mathf.Clamp01(travel - seg);
-
             Vector3 groundPos = Vector3.Lerp(points[seg], points[seg + 1], segT);
-            float arc = Mathf.Sin(segT * Mathf.PI);
+
+            // VERTICAL: driven by unwarped time, so every hop rises and falls at the same rate
+            // regardless of where it sits in the run.
+            float hopPhase = Mathf.Repeat(rawT * totalDuration / perHop, 1f);
+            if (rawT >= 1f) hopPhase = 0f;
+            float arc = Mathf.Sin(hopPhase * Mathf.PI);
 
             transform.position = groundPos + Vector3.up * (arc * heights[seg]);
-            transform.localScale = originalScale * (1f + arc * hopScalePunch);
+            transform.localScale = RestingScale * (1f + arc * hopScalePunch);
+
+            UpdateGroundShadow(groundPos, arc);
 
             if (seg != lastSoundedTile)
             {
@@ -332,15 +570,130 @@ public class TokenMovement : MonoBehaviour
                 PlayHopSound(seg, tileCount);
             }
 
+            // Light squash each time the token touches down mid-run.
+            if (seg != lastLandedTile && segT < 0.12f && seg > 0)
+            {
+                lastLandedTile = seg;
+                ApplyInstantSquash(perHopSquashAmount * (1f - arc));
+            }
+
             yield return null;
         }
 
-        transform.position = points[tileCount];
-        transform.localScale = originalScale;
+        // Land on the seat this token holds in the destination stack, not the bare tile centre.
+        transform.position = points[tileCount] + stackOffset;
+        transform.localScale = RestingScale;
+        UpdateGroundShadow(points[tileCount] + stackOffset, 0f);
 
         if (spriteRenderer != null) spriteRenderer.sortingOrder = baseSortingOrder;
 
         yield return StartCoroutine(LandingSquash());
+
+        HideGroundShadow();
+    }
+
+    private void ApplyInstantSquash(float amount)
+    {
+        if (amount <= 0f) return;
+        Vector3 rest = RestingScale;
+        transform.localScale = new Vector3(
+            rest.x * (1f + amount),
+            rest.y * (1f - amount),
+            rest.z);
+    }
+
+    #endregion
+
+    #region Ground Shadow
+
+    /// <summary>
+    /// Creates a soft elliptical shadow under the token the first time it hops. Generated in code
+    /// so it needs no imported sprite, and parented to the token's parent (not the token) so the
+    /// token's own hop offset and scale punch never move it off the board plane.
+    /// </summary>
+    private void EnsureGroundShadow()
+    {
+        if (!useGroundShadow) return;
+
+        if (shadowTransform == null)
+        {
+            GameObject go = new GameObject($"{name}_Shadow");
+            go.transform.SetParent(transform.parent, false);
+
+            shadowRenderer = go.AddComponent<SpriteRenderer>();
+            shadowRenderer.sprite = GetSoftEllipseSprite();
+            shadowRenderer.color = new Color(0f, 0f, 0f, shadowBaseAlpha);
+
+            if (spriteRenderer != null)
+            {
+                shadowRenderer.sortingLayerID = spriteRenderer.sortingLayerID;
+                shadowRenderer.sortingOrder = baseSortingOrder - 1;
+            }
+
+            shadowTransform = go.transform;
+        }
+
+        shadowTransform.gameObject.SetActive(true);
+    }
+
+    private void UpdateGroundShadow(Vector3 groundPos, float arc)
+    {
+        if (shadowTransform == null || shadowRenderer == null) return;
+
+        shadowTransform.position = new Vector3(
+            groundPos.x + shadowOffset.x,
+            groundPos.y + shadowOffset.y,
+            groundPos.z + 0.01f);
+
+        // Shrinks and fades as the token climbs.
+        float scale = shadowBaseScale * Mathf.Lerp(1f, shadowApexScale, arc);
+        shadowTransform.localScale = new Vector3(scale, scale * 0.55f, 1f);
+
+        Color c = shadowRenderer.color;
+        c.a = Mathf.Lerp(shadowBaseAlpha, shadowApexAlpha, arc);
+        shadowRenderer.color = c;
+    }
+
+    private void HideGroundShadow()
+    {
+        if (shadowTransform != null) shadowTransform.gameObject.SetActive(false);
+    }
+
+    private static Sprite cachedShadowSprite;
+
+    private static Sprite GetSoftEllipseSprite(int size = 128)
+    {
+        if (cachedShadowSprite != null) return cachedShadowSprite;
+
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            wrapMode = TextureWrapMode.Clamp,
+            filterMode = FilterMode.Bilinear
+        };
+
+        float half = size * 0.5f;
+        Color[] pixels = new Color[size * size];
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float dx = (x + 0.5f - half) / half;
+                float dy = (y + 0.5f - half) / half;
+                float dist = Mathf.Sqrt(dx * dx + dy * dy);
+
+                // Solid core with a soft falloff, so the shadow reads as contact rather than fog.
+                float alpha = 1f - Mathf.SmoothStep(0.35f, 1f, dist);
+                pixels[y * size + x] = new Color(1f, 1f, 1f, alpha);
+            }
+        }
+
+        tex.SetPixels(pixels);
+        tex.Apply();
+
+        cachedShadowSprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+        cachedShadowSprite.name = "GeneratedTokenShadow";
+        return cachedShadowSprite;
     }
 
     /// <summary>
@@ -358,15 +711,16 @@ public class TokenMovement : MonoBehaviour
 
             // Squash hard on impact, then spring back out.
             float squash = Mathf.Sin(t * Mathf.PI) * landingSquashAmount;
+            Vector3 rest = RestingScale;
             transform.localScale = new Vector3(
-                originalScale.x * (1f + squash),
-                originalScale.y * (1f - squash),
-                originalScale.z);
+                rest.x * (1f + squash),
+                rest.y * (1f - squash),
+                rest.z);
 
             yield return null;
         }
 
-        transform.localScale = originalScale;
+        transform.localScale = RestingScale;
     }
 
     /// <summary>
@@ -472,16 +826,135 @@ public class TokenMovement : MonoBehaviour
         cam.transform.position = origPos;
     }
 
+    /// <summary>
+    /// Sends a captured token back to its yard, walking it backwards along the exact path it
+    /// came down rather than teleporting.
+    ///
+    /// The rules state is committed immediately — the token counts as home the instant it is
+    /// captured — and only the visual retreat is animated afterwards. Doing it the other way
+    /// round would leave a token that the board still thinks is in play while it is flying home,
+    /// and the very next move would resolve against a stale position.
+    /// </summary>
     public void SendHome()
     {
+        int fromIndex = currentTileIndex;
+
         isHome = true;
         currentTileIndex = -1;
         stepsTaken = 0;
 
-        if (homeBaseSlot != null)
+        // Back to full size: it is alone in its yard slot now, whatever stack it was packed into.
+        stackOffset = Vector3.zero;
+        stackScale = 1f;
+        if (settleCoroutine != null) { StopCoroutine(settleCoroutine); settleCoroutine = null; }
+        transform.localScale = originalScale;
+
+        // The tile it was captured on now holds one fewer token, so the survivors spread back out.
+        TokenStackLayout.Refresh();
+
+        if (pathScript == null) pathScript = LudoPath.FindComplete();
+
+        bool canRetrace = isActiveAndEnabled && gameObject.activeInHierarchy
+                          && fromIndex >= 0 && pathScript != null;
+
+        if (canRetrace) StartCoroutine(RetreatAlongPath(fromIndex));
+        else if (homeBaseSlot != null) transform.position = homeBaseSlot.position;
+    }
+
+    /// <summary>
+    /// The walk of shame: hop back down every tile the token had climbed, in reverse, then drop
+    /// into the yard slot. Faster and flatter than a forward move so it reads as a retreat
+    /// rather than as a turn being taken.
+    /// </summary>
+    private IEnumerator RetreatAlongPath(int fromIndex)
+    {
+        // IsMoving keeps TokenStackLayout from snapping this token to its yard mid-flight.
+        IsMoving = true;
+
+        int boosted = baseSortingOrder + 40;
+        if (spriteRenderer != null) spriteRenderer.sortingOrder = boosted;
+
+        List<Vector3> waypoints = new List<Vector3>();
+        for (int i = fromIndex - 1; i >= 0; i--)
         {
-            transform.position = homeBaseSlot.position;
+            Transform tile = pathScript.GetTileTransform(tokenColor, i);
+            if (tile != null) waypoints.Add(tile.position);
         }
+        if (homeBaseSlot != null) waypoints.Add(homeBaseSlot.position);
+
+        // Budget the whole retreat rather than paying per tile: a token captured near home would
+        // otherwise take ten seconds to crawl back and stall the match.
+        const float totalBudget = 1.05f;
+        float perHop = waypoints.Count > 0
+            ? Mathf.Clamp(totalBudget / waypoints.Count, 0.035f, 0.13f)
+            : 0f;
+
+        Vector3 from = transform.position;
+        for (int i = 0; i < waypoints.Count; i++)
+        {
+            Vector3 to = waypoints[i];
+            bool lastHop = i == waypoints.Count - 1;
+            float arc = lastHop ? 0.55f : 0.22f;   // a bigger lift for the drop into the yard
+
+            float t = 0f;
+            while (t < 1f)
+            {
+                t += Time.deltaTime / Mathf.Max(perHop, 0.0001f);
+                float e = Mathf.Clamp01(t);
+                Vector3 pos = Vector3.Lerp(from, to, e);
+                pos.y += Mathf.Sin(e * Mathf.PI) * arc;
+                transform.position = pos;
+                yield return null;
+            }
+
+            transform.position = to;
+            from = to;
+            if (AudioManager.Instance != null && !lastHop)
+                AudioManager.Instance.PlayHop(1.25f);   // higher pitch than a forward hop
+        }
+
+        if (homeBaseSlot != null) transform.position = homeBaseSlot.position;
+        if (spriteRenderer != null) spriteRenderer.sortingOrder = baseSortingOrder;
+
+        transform.localScale = originalScale;
+        IsMoving = false;
+
+        yield return StartCoroutine(LandingSquash());
+        TokenStackLayout.Refresh();
+    }
+
+    /// <summary>
+    /// Full reset for match start — clears the finished flag and any in-flight visual state that
+    /// SendHome deliberately leaves alone, so a new match always begins from a clean board.
+    /// </summary>
+    public void ResetToYard()
+    {
+        StopAllCoroutines();
+
+        isHome = true;
+        isFinished = false;
+        currentTileIndex = -1;
+        stepsTaken = 0;
+        isHighlighted = false;
+        highlightCoroutine = null;
+        rejectShakeCoroutine = null;
+        IsMoving = false;
+
+        stackOffset = Vector3.zero;
+        stackScale = 1f;
+        settleCoroutine = null;   // StopAllCoroutines above already killed it
+
+        transform.localScale = originalScale == Vector3.zero ? Vector3.one : originalScale;
+
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = originalColor;
+            spriteRenderer.sortingOrder = baseSortingOrder;
+        }
+
+        HideGroundShadow();
+
+        if (homeBaseSlot != null) transform.position = homeBaseSlot.position;
     }
 
     private Transform GetCurrentTileTransform()
@@ -502,7 +975,7 @@ public class TokenMovement : MonoBehaviour
         Transform targetTile = GetCurrentTileTransform();
         if (targetTile != null)
         {
-            transform.position = targetTile.position;
+            transform.position = targetTile.position + stackOffset;
         }
     }
 
@@ -583,4 +1056,4 @@ public class TokenMovement : MonoBehaviour
     }
 
     #endregion
-}
+}

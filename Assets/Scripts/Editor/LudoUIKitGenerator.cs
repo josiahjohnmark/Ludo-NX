@@ -18,6 +18,16 @@ public static class LudoUIKitGenerator
     [MenuItem("Ludo NX/1. Generate UI Sprite Kit")]
     public static void GenerateKit()
     {
+        GenerateKit(true);
+    }
+
+    /// <summary>
+    /// <paramref name="showDialog"/> is false when another builder calls this as a dependency.
+    /// EditorUtility.DisplayDialog blocks the main thread, so a modal here would stall any
+    /// automated or scripted run of the build chain.
+    /// </summary>
+    public static void GenerateKit(bool showDialog)
+    {
         EnsureFolder();
 
         CreateSpriteAsset("ui_circle", BuildCircle(256), Vector4.zero);
@@ -30,11 +40,13 @@ public static class LudoUIKitGenerator
         CreateSpriteAsset("ui_panel_outline", BuildRoundedRect(160, 40f, 5f), new Vector4(48, 48, 48, 48));
 
         AssetDatabase.Refresh();
-        EditorUtility.DisplayDialog("Ludo NX",
-            $"Generated the UI sprite kit into {GeneratedDir}.\n\n" +
-            "All sprites are white so they can be tinted per player colour. " +
-            "ui_panel and ui_panel_outline are 9-sliced with 48px borders.",
-            "OK");
+
+        string summary = $"Generated the UI sprite kit into {GeneratedDir}. " +
+                         "All sprites are white so they can be tinted per player colour. " +
+                         "ui_panel and ui_panel_outline are 9-sliced with 48px borders.";
+
+        Debug.Log($"[LudoUIKitGenerator] {summary}");
+        if (showDialog) EditorUtility.DisplayDialog("Ludo NX", summary, "OK");
     }
 
     // ── Texture builders ────────────────────────────────────────────────────────────────────

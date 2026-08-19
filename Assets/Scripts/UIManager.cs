@@ -32,7 +32,14 @@ public class UIManager : MonoBehaviour
 
     [Header("Turn Timer (Center Top Bar)")]
     public TextMeshProUGUI timerText;
-    public float turnDuration = 15f;
+    // 60s, shown as MM:SS, matching the 01:00 countdown in the board UI sketch. Animation time is
+    // paused out of this, so it's 60s of actual thinking time.
+    public float turnDuration = 60f;
+    // Read against the light timer pill, not the old dark bar — mid-green on near-white was
+    // effectively invisible. Deep tones keep the same safe/warn/danger reading with real contrast.
+    public Color timerSafeColor = new Color(0.13f, 0.15f, 0.18f);
+    public Color timerWarnColor = new Color(0.72f, 0.45f, 0.02f);
+    public Color timerDangerColor = new Color(0.78f, 0.14f, 0.11f);
 
     [Header("Roll Button")]
     public Button rollButton;
@@ -43,8 +50,11 @@ public class UIManager : MonoBehaviour
     // other stray roll buttons) here so its visuals stay in sync until the scene duplicate is
     // cleaned up.
     public Button[] extraRollButtons;
-    public Color rollButtonActiveColor = new Color(0.96f, 0.65f, 0.14f);     // #F5A623
-    public Color rollButtonDisabledColor = new Color(0.4f, 0.4f, 0.4f);
+    // These multiply the sprite. Now that the button carries its own artwork, the enabled tint
+    // must be white or it stains the art — an orange tint over the cyan pill turned it olive.
+    // Disabled just drains it rather than recolouring it.
+    public Color rollButtonActiveColor = Color.white;
+    public Color rollButtonDisabledColor = new Color(0.55f, 0.58f, 0.60f, 0.75f);
 
     [Header("Setup Menu Panel")]
     public GameObject playerSetupPanel;
@@ -71,6 +81,7 @@ public class UIManager : MonoBehaviour
     private bool isSoundOn = true;
     private float turnTimeRemaining;
     private bool isTurnTimerActive = false;
+    private bool isTurnTimerPaused = false;
     private Coroutine turnTimerCoroutine;
 
     private void Awake()
@@ -108,6 +119,8 @@ public class UIManager : MonoBehaviour
         if (emojiButton != null) emojiButton.onClick.AddListener(OnEmojiClicked);
 
         UpdateSoundIcons();
+
+        StartCoroutine(LiveCardRefreshRoutine());
     }
 
     // ===========================
@@ -221,15 +234,17 @@ public class UIManager : MonoBehaviour
     public void StartTurnTimer()
     {
         if (turnTimerCoroutine != null) StopCoroutine(turnTimerCoroutine);
+        isTurnTimerPaused = false;
         turnTimerCoroutine = StartCoroutine(TurnTimerRoutine());
     }
 
     /// <summary>
-    /// Stop the turn timer (called when the player makes a move).
+    /// Stop the turn timer outright. Called on game over and whenever the turn changes hands.
     /// </summary>
     public void StopTurnTimer()
     {
         isTurnTimerActive = false;
+        isTurnTimerPaused = false;
         if (turnTimerCoroutine != null)
         {
             StopCoroutine(turnTimerCoroutine);
@@ -237,73 +252,121 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Freeze the countdown without ending it — used while the dice are spinning and while a
+    /// token is hopping, so animation time is never charged against the player's thinking time.
+    /// </summary>
+    public void PauseTurnTimer() => isTurnTimerPaused = true;
+
+    public void ResumeTurnTimer() => isTurnTimerPaused = false;
+
     private IEnumerator TurnTimerRoutine()
     {
         turnTimeRemaining = turnDuration;
         isTurnTimerActive = true;
 
-        GameManager.PlayerColor timerForColor = GameManager.Instance != null
-            ? GameManager.Instance.currentTurnColor
-            : GameManager.PlayerColor.RED;
+        GameManager gm = GameManager.Instance;
+        GameManager.PlayerColor timerForColor = gm != null ? gm.currentTurnColor : GameManager.PlayerColor.RED;
+        int mySequence = gm != null ? gm.TurnSequence : 0;
 
         while (turnTimeRemaining > 0f && isTurnTimerActive)
         {
-            turnTimeRemaining -= Time.deltaTime;
-
-            // Update timer text (center top bar)
-            if (timerText != null)
+            // Abandon silently if the turn moved on while we were counting.
+            if (gm != null && gm.TurnSequence != mySequence)
             {
-                int seconds = Mathf.CeilToInt(Mathf.Max(0, turnTimeRemaining));
-                timerText.text = seconds.ToString();
-
-                // Color: green → yellow → red
-                float normalized = turnTimeRemaining / turnDuration;
-                if (normalized > 0.5f)
-                    timerText.color = Color.Lerp(Color.yellow, Color.green, (normalized - 0.5f) * 2f);
-                else
-                    timerText.color = Color.Lerp(Color.red, Color.yellow, normalized * 2f);
+                isTurnTimerActive = false;
+                turnTimerCoroutine = null;
+                yield break;
             }
 
-            // Update active player card timer bar
-            PlayerCardUI activeCard = GetPlayerCard(timerForColor);
-            if (activeCard != null)
+            if (!isTurnTimerPaused)
             {
-                activeCard.UpdateTimerBar(turnTimeRemaining / turnDuration);
+                turnTimeRemaining -= Time.deltaTime;
             }
 
+            RenderTimer(turnTimeRemaining, timerForColor);
             yield return null;
         }
 
-        // Timer expired — auto-play
-        if (isTurnTimerActive && GameManager.Instance != null)
+        // Timer expired.
+        if (isTurnTimerActive && gm != null && gm.TurnSequence == mySequence)
         {
-            Debug.Log($"[UIManager] Turn timer expired for {timerForColor}! Auto-playing...");
+            bool canAct = gm.currentPhase == GameManager.TurnPhase.AwaitingRoll
+                       || gm.currentPhase == GameManager.TurnPhase.AwaitingSelection;
 
-            if (AutoPlayAI.Instance != null)
+            if (!canAct)
             {
-                bool moved = AutoPlayAI.Instance.AutoPlayBestMove(
-                    timerForColor,
-                    GameManager.Instance.dice1Value,
-                    GameManager.Instance.dice2Value
-                );
+                // Mid-animation. Restart the clock rather than firing into a running move — this
+                // was the race that let two tokens move on one die.
+                isTurnTimerActive = false;
+                turnTimerCoroutine = null;
+                StartTurnTimer();
+                yield break;
+            }
 
-                if (!moved)
-                {
-                    // No legal moves — force pass
-                    GameManager.Instance.ResetDiceState();
-                    GameManager.Instance.AdvanceToNextPlayer();
-                }
+            // A human who runs out of time FORFEITS the turn — the AI does not step in and play
+            // it for them. Having the computer make your move is worse than losing the turn:
+            // it moves a token you did not choose and the board changes while you are still
+            // deciding. AI-controlled houses keep auto-playing, since that IS their turn.
+            bool humanControlled = gm.IsHumanControlled(timerForColor);
+
+            if (humanControlled)
+            {
+                Debug.Log($"[UIManager] Turn timer expired for {timerForColor}. Skipping their turn.");
+                UpdateTurnUI(timerForColor, "TIME UP — TURN SKIPPED");
+                gm.ResetDiceState();
+                gm.AdvanceToNextPlayer();
             }
             else
             {
-                // No AI available — just pass
-                GameManager.Instance.ResetDiceState();
-                GameManager.Instance.AdvanceToNextPlayer();
+                Debug.Log($"[UIManager] Turn timer expired for AI {timerForColor}. Auto-playing.");
+
+                if (gm.currentPhase == GameManager.TurnPhase.AwaitingRoll)
+                {
+                    isTurnTimerActive = false;
+                    turnTimerCoroutine = null;
+                    gm.OnRollButtonClicked();
+                    yield break;
+                }
+
+                bool moved = AutoPlayAI.Instance != null
+                    && AutoPlayAI.Instance.AutoPlayBestMove(timerForColor, gm.dice1Value, gm.dice2Value);
+
+                if (!moved)
+                {
+                    gm.ResetDiceState();
+                    gm.AdvanceToNextPlayer();
+                }
             }
         }
 
         isTurnTimerActive = false;
         turnTimerCoroutine = null;
+    }
+
+    /// <summary>
+    /// MM:SS in the top-centre bar, per the board UI sketch, plus the active card's ring.
+    /// </summary>
+    private void RenderTimer(float remaining, GameManager.PlayerColor color)
+    {
+        float clamped = Mathf.Max(0f, remaining);
+
+        if (timerText != null)
+        {
+            int total = Mathf.CeilToInt(clamped);
+            timerText.text = $"{total / 60:00}:{total % 60:00}";
+
+            float normalized = turnDuration > 0f ? clamped / turnDuration : 0f;
+            timerText.color = normalized > 0.5f
+                ? Color.Lerp(timerWarnColor, timerSafeColor, (normalized - 0.5f) * 2f)
+                : Color.Lerp(timerDangerColor, timerWarnColor, normalized * 2f);
+        }
+
+        PlayerCardUI activeCard = GetPlayerCard(color);
+        if (activeCard != null && turnDuration > 0f)
+        {
+            activeCard.UpdateTimerBar(clamped / turnDuration);
+        }
     }
 
     // ===========================
@@ -343,12 +406,51 @@ public class UIManager : MonoBehaviour
     // TOP BAR — QUIT & SOUND
     // ===========================
 
+    /// <summary>
+    /// Asks before leaving. Exit is the only irreversible tap in a match — the board is gone and
+    /// the result is forfeited — so it is the one place a confirm earns its extra tap.
+    /// </summary>
     private void OnQuitClicked()
     {
-        // Show quit confirmation popup instead of quitting immediately
         if (quitConfirmPanel != null)
         {
             quitConfirmPanel.SetActive(true);
+            PauseTurnTimer();
+            return;
+        }
+
+        // No dialog in the scene: leave rather than do nothing, which is what this button used to do.
+        Debug.LogWarning("[UIManager] No exit dialog assigned — leaving the match directly.");
+        ConfirmExit();
+    }
+
+    /// <summary>Dismisses the exit dialog and hands the turn back.</summary>
+    public void CancelExit()
+    {
+        if (quitConfirmPanel != null) quitConfirmPanel.SetActive(false);
+        ResumeTurnTimer();
+    }
+
+    /// <summary>Forfeits the match and returns to the home screen.</summary>
+    public void ConfirmExit()
+    {
+        if (quitConfirmPanel != null) quitConfirmPanel.SetActive(false);
+        StopTurnTimer();
+
+        // The new UI owns navigation when it is present; LudoMenuFlow is the legacy fallback.
+        if (LudoNX.UI.MatchBridge.Instance != null)
+        {
+            LudoNX.UI.MatchBridge.Instance.LeaveMatch();
+            if (LudoNX.UI.ScreenManager.Instance != null)
+                LudoNX.UI.ScreenManager.Instance.ResetTo(LudoNX.UI.ScreenId.Home);
+        }
+        else if (LudoMenuFlow.Instance != null)
+        {
+            LudoMenuFlow.Instance.OnQuitToMenuPressed();
+        }
+        else
+        {
+            Debug.LogWarning("[UIManager] No menu flow in the scene — nothing to exit to.");
         }
     }
 
@@ -375,11 +477,38 @@ public class UIManager : MonoBehaviour
         Debug.Log($"[UIManager] Sound toggled: {(isSoundOn ? "ON" : "OFF")}");
     }
 
+    /// <summary>
+    /// Muted state is shown by striking the speaker through and draining the button, rather than
+    /// swapping in a second icon — there is no muted sprite in the art set, and a strike reads as
+    /// "off" instantly without adding another asset.
+    /// </summary>
     private void UpdateSoundIcons()
     {
         if (soundOnIcon != null) soundOnIcon.gameObject.SetActive(isSoundOn);
         if (soundOffIcon != null) soundOffIcon.gameObject.SetActive(!isSoundOn);
+
+        if (soundToggleButton == null) return;
+
+        Transform strike = soundToggleButton.transform.Find(SoundStrikeName);
+        if (strike != null) strike.gameObject.SetActive(!isSoundOn);
+
+        // Fade the whole button when muted so the off state reads at a glance.
+        float target = isSoundOn ? 1f : mutedButtonAlpha;
+
+        Image face = soundToggleButton.GetComponent<Image>();
+        if (face != null) face.color = new Color(1f, 1f, 1f, target);
+
+        Transform icon = soundToggleButton.transform.Find("Icon");
+        if (icon != null)
+        {
+            Image iconImage = icon.GetComponent<Image>();
+            if (iconImage != null) iconImage.color = new Color(1f, 1f, 1f, target);
+        }
     }
+
+    public const string SoundStrikeName = "Strike";
+    [Tooltip("Opacity of the sound button while muted.")]
+    [Range(0.2f, 1f)] public float mutedButtonAlpha = 0.45f;
 
     // ===========================
     // CHAT & EMOJI (Placeholders)
@@ -507,6 +636,82 @@ public class UIManager : MonoBehaviour
     // ===========================
     // HELPERS
     // ===========================
+
+    /// <summary>
+    /// Pushes live points, win chance and home-token counts into all four cards. WinCalculator
+    /// already recomputes every frame but nothing consumed it, so the cards never updated.
+    /// Driven on a slow tick rather than per-frame — these values only move on game events.
+    /// </summary>
+    private IEnumerator LiveCardRefreshRoutine()
+    {
+        WaitForSeconds tick = new WaitForSeconds(0.25f);
+
+        while (true)
+        {
+            RefreshAllPlayerCards();
+            yield return tick;
+        }
+    }
+
+    /// <summary>
+    /// Shows only the cards for houses in this match.
+    ///
+    /// RefreshAllPlayerCards only walks activePlayers, so an unused card is never updated — it
+    /// would sit there frozen on whatever the last match left behind. Hiding it is the honest
+    /// counterpart to hiding that house's tokens.
+    /// </summary>
+    public void ApplyActivePlayerCards()
+    {
+        GameManager gm = GameManager.Instance;
+        if (gm == null || gm.activePlayers == null) return;
+
+        foreach (GameManager.PlayerColor color in System.Enum.GetValues(typeof(GameManager.PlayerColor)))
+        {
+            PlayerCardUI card = GetPlayerCard(color);
+            if (card != null) card.gameObject.SetActive(gm.activePlayers.Contains(color));
+        }
+    }
+
+    public void RefreshAllPlayerCards()
+    {
+        GameManager gm = GameManager.Instance;
+        if (gm == null || gm.activePlayers == null) return;
+
+        WinCalculator win = WinCalculator.Instance;
+        PointsManager pts = PointsManager.Instance;
+
+        foreach (GameManager.PlayerColor color in gm.activePlayers)
+        {
+            PlayerCardUI card = GetPlayerCard(color);
+            if (card == null) continue;
+
+            if (pts != null)
+            {
+                card.UpdatePoints(pts.GetPoints(color), 0);
+                card.UpdateHomeTokens(pts.GetTokensHome(color));
+                card.SetFireStreak(pts.GetFireStreak(color));
+            }
+
+            if (win != null)
+            {
+                card.SetWinRate(GetWinPercentage(win, color));
+            }
+
+            card.SetActiveTurn(color == gm.currentTurnColor);
+        }
+    }
+
+    private static float GetWinPercentage(WinCalculator win, GameManager.PlayerColor color)
+    {
+        return color switch
+        {
+            GameManager.PlayerColor.RED => win.redWinPercentage,
+            GameManager.PlayerColor.GREEN => win.greenWinPercentage,
+            GameManager.PlayerColor.YELLOW => win.yellowWinPercentage,
+            GameManager.PlayerColor.BLUE => win.blueWinPercentage,
+            _ => 0f
+        };
+    }
 
     public PlayerCardUI GetPlayerCard(GameManager.PlayerColor color)
     {

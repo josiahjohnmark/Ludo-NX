@@ -21,6 +21,17 @@ public class GameManager : MonoBehaviour
     public PlayerColor currentTurnColor = PlayerColor.RED;
     public List<PlayerColor> activePlayers = new List<PlayerColor>();
 
+    [Header("Control")]
+    [Tooltip("The colour the player controls. Every other active colour is played by AIController.")]
+    public PlayerColor humanColor = PlayerColor.RED;
+    [Tooltip("Off = all four colours are hot-seat human, for testing.")]
+    public bool aiPlaysOtherColors = true;
+
+    public bool IsHumanControlled(PlayerColor color)
+    {
+        return !aiPlaysOtherColors || color == humanColor;
+    }
+
     [Header("Leaderboard & Match State")]
     public List<PlayerColor> leaderBoard = new List<PlayerColor>();
 
@@ -45,7 +56,38 @@ public class GameManager : MonoBehaviour
     public bool hasRolled = false;
     public int consecutiveDoublesCount = 0;
 
+    /// <summary>
+    /// Explicit turn phases. Every player input is gated on one of these, which is what stops a
+    /// stale coroutine or a timeout from acting on a turn that has already moved on.
+    /// </summary>
+    public enum TurnPhase
+    {
+        AwaitingRoll,       // Roll button live, tokens dead
+        Rolling,            // Dice animating, nothing accepted
+        AwaitingSelection,  // Player picks a die, then a token
+        Moving,             // A token is animating, nothing accepted
+        Resolving           // Post-move bookkeeping, nothing accepted
+    }
+
+    [Header("Turn Phase")]
+    public TurnPhase currentPhase = TurnPhase.AwaitingRoll;
+
+    /// <summary>
+    /// Bumped every time the turn changes hands or restarts. Any coroutine that was in flight
+    /// across that boundary compares its captured value and aborts instead of writing state that
+    /// belongs to the previous turn — the specific fault that left the roll button dead.
+    /// </summary>
+    private int turnSequence = 0;
+    public int TurnSequence => turnSequence;
+
+    /// <summary>
+    /// Exactly one token may animate at a time, match-wide. TokenMovement's own isMoving flag is
+    /// per-token, so two tokens could previously animate together and both consume a die.
+    /// </summary>
+    public bool IsAnyTokenMoving { get; private set; }
+
     private bool grantExtraTurn = false;
+    private string extraTurnReason = null;
 
     private void Awake()
     {
@@ -60,22 +102,101 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        // Auto-initialize a 4-player match so the game is playable immediately.
-        // Later this will be replaced by the player-setup UI flow.
+        // The menu owns match setup when it is present: it decides player count and AI difficulty
+        // and calls InitializeMatchWithPlayerCount itself. Auto-starting here as well would deal a
+        // 4-player match underneath the home screen and then deal a second one on top of it.
+        if (LudoMenuFlow.Instance != null) return;
+
+        // Same contract for the new interface. Without this line, retiring LudoMenuFlow makes the
+        // guard above fall through and a match is dealt under the home screen on the first frame.
+        if (LudoNX.UI.ScreenManager.Instance != null) return;
+
+        // No menu in the scene — keep the old behaviour so the board scene stays playable alone.
         if (activePlayers == null || activePlayers.Count == 0)
         {
             InitializeMatchWithPlayerCount(4);
-            Debug.Log("Auto-initialized 4-player match.");
+            Debug.Log("Auto-initialized 4-player match (no menu flow in scene).");
         }
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && !isRolling && !hasRolled)
+        WatchMoveLock();
+
+#if UNITY_EDITOR
+        // Editor-only convenience. Goes through the same gate as the button so it can't desync
+        // the turn machine, and never ships to a device.
+        if (Input.GetKeyDown(KeyCode.Space))
         {
             OnRollButtonClicked();
         }
+#endif
     }
+
+    #region Move-lock watchdog
+
+    [Header("Safety")]
+    [Tooltip("Seconds the move lock may stay held with no token actually moving before it is force-released.")]
+    public float stuckMoveLockTimeout = 3f;
+
+    private float moveLockHeldFor;
+    private float nextLockCheck;
+
+    /// <summary>
+    /// Releases the match-wide move lock if it is held while nothing is actually moving.
+    ///
+    /// TryBeginTokenMove and EndTokenMove bracket a coroutine. If anything between them throws, the
+    /// coroutine dies mid-flight and the lock is never released — and because AIController refuses
+    /// to act while the lock is held, the whole match freezes with no way back. A single unlucky
+    /// exception should not be able to end a game permanently.
+    ///
+    /// This is a net, not a fix: it logs loudly so the underlying fault is still visible rather
+    /// than being quietly papered over. The timeout is comfortably longer than the longest hop
+    /// (maxTotalMoveDuration is 1.25s), so a slow move can never trip it.
+    /// </summary>
+    private void WatchMoveLock()
+    {
+        if (!IsAnyTokenMoving)
+        {
+            moveLockHeldFor = 0f;
+            return;
+        }
+
+        // Scanning tokens is only worth doing a couple of times a second.
+        if (Time.time < nextLockCheck) return;
+        nextLockCheck = Time.time + 0.25f;
+
+        bool somethingIsMoving = false;
+        foreach (TokenMovement token in FindObjectsByType<TokenMovement>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        {
+            if (token.IsMoving) { somethingIsMoving = true; break; }
+        }
+
+        if (somethingIsMoving)
+        {
+            moveLockHeldFor = 0f;
+            return;
+        }
+
+        moveLockHeldFor += 0.25f;
+        if (moveLockHeldFor < stuckMoveLockTimeout) return;
+
+        Debug.LogWarning($"[GameManager] Move lock was held for {moveLockHeldFor:0.0}s with no token moving — " +
+                         $"a move coroutine died before releasing it. Force-releasing and resuming " +
+                         $"{currentTurnColor}'s turn (phase was {currentPhase}).");
+
+        moveLockHeldFor = 0f;
+        EndTokenMove();
+
+        // Finish the step the dead coroutine never completed: spend the die and either hand the
+        // player their second die or pass the turn on.
+        if (currentPhase == TurnPhase.Moving)
+        {
+            ConsumeSelectedDice();
+        }
+    }
+
+    #endregion
 
     #region Match Initialization
 
@@ -106,6 +227,26 @@ public class GameManager : MonoBehaviour
         leaderBoard.Clear();
         ResetDiceState();
 
+        // A human colour that is not in the match means every house is AI-driven and the player
+        // watches their own game. Guarding here rather than at the call site means no future caller
+        // can reintroduce it.
+        if (!activePlayers.Contains(humanColor))
+        {
+            humanColor = activePlayers[0];
+            Debug.Log($"[GameManager] Human colour was not in this match — moved to {humanColor}.");
+        }
+
+        turnSequence++;
+        currentPhase = TurnPhase.AwaitingRoll;
+        IsAnyTokenMoving = false;
+        ClearExtraTurn();
+        ResetAllTokensToYard();
+        ApplyActivePlayerVisibility();
+
+        // Every token is back in its own yard slot, so clear any stack scaling left over from the
+        // previous match. Instant, not animated — nothing should be seen sliding at match start.
+        TokenStackLayout.Refresh(false);
+
         if (PointsManager.Instance != null)
         {
             PointsManager.Instance.InitializeForMatch(activePlayers);
@@ -118,11 +259,58 @@ public class GameManager : MonoBehaviour
 
         if (UIManager.Instance != null)
         {
+            UIManager.Instance.ApplyActivePlayerCards();
             UIManager.Instance.UpdateTurnUI(currentTurnColor, "ROLL DICE");
             UIManager.Instance.StartTurnTimer();
         }
 
-        Debug.Log($"Match initialized. Players: {string.Join(", ", activePlayers)}. Starting: {currentTurnColor}");
+        Debug.Log($"Match initialized. Players: {string.Join(", ", activePlayers)}. " +
+                  $"Starting: {currentTurnColor}. Human: {humanColor}.");
+    }
+
+    /// <summary>
+    /// Hides every house that is not in this match, tokens and all.
+    ///
+    /// In a two-player game the two unused yards are then visibly empty, which states who is
+    /// playing more clearly than any label could. Leaving four sets of tokens on the board and
+    /// simply refusing to move two of them reads as a frozen game, not as a two-player match.
+    ///
+    /// Uses FindObjectsInactive.Include so a house hidden by the previous match can be brought
+    /// back for the next one.
+    /// </summary>
+    private void ApplyActivePlayerVisibility()
+    {
+        TokenMovement[] tokens = FindObjectsByType<TokenMovement>(FindObjectsInactive.Include);
+        int hidden = 0;
+
+        foreach (TokenMovement token in tokens)
+        {
+            bool playing = activePlayers.Contains(token.tokenColor);
+            token.gameObject.SetActive(playing);
+            if (!playing) hidden++;
+        }
+
+        Debug.Log($"[GameManager] {tokens.Length - hidden} tokens on the board, {hidden} hidden.");
+    }
+
+    /// <summary>
+    /// Puts every token back in its yard at kickoff.
+    ///
+    /// Tokens were being authored into the scene already on the board — one Red token sat at tile
+    /// 55, one step from finishing. That made "no tokens out, no six" rolls look broken: the rules
+    /// correctly found a legal move for the hidden token, so the turn waited for a tap that the
+    /// player had no way to make, the countdown kept running and the roll button stayed dead.
+    /// Starting from a known state removes a whole class of that bug.
+    /// </summary>
+    public void ResetAllTokensToYard()
+    {
+        TokenMovement[] tokens = FindObjectsByType<TokenMovement>(FindObjectsInactive.Include);
+        foreach (TokenMovement token in tokens)
+        {
+            token.ResetToYard();
+        }
+
+        Debug.Log($"[GameManager] Reset {tokens.Length} tokens to their yards.");
     }
 
     public void InitializeMatch(PlayerColor startingColor)
@@ -158,13 +346,22 @@ public class GameManager : MonoBehaviour
 
     public void OnRollButtonClicked()
     {
-        if (isRolling || hasRolled) return;
+        // Phase is the single source of truth. hasRolled/isRolling are kept in sync for any
+        // existing UI that reads them, but they no longer decide whether a roll is allowed.
+        if (currentPhase != TurnPhase.AwaitingRoll) return;
         StartCoroutine(RollDiceRoutine());
     }
 
     private IEnumerator RollDiceRoutine()
     {
+        int mySequence = turnSequence;
+
         isRolling = true;
+        currentPhase = TurnPhase.Rolling;
+
+        // The countdown must not eat the dice animation.
+        if (UIManager.Instance != null) UIManager.Instance.PauseTurnTimer();
+
         try
         {
             ResetDiceSelection();
@@ -172,17 +369,23 @@ public class GameManager : MonoBehaviour
             dice1Value = Random.Range(1, 7);
             dice2Value = Random.Range(1, 7);
 
-            bool isDouble = (dice1Value == dice2Value);
+            // Ludo NX house rule: only a DOUBLE SIX earns another roll. Any other double is an
+            // ordinary roll. Captures and home arrivals also grant one, awarded where they happen.
+            bool isDoubleSix = (dice1Value == 6 && dice2Value == 6);
 
-            if (isDouble)
+            if (isDoubleSix)
             {
                 consecutiveDoublesCount++;
-                Debug.Log($"DOUBLES ROLLED [{dice1Value}-{dice2Value}] by {currentTurnColor}! Streak: {consecutiveDoublesCount}");
-                if (PointsManager.Instance != null) PointsManager.Instance.OnDoublesRolled(currentTurnColor);
+                Debug.Log($"DOUBLE SIX by {currentTurnColor}! Streak: {consecutiveDoublesCount}");
             }
             else
             {
                 consecutiveDoublesCount = 0;
+            }
+
+            if (dice1Value == dice2Value && PointsManager.Instance != null)
+            {
+                PointsManager.Instance.OnDoublesRolled(currentTurnColor);
             }
 
             if (dice1Value == 6 || dice2Value == 6)
@@ -190,25 +393,29 @@ public class GameManager : MonoBehaviour
                 if (PointsManager.Instance != null) PointsManager.Instance.OnSixRolled(currentTurnColor);
             }
 
+            // Three double-sixes in a row voids the whole roll, matching the official three-sixes
+            // penalty. Nothing moves and the turn passes immediately.
             if (consecutiveDoublesCount >= 3)
             {
-                Debug.Log($"3 CONSECUTIVE DOUBLES ROLLED by {currentTurnColor}! Turn forfeited!");
+                Debug.Log($"3 CONSECUTIVE DOUBLE SIXES by {currentTurnColor}! Turn forfeited!");
                 consecutiveDoublesCount = 0;
-                grantExtraTurn = false;
+                ClearExtraTurn();
                 hasRolled = true;
 
                 if (UIManager.Instance != null)
                 {
-                    UIManager.Instance.UpdateTurnUI(currentTurnColor, "3 DOUBLES — TURN FORFEITED");
+                    UIManager.Instance.UpdateTurnUI(currentTurnColor, "3 DOUBLE SIXES — TURN FORFEITED");
                 }
 
                 yield return new WaitForSeconds(1.2f);
+                if (mySequence != turnSequence) yield break;
+
                 ResetDiceState();
                 AdvanceToNextPlayer();
                 yield break;
             }
 
-            grantExtraTurn = isDouble;
+            if (isDoubleSix) GrantExtraTurn("DOUBLE SIX");
 
             if (AudioManager.Instance != null) AudioManager.Instance.PlayDiceRoll();
 
@@ -219,6 +426,14 @@ public class GameManager : MonoBehaviour
             else
             {
                 yield return new WaitForSeconds(0.8f);
+            }
+
+            // The turn changed underneath us while the dice were spinning (timeout, forced pass).
+            // Writing hasRolled/phase now would strand the next player with a dead roll button.
+            if (mySequence != turnSequence)
+            {
+                Debug.Log("[GameManager] Roll routine finished after the turn moved on — discarding.");
+                yield break;
             }
 
             hasRolled = true;
@@ -234,25 +449,66 @@ public class GameManager : MonoBehaviour
                     UIManager.Instance.UpdateTurnUI(currentTurnColor, "NO MOVE — PASSING");
                 }
 
+                currentPhase = TurnPhase.Resolving;
                 yield return new WaitForSeconds(1.0f);
+                if (mySequence != turnSequence) yield break;
 
+                // A roll that produced nothing never earns another turn, double six or not.
+                ClearExtraTurn();
                 ResetDiceState();
                 AdvanceToNextPlayer();
             }
-            else if (UIManager.Instance != null)
+            else
             {
-                string baseMsg = isDouble ? "DOUBLES! SELECT A DIE" : "SELECT A DIE";
-                if (PlayerHasLegalCombinedMove(currentTurnColor))
+                currentPhase = TurnPhase.AwaitingSelection;
+
+                if (UIManager.Instance != null)
                 {
-                    baseMsg += " (OR TAP BOTH TO COMBINE)";
+                    string baseMsg = isDoubleSix ? "DOUBLE SIX! SELECT A DIE" : "SELECT A DIE";
+                    if (PlayerHasLegalCombinedMove(currentTurnColor))
+                    {
+                        baseMsg += " (OR TAP BOTH TO COMBINE)";
+                    }
+                    UIManager.Instance.UpdateTurnUI(currentTurnColor, baseMsg);
+                    UIManager.Instance.ResumeTurnTimer();
                 }
-                UIManager.Instance.UpdateTurnUI(currentTurnColor, baseMsg);
             }
         }
         finally
         {
             isRolling = false;
         }
+    }
+
+    /// <summary>
+    /// Claimed by a double six, a capture, or a token reaching home. Multiple grants in one turn
+    /// collapse to a single extra roll — you don't bank them.
+    /// </summary>
+    public void GrantExtraTurn(string reason)
+    {
+        grantExtraTurn = true;
+        extraTurnReason = reason;
+    }
+
+    private void ClearExtraTurn()
+    {
+        grantExtraTurn = false;
+        extraTurnReason = null;
+    }
+
+    /// <summary>Global animation lock — see IsAnyTokenMoving.</summary>
+    public bool TryBeginTokenMove()
+    {
+        if (IsAnyTokenMoving) return false;
+        IsAnyTokenMoving = true;
+        currentPhase = TurnPhase.Moving;
+        if (UIManager.Instance != null) UIManager.Instance.PauseTurnTimer();
+        return true;
+    }
+
+    public void EndTokenMove()
+    {
+        IsAnyTokenMoving = false;
     }
 
     private bool PlayerHasAnyLegalMove(PlayerColor color, int d1, int d2)
@@ -305,11 +561,22 @@ public class GameManager : MonoBehaviour
 
     public void GrantCaptureBonusTurn()
     {
-        grantExtraTurn = true;
+        GrantExtraTurn("CAPTURE");
         Debug.Log($"{currentTurnColor} earned a BONUS TURN for capturing an opponent token!");
         if (UIManager.Instance != null)
         {
             UIManager.Instance.UpdateTurnUI(currentTurnColor, "BONUS TURN (CAPTURE)");
+        }
+    }
+
+    /// <summary>Third way to earn another roll: landing a token in the home triangle.</summary>
+    public void GrantHomeArrivalBonusTurn()
+    {
+        GrantExtraTurn("TOKEN HOME");
+        Debug.Log($"{currentTurnColor} earned a BONUS TURN for bringing a token home!");
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.UpdateTurnUI(currentTurnColor, "BONUS TURN (TOKEN HOME)");
         }
     }
 
@@ -477,6 +744,17 @@ public class GameManager : MonoBehaviour
                 RefreshDiceVisuals();
                 ResetTurnForNextPlayer();
             }
+            else
+            {
+                // Still the same player's turn with one die left — hand control back and restart
+                // the clock, which previously died here and left the second die untimed.
+                currentPhase = TurnPhase.AwaitingSelection;
+                if (UIManager.Instance != null)
+                {
+                    UIManager.Instance.UpdateTurnUI(currentTurnColor, $"MOVE AGAIN — DIE [{remainingDie}]");
+                    UIManager.Instance.StartTurnTimer();
+                }
+            }
         }
 
         Debug.Log("Selected dice consumed successfully.");
@@ -501,19 +779,28 @@ public class GameManager : MonoBehaviour
 
     public void ResetTurnForNextPlayer()
     {
-        ResetDiceState();
+        string reason = extraTurnReason;
+        bool keepTurn = grantExtraTurn;
 
-        if (!grantExtraTurn)
+        ResetDiceState();
+        ClearExtraTurn();
+
+        if (!keepTurn)
         {
             AdvanceToNextPlayer();
-        }
-        else
-        {
-            if (UIManager.Instance != null)
-                UIManager.Instance.UpdateTurnUI(currentTurnColor, "ROLL AGAIN — BONUS TURN");
+            return;
         }
 
-        grantExtraTurn = false;
+        // Same player rolls again. This is a fresh decision point, so it needs a fresh sequence
+        // (to invalidate anything still in flight) and a fresh clock.
+        turnSequence++;
+        currentPhase = TurnPhase.AwaitingRoll;
+
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.UpdateTurnUI(currentTurnColor, $"ROLL AGAIN — {reason}");
+            UIManager.Instance.StartTurnTimer();
+        }
     }
 
     public void AdvanceToNextPlayer()
@@ -521,6 +808,13 @@ public class GameManager : MonoBehaviour
         if (activePlayers == null || activePlayers.Count == 0) return;
 
         consecutiveDoublesCount = 0;
+        ClearExtraTurn();
+
+        // Invalidate every coroutine that belonged to the turn we're leaving.
+        turnSequence++;
+        currentPhase = TurnPhase.AwaitingRoll;
+        IsAnyTokenMoving = false;
+        hasRolled = false;
 
         // Skip players who have already finished all their tokens
         int attempts = 0;
@@ -572,13 +866,26 @@ public class GameManager : MonoBehaviour
             leaderBoard.Add(color);
             Debug.Log($"{color} has finished all tokens! Placed #{leaderBoard.Count}");
 
-            if (UIManager.Instance != null && activePlayers.Count > 0 && leaderBoard.Count >= activePlayers.Count)
+            // Match end is a game fact, not a UI one — gate it on the board state alone so a scene
+            // without a UIManager still awards placement bonuses and still ends cleanly.
+            if (activePlayers.Count > 0 && leaderBoard.Count >= activePlayers.Count)
             {
                 if (PointsManager.Instance != null)
                 {
                     PointsManager.Instance.AwardPlacementBonuses(leaderBoard);
                 }
-                UIManager.Instance.ShowGameOverUI(leaderBoard);
+
+                // When the menu is present it owns the post-match screen, because it also banks
+                // coins and NX. Two victory screens fighting over the same moment is worse than
+                // either one alone.
+                if (LudoMenuFlow.Instance != null)
+                {
+                    LudoMenuFlow.NotifyMatchEnded(leaderBoard);
+                }
+                else if (UIManager.Instance != null)
+                {
+                    UIManager.Instance.ShowGameOverUI(leaderBoard);
+                }
             }
         }
     }
