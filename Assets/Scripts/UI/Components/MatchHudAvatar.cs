@@ -36,9 +36,11 @@ namespace LudoNX.UI
         private void Update()
         {
             // The match can start after this component wakes, so the owning house is not known
-            // at OnEnable. Checking once per frame is cheap and keeps the card correct if the
-            // player's colour changes between matches.
-            if (!_built) Refresh();
+            // at OnEnable, and it changes between matches. Guarding this on !_built meant a card
+            // that had once belonged to the player kept his photo forever: switch from red to
+            // blue and both cards showed the same face, because the red one had already built
+            // its photo and stopped looking. Refresh is idempotent, so just run it.
+            Refresh();
         }
 
         public void Refresh()
@@ -48,7 +50,12 @@ namespace LudoNX.UI
 
             if (!mine)
             {
+                // Hand the slot back to the pawn silhouette. Hiding the photo alone left the
+                // card showing an empty disc, because the pawn was switched off when the photo
+                // was first put in and nothing ever switched it back on.
                 if (_photo != null) _photo.enabled = false;
+                var ownPawn = transform.Find("Pawn");
+                if (ownPawn != null) ownPawn.gameObject.SetActive(true);
                 return;
             }
 

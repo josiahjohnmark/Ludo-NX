@@ -73,17 +73,18 @@ namespace LudoNX.UI
 
             if (titleLabel != null) titleLabel.text = passAndPlay ? "PASS AND PLAY" : "QUICK PLAY";
 
-            // Pass-and-play is always four humans, so neither count nor difficulty applies.
+            // Difficulty is meaningless with no computer, but the player count is not: two people
+            // passing one device is as ordinary as four, and forcing 4 here left the 2-player
+            // option visible but dead.
             if (difficultySection != null) difficultySection.SetActive(!passAndPlay);
 
             if (s != null)
             {
-                if (passAndPlay) s.pendingPlayerCount = 4;
                 if (playersToggle != null)
                 {
                     playersToggle.SetSilent(s.pendingPlayerCount >= 4 ? 1 : 0);
                     foreach (var h in playersToggle.hitboxes)
-                        if (h != null) h.interactable = !passAndPlay;
+                        if (h != null) h.interactable = true;
                 }
                 if (difficultyToggle != null) difficultyToggle.SetSilent((int)s.pendingDifficulty);
             }
@@ -165,7 +166,9 @@ namespace LudoNX.UI
             if (modeBlurb != null)
             {
                 modeBlurb.text = passAndPlay
-                    ? "All four houses played by people on this device."
+                    ? (s.pendingPlayerCount >= 4
+                        ? "All four houses played by people on this device."
+                        : "Two people on this device, playing opposite corners.")
                     : "Standard rules. May the best roller win.";
             }
         }

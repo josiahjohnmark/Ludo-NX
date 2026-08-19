@@ -43,6 +43,55 @@ public class PlayerCardUI : MonoBehaviour
     private int currentPoints = 0;
     private int tokensHomeCount = 0;
 
+    private void OnEnable()
+    {
+        LudoNX.UI.AvatarService.Changed += RefreshIdentity;
+        RefreshIdentity();
+    }
+
+    private void OnDisable()
+    {
+        LudoNX.UI.AvatarService.Changed -= RefreshIdentity;
+    }
+
+    private void Update()
+    {
+        // The match can start after this card wakes, so the house the player controls is not
+        // known at OnEnable, and it changes between matches. Comparing a cheap signature once a
+        // frame keeps the card correct without anything having to remember to notify it.
+        RefreshIdentity();
+    }
+
+    /// <summary>
+    /// Puts the player's own name on the card for the house they are playing.
+    ///
+    /// SetPlayerName existed but nothing ever called it, so every card kept the literal the
+    /// builder authored — "RED", "GREEN" — and the name you set in Edit Profile never appeared
+    /// anywhere in a match. The other houses stay named by their colour: they are the computer,
+    /// or in pass-and-play other people sharing the device, and giving them your name would be
+    /// worse than giving them none.
+    /// </summary>
+    public void RefreshIdentity()
+    {
+        var gm = GameManager.Instance;
+        if (gm == null || playerNameText == null) return;
+
+        bool mine = gm.humanColor == playerColor && gm.IsHumanControlled(playerColor);
+        var session = LudoNXSession.Instance;
+
+        string wanted = mine && session != null && !string.IsNullOrWhiteSpace(session.PlayerName)
+                      ? session.PlayerName
+                      : playerColor.ToString();
+
+        if (_appliedName != wanted)
+        {
+            playerNameText.text = wanted;
+            _appliedName = wanted;
+        }
+    }
+
+    private string _appliedName;
+
     private void Start()
     {
         // Default to inactive

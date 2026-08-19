@@ -41,6 +41,11 @@ public class TokenMovement : MonoBehaviour
     // leaves it. Generated at runtime, so it needs no imported art.
     public bool useGroundShadow = true;
     public float shadowBaseScale = 0.55f;
+
+    [Tooltip("Minimum tap radius for a token, in world units. One board cell is about 0.46 " +
+             "world units of radius, which is the practical ceiling before tokens steal each " +
+             "other's taps.")]
+    public float touchRadiusWorld = 0.45f;
     public float shadowApexScale = 0.62f;   // multiplier applied to base at full height
     public float shadowBaseAlpha = 0.45f;
     public float shadowApexAlpha = 0.18f;
@@ -183,11 +188,43 @@ public class TokenMovement : MonoBehaviour
         }
 
         originalScale = transform.localScale;
+        EnsureTouchTarget();
 
         if (pathScript == null)
         {
             pathScript = LudoPath.FindComplete();
         }
+    }
+
+    /// <summary>
+    /// Grows the pick collider to at least cover the token you can see.
+    ///
+    /// The authored CircleCollider2D was 0.30 world units across while the token sprite renders
+    /// at 0.90 — the tappable spot was a third of the token, dead centre, so taps that visibly
+    /// landed on a token did nothing and you had to hunt for the middle. At the match camera
+    /// that is a ~25px target on a 1080x2400 screen, about 9dp against a 48dp minimum.
+    ///
+    /// Sized to the sprite and capped at one board cell: going wider would spill onto the
+    /// neighbouring square and start stealing taps from the token next door, which trades one
+    /// selection problem for a worse one.
+    /// </summary>
+    private void EnsureTouchTarget()
+    {
+        var circle = GetComponent<CircleCollider2D>();
+        if (circle == null) return;
+
+        float scale = Mathf.Max(Mathf.Abs(transform.lossyScale.x), 0.0001f);
+        float wantedWorldRadius = touchRadiusWorld;
+
+        if (spriteRenderer != null && spriteRenderer.sprite != null)
+        {
+            // Half the sprite's own width, in world units, is the token as the player sees it.
+            float spriteWorld = spriteRenderer.sprite.bounds.size.x * scale;
+            wantedWorldRadius = Mathf.Max(wantedWorldRadius, spriteWorld * 0.5f);
+        }
+
+        float wantedLocal = wantedWorldRadius / scale;
+        if (circle.radius < wantedLocal) circle.radius = wantedLocal;
     }
 
     private void OnMouseDown()
