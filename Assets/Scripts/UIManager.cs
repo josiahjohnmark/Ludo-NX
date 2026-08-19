@@ -412,7 +412,34 @@ public class UIManager : MonoBehaviour
     /// </summary>
     private void OnQuitClicked()
     {
-        if (quitConfirmPanel != null)
+        // The styled dialog first. quitConfirmPanel is a bare placeholder in the scene with no
+        // children, so switching it on showed nothing and Exit read as a dead button — check
+        // that the panel actually has content before trusting it.
+        if (LudoNX.UI.ScreenManager.Instance != null)
+        {
+            // Cancelling, tapping the scrim and the back key all route through Dismiss, so the
+            // timer resumes however the player backs out. On confirm, Dismiss runs before the
+            // callback, so ConfirmExit still gets the last word and stops the timer.
+            var modal = LudoNX.UI.UIModal.Open("Confirm", ResumeTurnTimer);
+            if (modal != null)
+            {
+                var confirm = modal.GetComponent<LudoNX.UI.ConfirmModal>();
+                if (confirm != null)
+                {
+                    PauseTurnTimer();
+                    confirm.Configure(
+                        "LEAVE MATCH?",
+                        "This match will be forfeited and the result will not be saved.",
+                        "LEAVE", "KEEP PLAYING",
+                        ConfirmExit);
+                    return;
+                }
+
+                modal.Dismiss();
+            }
+        }
+
+        if (quitConfirmPanel != null && quitConfirmPanel.transform.childCount > 0)
         {
             quitConfirmPanel.SetActive(true);
             PauseTurnTimer();
