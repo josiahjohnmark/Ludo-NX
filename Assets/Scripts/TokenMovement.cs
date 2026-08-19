@@ -22,16 +22,16 @@ public class TokenMovement : MonoBehaviour
     // Per-tile hop duration, scaled down as the move gets longer. Ludo King sits around 0.13s per
     // tile, which reads as hurried; these are deliberately slower and weightier while still
     // capping a six-tile run so the player isn't left waiting.
-    public float hopDurationShort = 0.30f;   // 1 tile
-    public float hopDurationMedium = 0.24f;  // 2-3 tiles
-    public float hopDurationLong = 0.185f;   // 4+ tiles
-    public float maxTotalMoveDuration = 1.25f;
+    public float hopDurationShort = 0.42f;   // 1 tile
+    public float hopDurationMedium = 0.34f;  // 2-3 tiles
+    public float hopDurationLong = 0.26f;    // 4+ tiles
+    public float maxTotalMoveDuration = 1.70f;
 
     [Header("Hop Shape")]
     public float hopHeight = 0.42f;
     // Scale growth at the apex. In a top-down 2D board a Y offset alone is ambiguous with "moved
     // further up the board", so the token also grows slightly as it rises.
-    public float hopScalePunch = 0.16f;
+    public float hopScalePunch = 0.085f;
     public float penultimateRampHeight = 0.52f;
     public float captureSlamHeight = 0.7f;
     public float captureHangTime = 0.18f;
@@ -56,7 +56,7 @@ public class TokenMovement : MonoBehaviour
     public float landingSquashAmount = 0.12f;
     // Lighter squash applied on every intermediate landing, so a run reads as a series of real
     // impacts rather than one long glide with a bump at the end.
-    public float perHopSquashAmount = 0.06f;
+    public float perHopSquashAmount = 0.028f;
 
     [Header("Sorting")]
     // Added to the token's sorting order while airborne so it passes over other tokens.
@@ -66,7 +66,7 @@ public class TokenMovement : MonoBehaviour
     // Eases the HORIZONTAL advance only. Hop gravity is deliberately kept on its own constant
     // clock — driving the arc from eased progress stretched the first and last hops in time and
     // was the main source of the uneven rhythm.
-    [Range(0f, 1f)] public float flowEasing = 0.35f;
+    [Range(0f, 1f)] public float flowEasing = 0.75f;
 
     private Transform shadowTransform;
     private SpriteRenderer shadowRenderer;
@@ -227,11 +227,90 @@ public class TokenMovement : MonoBehaviour
         if (circle.radius < wantedLocal) circle.radius = wantedLocal;
     }
 
+    // ── "you can move this one" hint ────────────────────────────────────────────────────
+
+    [Header("Movable Hint")]
+    [Tooltip("Soft breathing applied to tokens that can legally take the selected die.")]
+    public float hintBreathScale = 0.055f;
+    [Tooltip("Seconds for one full breath. Slow on purpose — this is a hint, not an alarm.")]
+    public float hintBreathPeriod = 1.5f;
+    [Tooltip("How far the token lifts toward white at the top of the breath.")]
+    [Range(0f, 0.6f)] public float hintBrighten = 0.30f;
+
+    private bool _hinting;
+
+    /// <summary>
+    /// Breathes the tokens the player could actually move right now.
+    ///
+    /// Chosen over dots orbiting each token: with up to four eligible tokens, four rings of
+    /// travelling dots is a lot of motion competing with the move the player is about to make,
+    /// and it needs its own geometry per token. A slow swell in scale and brightness reads at a
+    /// glance, costs nothing, and stays calm — which is what makes it feel cinematic rather than
+    /// like a tutorial arrow.
+    /// </summary>
+    private void Update()
+    {
+        bool want = ShouldHint();
+
+        if (!want)
+        {
+            if (_hinting)
+            {
+                _hinting = false;
+                transform.localScale = RestingScale;
+                if (spriteRenderer != null) spriteRenderer.color = originalColor;
+            }
+            return;
+        }
+
+        _hinting = true;
+
+        // Sine over unscaled time, so the hint keeps breathing while a dialog holds the game.
+        float phase = Mathf.Sin(Time.unscaledTime * (Mathf.PI * 2f / Mathf.Max(0.05f, hintBreathPeriod)));
+        float t = (phase + 1f) * 0.5f;
+
+        transform.localScale = RestingScale * (1f + t * hintBreathScale);
+        if (spriteRenderer != null)
+            spriteRenderer.color = Color.Lerp(originalColor, Color.white, t * hintBrighten);
+    }
+
+    private bool ShouldHint()
+    {
+        GameManager gm = GameManager.Instance;
+        if (gm == null || isFinished || IsMoving) return false;
+        if (gm.currentTurnColor != tokenColor) return false;
+        if (!gm.IsHumanControlled(tokenColor)) return false;
+        if (gm.currentPhase != GameManager.TurnPhase.AwaitingSelection) return false;
+
+        int value = gm.GetSelectedDiceValue();
+        if (value <= 0) return false;
+
+        // A combined roll cannot buy a token out of the yard, so those tokens are not eligible
+        // and must not be advertised as if they were.
+        if (isHome && gm.isDiceCombined) return false;
+
+        return CanTokenMove(this, value);
+    }
+
     private void OnMouseDown()
     {
         GameManager gm = GameManager.Instance;
         if (gm == null) return;
-        if (gm.currentTurnColor != tokenColor) return;
+
+        // Someone reaching for a house that is not currently to move. Tell them why nothing
+        // happened instead of ignoring the tap.
+        if (gm.currentTurnColor != tokenColor)
+        {
+            if (UIManager.Instance != null)
+            {
+                Color c = LudoNX.UI.UITheme.Current.ForPlayer(gm.currentTurnColor);
+                UIManager.Instance.ShowNotice(
+                    gm.currentTurnColor.ToString() + " TO PLAY",
+                    Color.Lerp(c, Color.white, 0.55f));
+            }
+            return;
+        }
+
         if (isFinished) return;
 
         // Tokens are only live while the player is choosing. This rejects taps during the dice
@@ -478,7 +557,9 @@ public class TokenMovement : MonoBehaviour
         if (currentTileIndex == pathLength - 1)
         {
             isFinished = true;
-            if (AudioManager.Instance != null) AudioManager.Instance.PlayVictory();
+            // Reaching home is a token finishing, not the match being won — those deserve
+            // different sounds. PlayVictory is reserved for the end of the game.
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayTokenHome();
             if (PointsManager.Instance != null)
             {
                 PointsManager.Instance.OnTokenReachedHome(tokenColor);
@@ -826,11 +907,16 @@ public class TokenMovement : MonoBehaviour
                     PointsManager.Instance.OnTokenCaptured(tokenColor, other.tokenColor);
                 }
 
+                // The victim still gets its small marker in place — that one is about which
+                // token was lost. The capturer's reward moves to the centre of the screen,
+                // where it is big enough to actually read before it goes.
                 if (FloatingTextFX.Instance != null)
                 {
-                    FloatingTextFX.Instance.SpawnFloatingText(transform.position, 3);
                     FloatingTextFX.Instance.SpawnFloatingText(other.transform.position, -1);
                 }
+
+                int reward = PointsManager.Instance != null ? PointsManager.Instance.capturePoints : 3;
+                LudoNX.UI.CaptureBanner.Instance.Show(tokenColor, reward);
 
                 if (AudioManager.Instance != null) AudioManager.Instance.PlayCapture();
                 if (GameManager.Instance != null) GameManager.Instance.GrantCaptureBonusTurn();

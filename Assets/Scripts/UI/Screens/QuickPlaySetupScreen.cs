@@ -49,13 +49,26 @@ namespace LudoNX.UI
             if (playersToggle != null) playersToggle.onChanged.AddListener(_ => OnPlayerCountChanged());
             if (difficultyToggle != null) difficultyToggle.onChanged.AddListener(_ => Sync());
 
-            // Safe Zone is not implemented yet, so the ruleset toggle stays on Classic.
+            // Safe Zone is not in this release. The segment stays tappable on purpose: a dead
+            // control that swallows taps reads as broken, so it snaps back to Classic and says
+            // why. The padlock on the label warns before the tap; the toast explains after it.
             if (modeToggle != null)
             {
                 modeToggle.SetSilent(0);
-                modeToggle.onChanged.AddListener(_ => modeToggle.SetSilent(0));
-                for (int i = 0; i < modeToggle.hitboxes.Count; i++)
-                    if (modeToggle.hitboxes[i] != null) modeToggle.hitboxes[i].interactable = false;
+                modeToggle.onChanged.AddListener(i =>
+                {
+                    if (i == 0) return;
+                    modeToggle.SetSilent(0);
+                    Toast.ComingSoon("Safe Zone");
+                });
+
+                // No padlock glyph exists in the icon set, so this borrows the "SOON" wording the
+                // Play menu already uses for locked modes — same language, no new asset.
+                if (modeToggle.labels.Count > 1 && modeToggle.labels[1] != null)
+                {
+                    modeToggle.labels[1].text = "SAFE ZONE · SOON";
+                    modeToggle.labels[1].color = UITheme.Lin(UITheme.Current.inkDim);
+                }
             }
 
             for (int i = 0; i < colourButtons.Length; i++)

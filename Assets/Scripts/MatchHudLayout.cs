@@ -83,8 +83,11 @@ public class MatchHudLayout : MonoBehaviour
     [Range(0.2f, 0.6f)] public float houseBlockEnd = 0.400f;
     [Tooltip("Die edge length as a fraction of board width.")]
     [Range(0.03f, 0.2f)] public float dieSize = 0.130f;
+    // A die is a cube showing a rolled face, so it sits at an angle rather than square to the
+    // camera, and its screen footprint is up to ~1.7x its edge length. Spacing set from the edge
+    // length alone let the two dice visually collide.
     [Tooltip("Half the gap between the two dice, as a fraction of board width.")]
-    [Range(0f, 0.2f)] public float diceHalfGap = 0.085f;
+    [Range(0f, 0.2f)] public float diceHalfGap = 0.125f;
 
     private Canvas _canvas;
     private RectTransform _canvasRt;

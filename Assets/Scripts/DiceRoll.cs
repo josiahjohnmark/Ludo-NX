@@ -38,13 +38,39 @@ public class DiceRoll : MonoBehaviour
         var gm = GameManager.Instance;
         if (gm == null) return;
 
-        // Not this player's turn, or a computer is playing this house.
-        if (!gm.IsHumanControlled(gm.currentTurnColor)) return;
+        // A computer house is thinking. Say so rather than swallowing the tap — silence reads
+        // as a broken button.
+        if (!gm.IsHumanControlled(gm.currentTurnColor))
+        {
+            Notify("NOT YOUR TURN", gm.currentTurnColor);
+            return;
+        }
 
         // Between rolls, during a hop, or while the turn is resolving: nothing to choose yet.
-        if (gm.currentPhase != GameManager.TurnPhase.AwaitingSelection) return;
+        if (gm.currentPhase != GameManager.TurnPhase.AwaitingSelection)
+        {
+            if (gm.currentPhase == GameManager.TurnPhase.AwaitingRoll)
+                Notify("ROLL FIRST", gm.currentTurnColor);
+            return;
+        }
 
         gm.ToggleDiceSelection(gameObject);
+
+        // Say what is now selected. Without this the only cue was the tint, and a player who
+        // tapped the second die could not tell a switch from a combine — which is what made
+        // deselecting look like it had not worked.
+        int v = gm.GetSelectedDiceValue();
+        if (v > 0)
+            Notify(gm.isDiceCombined ? "COMBINED " + v : "SELECTED " + v, gm.currentTurnColor);
+        else
+            Notify("NO DIE SELECTED", gm.currentTurnColor);
+    }
+
+    private static void Notify(string message, GameManager.PlayerColor turn)
+    {
+        if (UIManager.Instance == null) return;
+        Color c = LudoNX.UI.UITheme.Current.ForPlayer(turn);
+        UIManager.Instance.ShowNotice(message, Color.Lerp(c, Color.white, 0.55f));
     }
 
     public void Roll()

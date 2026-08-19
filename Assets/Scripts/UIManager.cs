@@ -127,6 +127,47 @@ public class UIManager : MonoBehaviour
     // TURN UI
     // ===========================
 
+    private GameManager.PlayerColor _lastTurnColour = GameManager.PlayerColor.RED;
+    private Coroutine _noticeRoutine;
+
+    /// <summary>
+    /// The house colour, brightened enough to read as text on the deep page.
+    ///
+    /// The page is that same house colour taken down toward black, so painting the label in the
+    /// raw colour would put red on red. Lifting it toward white keeps the label unmistakably the
+    /// player's colour while staying legible against its own background.
+    /// </summary>
+    private static Color TurnTextColour(GameManager.PlayerColor color)
+    {
+        Color house = LudoNX.UI.UITheme.Current.ForPlayer(color);
+        return LudoNX.UI.UITheme.Lin(Color.Lerp(house, Color.white, 0.78f));
+    }
+
+    /// <summary>
+    /// Briefly replaces the turn label with a one-off message — "NOT YOUR TURN", the die a player
+    /// just chose — then puts the turn back. Transient, because none of it is state the player
+    /// needs to keep reading; it is feedback for something they just did.
+    /// </summary>
+    public void ShowNotice(string message, Color colour, float seconds = 1.4f)
+    {
+        if (turnStatusText == null) return;
+        if (_noticeRoutine != null) StopCoroutine(_noticeRoutine);
+        _noticeRoutine = StartCoroutine(NoticeRoutine(message, colour, seconds));
+    }
+
+    private System.Collections.IEnumerator NoticeRoutine(string message, Color colour, float seconds)
+    {
+        turnStatusText.text = message;
+        turnStatusText.color = LudoNX.UI.UITheme.Lin(colour);
+        turnStatusText.fontStyle = TMPro.FontStyles.Bold;
+
+        yield return new WaitForSeconds(seconds);
+
+        turnStatusText.text = _lastTurnColour.ToString() + " TURN";
+        turnStatusText.color = TurnTextColour(_lastTurnColour);
+        _noticeRoutine = null;
+    }
+
     /// <summary>
     /// Drives every per-turn visual: banner text/colour, player card highlighting, background
     /// ambience and roll-button state. Each concern is guarded independently on purpose — an
@@ -144,10 +185,15 @@ public class UIManager : MonoBehaviour
 
         if (turnStatusText != null)
         {
-            turnStatusText.text = string.IsNullOrEmpty(actionMessage)
-                ? color.ToString() + "'S TURN"
-                : color.ToString() + ": " + actionMessage;
+            // Whose turn it is, and nothing else. The action ("ROLL DICE", "SELECT A DIE") was
+            // instruction the player does not need spelled out every turn, and it made the one
+            // thing that does matter — the house to move — the shorter half of the line.
+            turnStatusText.text = color.ToString() + " TURN";
+            turnStatusText.color = TurnTextColour(color);
+            turnStatusText.fontStyle = TMPro.FontStyles.Bold;
         }
+
+        _lastTurnColour = color;
 
         // Update player cards — activate current, dim others
         SetActivePlayerCard(color);

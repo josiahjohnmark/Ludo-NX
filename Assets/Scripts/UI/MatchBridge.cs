@@ -45,6 +45,7 @@ namespace LudoNX.UI
         private void HandleMatchEnded(List<GameManager.PlayerColor> leaderBoard)
         {
             MatchInProgress = false;
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayMenuMusic();
             RecordStats(leaderBoard);
 
             if (hudCanvas != null) hudCanvas.SetActive(false);
@@ -135,6 +136,7 @@ namespace LudoNX.UI
             LudoAI.CurrentDifficulty = difficulty;
 
             MatchInProgress = true;
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayMatchMusic();
             _startedAt = Time.unscaledTime;
             if (boardRoot != null) boardRoot.SetActive(true);
             if (hudCanvas != null) hudCanvas.SetActive(true);
@@ -196,6 +198,7 @@ namespace LudoNX.UI
         public void LeaveMatch()
         {
             MatchInProgress = false;
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayMenuMusic();
             if (hudCanvas != null) hudCanvas.SetActive(false);
             if (boardRoot != null) boardRoot.SetActive(false);
             if (ScreenManager.Instance != null) ScreenManager.Instance.SetScreensVisible(true);

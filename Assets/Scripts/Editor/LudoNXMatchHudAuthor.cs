@@ -96,10 +96,13 @@ public static class LudoNXMatchHudAuthor
                                         42f, T.InkOn(T.panel));
 
         // The turn banner is small and sits just under the timer.
-        var turnText = UIFactory.Label("Turn_Text", p, new Vector2(700f, 48f), new Vector2(0f, 782f),
-                                       "YOUR TURN", UIFontSet.Current.body, 30f, T.inkMuted);
+        // The one label that has to carry across the room. Display face, not body, and sized to
+        // sit second only to the timer — it is the answer to "whose move is it", which is the
+        // question a player asks most often.
+        var turnText = UIFactory.Label("Turn_Text", p, new Vector2(760f, 66f), new Vector2(0f, 786f),
+                                       "YOUR TURN", UIFontSet.Current.display, 46f, T.ink);
         turnText.fontStyle = FontStyles.Bold;
-        turnText.characterSpacing = 6f;
+        turnText.characterSpacing = 7f;
 
         // â”€â”€ Player cards, each at its own house corner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var red = BuildCard(p, "Card_Red", new Vector2(-CardX, CardTopY), GameManager.PlayerColor.RED, T, icons);
@@ -518,7 +521,7 @@ public static class LudoNXMatchHudAuthor
         var amb = cam.GetComponent<MatchAmbience>();
         if (amb == null) amb = cam.gameObject.AddComponent<MatchAmbience>();
         amb.targetCamera = cam;
-        amb.lightenToward = 0.70f;   // soft pastel of the house colour, not a white wash
+        amb.deepenBy = 0.52f;   // the house colour taken down into a deep page, not a white wash
         amb.blendSeconds = 0.7f;
         EditorUtility.SetDirty(cam);
     }

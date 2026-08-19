@@ -19,8 +19,10 @@ namespace LudoNX.UI
     {
         public Camera targetCamera;
 
-        [Tooltip("How far the page is lightened from the pure house colour. 0 = full colour, 1 = white.")]
-        [Range(0f, 1f)] public float lightenToward = 0.70f;
+        [Tooltip("How far the page is deepened from the house colour. 0 = the colour itself, " +
+                 "1 = black. Deepened rather than lightened so the page reads as the house " +
+                 "colour and the player cards, which use that same colour, still stand off it.")]
+        [Range(0f, 1f)] public float deepenBy = 0.52f;
 
         [Tooltip("Seconds to cross-fade when the turn changes.")]
         public float blendSeconds = 0.7f;
@@ -39,16 +41,18 @@ namespace LudoNX.UI
         private static Color Neutral => UITheme.Current.groundTop;
 
         /// <summary>
-        /// The page colour for a house: that house's own colour, lightened into a soft pastel.
+        /// The page colour for a house: that house's own colour, taken down into a deep ground.
         ///
-        /// Built from the colour outwards rather than from the near-white page inwards. Mixing a
-        /// little colour into #F8F9FA reads as "white with a hint", which is what looked washed
-        /// out; lightening the actual house colour keeps it unmistakably red, green, yellow or
-        /// blue while staying soft enough to sit behind a board.
+        /// Lightening toward white was the mistake. Any amount of it reads as "white with a hint
+        /// of colour" — the washed-out pink that made a red turn look nothing like red. Taking
+        /// the colour down instead keeps it unmistakably red, green, yellow or blue, gives the
+        /// board something to sit on, and leaves the player cards — which are that same house
+        /// colour at full strength — standing clearly off the page instead of dissolving into it.
         /// </summary>
         private Color TintFor(GameManager.PlayerColor c)
         {
-            return Color.Lerp(UITheme.Current.ForPlayer(c), Color.white, lightenToward);
+            Color house = UITheme.Current.ForPlayer(c);
+            return Color.Lerp(house, Color.black, deepenBy);
         }
 
         private void LateUpdate()

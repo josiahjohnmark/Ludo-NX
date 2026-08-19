@@ -24,6 +24,19 @@ namespace LudoNX.UI
             if (quickPlayCard != null) quickPlayCard.onClick.AddListener(OnQuickPlay);
             if (passAndPlayCard != null) passAndPlayCard.onClick.AddListener(OnPassAndPlay);
 
+            // The online modes carry a SOON chip, but a chip only reads before the tap. Saying it
+            // again on tap is what tells the player the card is deliberate rather than dead.
+            if (onlineRandomCard != null)
+            {
+                onlineRandomCard.interactable = true;
+                onlineRandomCard.onClick.AddListener(() => Toast.ComingSoon("Online play"));
+            }
+            if (onlineFriendsCard != null)
+            {
+                onlineFriendsCard.interactable = true;
+                onlineFriendsCard.onClick.AddListener(() => Toast.ComingSoon("Playing with friends online"));
+            }
+
             // Online is not in this release.
             if (onlineRandomCard != null) onlineRandomCard.SetLocked(true);
             if (onlineFriendsCard != null) onlineFriendsCard.SetLocked(true);

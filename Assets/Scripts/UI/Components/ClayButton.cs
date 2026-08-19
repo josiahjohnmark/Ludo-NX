@@ -69,6 +69,11 @@ namespace LudoNX.UI
             base.OnPointerDown(eventData);
             if (!IsInteractable()) return;
             Animate(1f, UITheme.Current.pressDown, UITween.OutQuint);
+
+            // On press, not on release: the sound has to land with the finger or the button
+            // feels laggy, however fast the click itself is.
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayButton();
+            SettingsService.Haptic();
         }
 
         public override void OnPointerUp(PointerEventData eventData)

@@ -87,10 +87,13 @@ namespace LudoNX.UI
 
         // ── Player colours (must match the board — do not restyle these) ───────────────────
         [Header("Players")]
-        public Color playerRed = Hex("E8443C");
-        public Color playerGreen = Hex("35B44A");
-        public Color playerYellow = Hex("F2C230");
-        public Color playerBlue = Hex("3A7BD5");
+        // Read off the strip you supplied. These are deliberately muted rather than the bright
+        // primaries the board art uses: they have to work as a full-screen page colour behind
+        // the board, and a saturated primary at that size is unreadable to sit a match on.
+        public Color playerRed = Hex("A62D35");
+        public Color playerGreen = Hex("3C6B4C");
+        public Color playerYellow = Hex("E0A526");
+        public Color playerBlue = Hex("2E5C80");
 
         // ── Shape ──────────────────────────────────────────────────────────────────────────
         [Header("Radii (px @ 1080 wide)")]
