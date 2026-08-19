@@ -63,15 +63,23 @@ namespace LudoNX.UI
             if (scaler == null) scaler = gameObject.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1080f, 1920f);
-            // Match on height: the design is vertical, and letting width drive the scale makes
-            // everything balloon on a narrow tall phone.
+            // Match on WIDTH. Width is the dimension a portrait design is fixed to: at 1080
+            // reference width the canvas is always 1080 units across, whatever the device, and a
+            // taller phone simply gets more vertical room. Matching height instead scales by
+            // deviceHeight/1920, so a 20:9 phone scales by 1.25 and squeezes the 1080-wide design
+            // into 864 units - every element authored near an edge then renders off-screen.
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 1f;
+            scaler.matchWidthOrHeight = 0f;
 
             if (GetComponent<GraphicRaycaster>() == null) gameObject.AddComponent<GraphicRaycaster>();
 
+            // Screens and modals live inside the safe area so a back button never hides under a
+            // notch and a bottom row never sits beneath the gesture bar. The canvas itself stays
+            // full-bleed, so page backgrounds still reach the physical edges.
             _screenRoot = MakeFullRect("ScreenRoot", transform);
+            _screenRoot.gameObject.AddComponent<SafeAreaFitter>();
             _modalRoot = MakeFullRect("ModalRoot", transform);
+            _modalRoot.gameObject.AddComponent<SafeAreaFitter>();
         }
 
         private void Start()

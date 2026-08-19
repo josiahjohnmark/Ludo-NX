@@ -52,7 +52,7 @@ public static class LudoScreenshot
         if (framer != null) framer.Frame();
 
         MatchHudLayout hud = Object.FindAnyObjectByType<MatchHudLayout>();
-        if (hud != null) hud.ApplyFor(width, height);
+        if (hud != null) hud.Apply();
 
         // ── overlay canvases have to go through the camera to be captured ──
         List<(Canvas canvas, RenderMode mode, Camera worldCam, float plane)> restore =
