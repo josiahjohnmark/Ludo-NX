@@ -150,7 +150,7 @@ namespace LudoNX.UI
             var s = LudoNXSession.Instance;
             if (s == null || colourButtons[index] == null || !colourButtons[index].interactable) return;
             s.pendingHumanColor = Houses[index];
-            SettingsService.Haptic();
+            // No haptic here — vibration is reserved for captures.
             Sync();
         }
 

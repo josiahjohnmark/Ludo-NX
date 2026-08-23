@@ -72,8 +72,11 @@ namespace LudoNX.UI
 
             // On press, not on release: the sound has to land with the finger or the button
             // feels laggy, however fast the click itself is.
+            //
+            // Sound only — no haptic. Buzzing on every tap makes the whole interface feel
+            // twitchy and drains battery for no information; the vibration is reserved for
+            // captures, where something actually happened to you.
             if (AudioManager.Instance != null) AudioManager.Instance.PlayButton();
-            SettingsService.Haptic();
         }
 
         public override void OnPointerUp(PointerEventData eventData)

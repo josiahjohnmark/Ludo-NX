@@ -35,7 +35,7 @@ namespace LudoNX.UI
         {
             isOn = !isOn;
             Apply(instant: false);
-            SettingsService.Haptic();
+            // No haptic here — vibration is reserved for captures.
             onChanged.Invoke(isOn);
         }
 

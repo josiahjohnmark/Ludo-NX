@@ -179,7 +179,6 @@ public class AudioManager : MonoBehaviour
     public void PlayTokenHome()
     {
         if (tokenHomeClip != null && audioSource != null) audioSource.PlayOneShot(tokenHomeClip);
-        LudoNX.UI.SettingsService.Haptic();
     }
 
     /// <summary>Every button in the game. Kept quiet — it fires more than anything else.</summary>
