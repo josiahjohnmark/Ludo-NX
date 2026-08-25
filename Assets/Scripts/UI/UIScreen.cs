@@ -13,7 +13,8 @@ namespace LudoNX.UI
         Match,
         Result,
         Profile,
-        Settings
+        Settings,
+        Shop
     }
 
     /// <summary>

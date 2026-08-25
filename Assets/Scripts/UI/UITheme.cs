@@ -39,37 +39,58 @@ namespace LudoNX.UI
         // plain white — that contrast is what gives light claymorphism its lift, and it is also
         // why drop shadows finally do real work here (a dark shadow on a light page reads,
         // where on the previous near-black ground it could only ever glow).
-        [Header("Ground")]
-        public Color groundTop = Hex("F8F9FA");
-        public Color groundBottom = Hex("F8F9FA");
-        public Color panel = Hex("FFFFFF");
+        [Header("Ground — the felt table")]
+        // Green baize, not burgundy. Burgundy was tried first and looked good on its own, but
+        // crimson is both the brand accent and one of the four house colours, so a red ground
+        // left the PLAY button as red-on-red with nowhere to stand out. Green gives every
+        // accent — crimson, gold, blue — somewhere to sit.
+        // The page is a deep burgundy felt, not a near-white sheet. The old ground was #F8F9FA
+        // with white cards on it: about 2% apart in lightness, which left the drop shadow as the
+        // only thing separating a card from the page — and a soft shadow is the first thing to
+        // disappear on a phone in daylight. Every surface below now sits at least 12% clear of
+        // the one behind it, so depth survives a cheap screen in bright light.
+        public Color groundTop = Hex("1E3F36");
+        public Color groundBottom = Hex("122A24");
+        public Color panel = Hex("F5F1EC");
         public Color panelHigh = Hex("FFFFFF");
-        public Color recessed = Hex("EDEEEF");
-        public Color hairline = Hex("E2BEC0");
+        public Color recessed = Hex("E4DDD6");
+        public Color hairline = Hex("3A2D2A");
 
-        [Header("Corner washes (sampled from the loader reference)")]
-        public Color washTopLeft = Hex("F3D7DE");
-        public Color washBottomRight = Hex("EEEADF");
+        [Header("Corner washes — light pooling on the felt")]
+        // Warm pools rather than pastel tints: the ground is dark now, so these lift it toward
+        // the lamp rather than washing it toward white.
+        public Color washTopLeft = Hex("2E5A4C");
+        public Color washBottomRight = Hex("2A4E48");
 
         // ── Actions ────────────────────────────────────────────────────────────────────────
         [Header("Actions")]
-        public Color primary = Hex("B60E3D");
-        public Color primaryDeep = Hex("91002D");
-        public Color secondary = Hex("2B4CDA");
-        public Color secondaryDeep = Hex("0031C4");
-        public Color success = Hex("2E9E4B");
-        public Color successDeep = Hex("1F7A38");
-        public Color gold = Hex("FFBA27");
-        public Color goldDeep = Hex("996C00");
-        public Color neutral = Hex("E7E8E9");
-        public Color neutralDeep = Hex("D9DADB");
-        public Color locked = Hex("EDEEEF");
+        // Muted rather than bright. Saturated primaries at full strength are what make an
+        // interface read as a toy; the same hues pulled back read as premium, and they sit
+        // properly against a dark ground instead of vibrating on it.
+        public Color primary = Hex("A8324A");
+        public Color primaryDeep = Hex("7E2136");
+        public Color secondary = Hex("2E5C80");
+        public Color secondaryDeep = Hex("1F415C");
+        public Color success = Hex("3C6B4C");
+        public Color successDeep = Hex("2A4E37");
+        public Color gold = Hex("D9A441");
+        public Color goldDeep = Hex("9A6E14");
+        public Color neutral = Hex("EFE9E1");
+        public Color neutralDeep = Hex("DCD3C8");
+        public Color locked = Hex("CFC6BD");
 
         // ── Ink ────────────────────────────────────────────────────────────────────────────
         [Header("Ink")]
-        public Color ink = Hex("191C1D");
-        public Color inkMuted = Hex("5A4042");
-        public Color inkDim = Hex("8E6F71");
+        public Color ink = Hex("1A1614");
+        public Color inkMuted = Hex("6B625B");
+        public Color inkDim = Hex("877C73");
+
+        /// <summary>Text sitting directly on the felt, where dark ink would vanish.</summary>
+        public Color inkOnGround = Hex("F5F1EC");
+
+        /// <summary>Secondary text on the felt. inkMuted is tuned for light cards and is
+        /// unreadable here; this is its counterpart for the dark ground.</summary>
+        public Color inkOnGroundDim = Hex("C2CFC7");
 
         /// <summary>Text and icons sitting ON a saturated fill. Always white.</summary>
         public Color onAccent = Hex("FFFFFF");

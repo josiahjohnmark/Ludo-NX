@@ -142,6 +142,49 @@ namespace LudoNX.Shop
         public bool IsPremium { get { return HasEntitlement(premiumEntitlementId); } }
 
         /// <summary>
+        /// True when the store answered and there is something to sell. False in the Editor,
+        /// and on device until the first offerings call returns — the shop uses this to say so
+        /// rather than presenting a buy button that cannot work.
+        /// </summary>
+        public bool StoreReady
+        {
+            get { return Offerings != null && Offerings.Current != null; }
+        }
+
+        /// <summary>
+        /// Buys a product by its store identifier.
+        ///
+        /// Reports success as a plain bool because that is all a shop row needs to know; a
+        /// cancellation and a failure both mean "do not grant anything", and only a real error
+        /// is worth logging. Entitlements are refreshed on success so anything gated on them
+        /// updates without the caller having to ask.
+        /// </summary>
+        public void Buy(string productId, System.Action<bool> done)
+        {
+            if (_purchases == null || string.IsNullOrEmpty(productId))
+            {
+                if (done != null) done(false);
+                return;
+            }
+
+            _purchases.PurchaseProduct(productId, result =>
+            {
+                if (result == null || result.Error != null)
+                {
+                    if (result != null && result.Error != null && !result.UserCancelled)
+                        Debug.LogWarning("[RevenueCat] Purchase failed: " + result.Error.Message);
+                    if (done != null) done(false);
+                    return;
+                }
+
+                if (result.UserCancelled) { if (done != null) done(false); return; }
+
+                ApplyCustomerInfo(result.CustomerInfo);
+                if (done != null) done(true);
+            });
+        }
+
+        /// <summary>
         /// Restores prior purchases. Google Play requires a reachable restore path for
         /// non-consumable products, so the shop screen must expose this as a visible control.
         /// </summary>

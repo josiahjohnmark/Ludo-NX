@@ -34,6 +34,7 @@ namespace LudoNX.UI
             StatsService.ResetStatics();
             SettingsService.ResetStatics();
             AvatarService.ResetStatics();
+            EnergyService.ResetStatics();
         }
     }
 }

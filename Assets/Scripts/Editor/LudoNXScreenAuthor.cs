@@ -1,8 +1,10 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using LudoNX.UI;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// One-shot authoring for the Ludo NX interface.
@@ -210,7 +212,7 @@ public static class LudoNXScreenAuthor
         avatar.gameObject.AddComponent<ProfileAvatarSlot>().diameter = 84f;
 
         var nameLabel = UIFactory.Body("PlayerName", p, new Vector2(420f, 60f), new Vector2(-130f, 806f),
-                                       "Player", T.ink, UIFontSet.SizeBody);
+                                       "Player", T.inkOnGround, UIFontSet.SizeBody);
         nameLabel.alignment = TextAlignmentOptions.Left;
 
         var settings = UIFactory.CircleButton("SettingsButton", p, 100f, new Vector2(432f, 806f), T.neutral);
@@ -233,10 +235,10 @@ public static class LudoNXScreenAuthor
 
         // â”€â”€ Wordmark â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var word = UIFactory.Label("Wordmark", p, new Vector2(1000f, 130f), new Vector2(0f, 244f),
-                                   "Ludo NX", UIFontSet.Current.numeric, 86f, T.primary);
+                                   "Ludo NX", UIFontSet.Current.numeric, 86f, T.inkOnGround);
         word.characterSpacing = -2f;
         UIFactory.Label("Tagline", p, new Vector2(1000f, 60f), new Vector2(0f, 160f),
-                        "Every capture counts", UIFontSet.Current.bodyLight, 36f, T.inkMuted);
+                        "Every capture counts", UIFontSet.Current.bodyLight, 36f, T.inkOnGroundDim);
 
         // â”€â”€ Hero action â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var play = UIFactory.Button("PlayButton", p, new Vector2(840f, 208f), new Vector2(0f, -46f),
@@ -333,7 +335,7 @@ public static class LudoNXScreenAuthor
 
         // â”€â”€ Online, locked for this release â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         UIFactory.Label("OnlineHeader", p, new Vector2(880f, 44f), new Vector2(0f, 40f), "ONLINE",
-                        UIFontSet.Current.body, 26f, T.inkDim, TextAlignmentOptions.Left).characterSpacing = 8f;
+                        UIFontSet.Current.body, 26f, T.inkOnGroundDim, TextAlignmentOptions.Left).characterSpacing = 8f;
 
         screen.onlineRandomCard = ModeCard(p, "OnlineRandomCard", "PLAY ONLINE",
                                            "Match with random players worldwide.",
@@ -499,7 +501,7 @@ public static class LudoNXScreenAuthor
         // same width therefore starts exactly where the rows start; offsetting it pushes it
         // off-screen, which is what clipped this to "CES".
         UIFactory.Label("PrefHeader", p, new Vector2(880f, 44f), new Vector2(0f, 640f), "PREFERENCES",
-                        UIFontSet.Current.body, 26f, T.inkDim, TextAlignmentOptions.Left).characterSpacing = 8f;
+                        UIFontSet.Current.body, 26f, T.inkOnGroundDim, TextAlignmentOptions.Left).characterSpacing = 8f;
 
         screen.soundToggle = SettingRowWithSwitch(p, "SoundRow", "Sound Effects", 540f, T);
         screen.musicToggle = SettingRowWithSwitch(p, "MusicRow", "Music", 396f, T);
@@ -514,16 +516,127 @@ public static class LudoNXScreenAuthor
         UIFactory.Chevron(screen.languageRow.content, new Vector2(396f, 0f), T.inkDim);
 
         UIFactory.Label("AboutHeader", p, new Vector2(880f, 44f), new Vector2(0f, -50f), "ABOUT",
-                        UIFontSet.Current.body, 26f, T.inkDim, TextAlignmentOptions.Left).characterSpacing = 8f;
+                        UIFontSet.Current.body, 26f, T.inkOnGroundDim, TextAlignmentOptions.Left).characterSpacing = 8f;
 
         screen.aboutRow = LinkRow(p, "AboutRow", "About Ludo NX", -150f, T);
         screen.privacyRow = LinkRow(p, "PrivacyRow", "Privacy Policy", -294f, T);
         screen.termsRow = LinkRow(p, "TermsRow", "Terms of Service", -438f, T);
 
         screen.versionLabel = UIFactory.Label("Version", p, new Vector2(880f, 44f), new Vector2(0f, -600f),
-                                              "Version 1.0", UIFontSet.Current.bodyLight, 26f, T.inkDim);
+                                              "Version 1.0", UIFontSet.Current.bodyLight, 26f, T.inkOnGroundDim);
 
         SavePrefab(root, ScreenDir + "/Settings.prefab");
+    }
+
+    [MenuItem("Ludo NX/UI/12. Build Shop", priority = 112)]
+    public static void BuildShop()
+    {
+        CreateSupportAssets();
+        var T = UITheme.Current;
+
+        GameObject root = NewScreenRoot("Shop", ScreenId.Shop);
+        var screen = root.AddComponent<ShopScreen>();
+        Transform p = root.transform;
+
+        UIFactory.Page(p);
+        TextMeshProUGUI title;
+        screen.backButton = UIFactory.TopBar(p, "SHOP", out title);
+        screen.titleLabel = title;
+
+        // ── Energy panel ──────────────────────────────────────────────────────────────────
+        // Balance first, and large. It is the number the player came to change, and it is also
+        // the reason the rest of the screen exists.
+        var energyCard = UIFactory.Clay("EnergyCard", p, new Vector2(880f, 300f), new Vector2(0f, 560f),
+                                        T.panel, ClayGraphic.Shape.Panel, T.radiusLg, UISkin.Role.PanelCard);
+
+        UIFactory.Label("EnergyHeader", energyCard.transform, new Vector2(760f, 44f), new Vector2(0f, 106f),
+                        "ENERGY", UIFontSet.Current.body, 26f, T.inkDim,
+                        TextAlignmentOptions.Left).characterSpacing = 8f;
+
+        screen.energyCountLabel = UIFactory.Display("EnergyCount", energyCard.transform,
+                                                    new Vector2(400f, 90f), new Vector2(-180f, 34f),
+                                                    "5 / 5", T.ink);
+        screen.energyCountLabel.fontSize = 62f;
+        screen.energyCountLabel.alignment = TextAlignmentOptions.Left;
+
+        screen.energyTimerLabel = UIFactory.Label("EnergyTimer", energyCard.transform,
+                                                  new Vector2(360f, 50f), new Vector2(190f, 34f),
+                                                  "FULL", UIFontSet.Current.body, 28f, T.inkMuted,
+                                                  TextAlignmentOptions.Right);
+
+        // One pip per life — a bar the player can read without counting digits.
+        var pips = new List<ClayGraphic>();
+        const int pipCount = 5;
+        float pipW = 140f, pipGap = 16f;
+        float rowW = pipCount * pipW + (pipCount - 1) * pipGap;
+        for (int i = 0; i < pipCount; i++)
+        {
+            float x = -rowW * 0.5f + pipW * 0.5f + i * (pipW + pipGap);
+            var pip = UIFactory.Clay("Pip" + i, energyCard.transform, new Vector2(pipW, 26f),
+                                     new Vector2(x, -74f), T.primary, ClayGraphic.Shape.Pill);
+            pip.shadowAlpha = 0f;
+            pips.Add(pip);
+        }
+        screen.energyPips = pips.ToArray();
+
+        // ── Offers ────────────────────────────────────────────────────────────────────────
+        UIFactory.Label("OffersHeader", p, new Vector2(880f, 44f), new Vector2(0f, 366f), "GET ENERGY",
+                        UIFontSet.Current.body, 26f, T.inkOnGroundDim,
+                        TextAlignmentOptions.Left).characterSpacing = 8f;
+
+        screen.offers.Add(OfferRow(p, T, "ludonx_energy_5",  "5 Energy",  "Refill your tank",  5,  230f, T.secondary));
+        screen.offers.Add(OfferRow(p, T, "ludonx_energy_15", "15 Energy", "Best value",        15,  70f, T.primary));
+        screen.offers.Add(OfferRow(p, T, "ludonx_energy_40", "40 Energy", "Play all week",     40, -90f, T.gold));
+
+        // ── Dice skins, advertised but not yet sellable ────────────────────────────────────
+        UIFactory.Label("SkinsHeader", p, new Vector2(880f, 44f), new Vector2(0f, -210f), "DICE SKINS",
+                        UIFontSet.Current.body, 26f, T.inkOnGroundDim,
+                        TextAlignmentOptions.Left).characterSpacing = 8f;
+
+        var soon = UIFactory.Clay("SkinsSoon", p, new Vector2(880f, 150f), new Vector2(0f, -310f),
+                                  T.panel, ClayGraphic.Shape.Panel, T.radiusLg, UISkin.Role.PanelCard);
+        UIFactory.Label("SoonLabel", soon.transform, new Vector2(760f, 50f), new Vector2(0f, 14f),
+                        "Coming in a later update", UIFontSet.Current.body, 30f, T.inkMuted);
+        UIFactory.Label("SoonSub", soon.transform, new Vector2(760f, 40f), new Vector2(0f, -30f),
+                        "Collect and equip custom dice", UIFontSet.Current.bodyLight, 24f, T.inkDim);
+
+        // ── Restore ───────────────────────────────────────────────────────────────────────
+        // Google Play requires a reachable restore path for anything non-consumable, so this is
+        // a store requirement rather than a nicety.
+        screen.restoreButton = UIFactory.Button("RestoreButton", p, new Vector2(880f, 96f),
+                                                new Vector2(0f, -450f), T.neutral,
+                                                "RESTORE PURCHASES", 26f);
+
+        SavePrefab(root, ScreenDir + "/Shop.prefab");
+    }
+
+    /// <summary>One purchasable row: what you get, why, and the price on a coloured button.</summary>
+    private static ShopOfferRow OfferRow(Transform p, UITheme T, string productId, string title,
+                                         string blurb, int energy, float y, Color accent)
+    {
+        var card = UIFactory.Clay("Offer_" + productId, p, new Vector2(880f, 140f), new Vector2(0f, y),
+                                  T.panel, ClayGraphic.Shape.Panel, T.radiusLg, UISkin.Role.PanelCard);
+
+        UIFactory.Label("Title", card.transform, new Vector2(480f, 44f), new Vector2(-190f, 22f),
+                        title, UIFontSet.Current.body, 34f, T.ink, TextAlignmentOptions.Left);
+        UIFactory.Label("Blurb", card.transform, new Vector2(480f, 36f), new Vector2(-190f, -20f),
+                        blurb, UIFontSet.Current.bodyLight, 24f, T.inkDim, TextAlignmentOptions.Left);
+
+        var buy = UIFactory.Button("Buy", card.transform, new Vector2(240f, 92f), new Vector2(280f, 0f),
+                                   accent, null, shape: ClayGraphic.Shape.Pill, glow: 0.12f);
+
+        var price = UIFactory.Label("Price", buy.content, new Vector2(220f, 60f), Vector2.zero,
+                                    "—", UIFontSet.Current.body, 30f, T.InkOn(accent));
+        price.fontStyle = FontStyles.Bold;
+
+        return new ShopOfferRow
+        {
+            productId = productId,
+            buyButton = buy,
+            priceLabel = price,
+            fallbackPrice = "—",
+            energyGranted = energy
+        };
     }
 
     private static ToggleSwitch SettingRowWithSwitch(Transform p, string name, string label, float y, UITheme T)
@@ -766,7 +879,7 @@ public static class LudoNXScreenAuthor
         TextMeshProUGUI title;
         screen.backButton = UIFactory.TopBar(p, "", out title);
 
-        UIFactory.Display("Ready", p, new Vector2(1000f, 140f), new Vector2(0f, 560f), "GET READY!", T.ink);
+        UIFactory.Display("Ready", p, new Vector2(1000f, 140f), new Vector2(0f, 560f), "GET READY!", T.inkOnGround);
 
         var ring = UIFactory.Clay("CountdownRing", p, new Vector2(200f, 200f), new Vector2(0f, 372f),
                                   T.primary, ClayGraphic.Shape.Circle);
@@ -791,7 +904,7 @@ public static class LudoNXScreenAuthor
                                                 48f, T.ink, TextAlignmentOptions.Left);
 
         UIFactory.Label("VS", p, new Vector2(200f, 70f), new Vector2(0f, -110f), "VS",
-                        UIFontSet.Current.display, 44f, T.inkDim);
+                        UIFontSet.Current.display, 44f, T.inkOnGroundDim);
 
         // Opponents
         var swatches = new ClayGraphic[3];
@@ -940,19 +1053,19 @@ public static class LudoNXScreenAuthor
         // â”€â”€ Wordmark â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Plus Jakarta Sans Bold, not Baloo â€” the reference wordmark is a geometric sans.
         var word = UIFactory.Label("Wordmark", p, new Vector2(1000f, 150f), new Vector2(0f, -75f),
-                                   "Ludo NX", UIFontSet.Current.numeric, 100f, T.primary);
+                                   "Ludo NX", UIFontSet.Current.numeric, 100f, T.inkOnGround);
         word.characterSpacing = -2f;
 
         UIFactory.Label("Tagline", p, new Vector2(1000f, 70f), new Vector2(0f, -190f),
-                        "Roll into a new world", UIFontSet.Current.bodyLight, 44f, T.inkMuted);
+                        "Roll into a new world", UIFontSet.Current.bodyLight, 44f, T.inkOnGroundDim);
 
         // â”€â”€ Status row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Flush with the ends of the bar below (Â±485), as in the reference.
         screen.statusLabel = UIFactory.Label("Status", p, new Vector2(500f, 50f), new Vector2(-235f, -391f),
-                                             "Loading...", UIFontSet.Current.body, 34f, T.primary,
+                                             "Loading...", UIFontSet.Current.body, 34f, T.inkOnGroundDim,
                                              TextAlignmentOptions.Left);
         screen.versionLabel = UIFactory.Label("Version", p, new Vector2(400f, 50f), new Vector2(285f, -391f),
-                                              "v1.0", UIFontSet.Current.bodyLight, 30f, T.inkDim,
+                                              "v1.0", UIFontSet.Current.bodyLight, 30f, T.inkOnGroundDim,
                                               TextAlignmentOptions.Right);
 
         // â”€â”€ Progress bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1177,6 +1290,7 @@ public static class LudoNXScreenAuthor
         BuildResult();
         BuildProfile();
         BuildSettings();
+        BuildShop();
         BuildModals();
         Debug.Log("[LudoNX UI] ALL screens + modals rebuilt.");
     }

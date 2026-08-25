@@ -66,21 +66,27 @@ namespace LudoNX.UI
         }
 
         /// <summary>Full-bleed background. No shadow, no bevel — it is the page, not an object on it.</summary>
-        public static ClayGraphic Ground(Transform parent, Color color)
+        /// <summary>
+        /// The flat page behind everything.
+        ///
+        /// A plain Image on Unity's own UI material, not a ClayGraphic. The ground needs none of
+        /// the clay features — no shadow, no glow, no bevel, no gradient, all of which were being
+        /// zeroed out anyway — and routing it through the clay shader put it through that
+        /// shader's sRGB-to-linear conversion on top of the one Unity already performs. On a
+        /// light page that double conversion was invisible; on the dark felt it turned #3A2228
+        /// into #060102, which is black. Standard path, correct colour, one less draw call.
+        /// </summary>
+        public static Image Ground(Transform parent, Color color)
         {
             var rt = Stretch("Ground", parent);
-            rt.gameObject.AddComponent<CanvasRenderer>();
-            var g = rt.gameObject.AddComponent<ClayGraphic>();
-            g.color = color;
-            g.shape = ClayGraphic.Shape.Panel;
-            g.cornerRadius = 0f;
-            g.shadowAlpha = 0f;
-            g.glowAlpha = 0f;
-            g.innerHighlight = 0f;
-            g.innerShadow = 0f;
-            g.gradientStrength = 0f;   // a full-screen ramp bands in 8-bit
-            g.raycastTarget = false;
-            return g;
+            var img = rt.gameObject.AddComponent<Image>();
+            // Raw sRGB, deliberately NOT passed through UITheme.Lin. A plain Image on Unity's
+            // own UI material has its colour converted by Unity; converting first as well makes
+            // it a double conversion. Measured: #3A2228 came out #060102 through the clay
+            // shader, #0D0000 with Lin applied here, and #392125 — correct — with neither.
+            img.color = color;
+            img.raycastTarget = false;
+            return img;
         }
 
         /// <summary>
@@ -249,9 +255,10 @@ namespace LudoNX.UI
                 stroke.innerShadow = 0f;
             }
 
+            // On the felt, not on a card — dark ink would disappear into the ground.
             titleLabel = Label("Title", parent, new Vector2(700f, 80f), new Vector2(0f, 806f), title,
                                UIFontSet.Current != null ? UIFontSet.Current.display : null,
-                               UIFontSet.SizeHeadline, T.ink);
+                               UIFontSet.SizeHeadline, T.inkOnGround);
             return back;
         }
 
