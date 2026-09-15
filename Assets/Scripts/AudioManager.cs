@@ -46,6 +46,11 @@ public class AudioManager : MonoBehaviour
 
             LudoNX.UI.SettingsService.Changed += ApplySettings;
             ApplySettings();
+
+            if (buttonClip == null)
+            {
+                buttonClip = Resources.Load<AudioClip>("Audio/click1");
+            }
         }
         else
         {
@@ -184,7 +189,7 @@ public class AudioManager : MonoBehaviour
     /// <summary>Every button in the game. Kept quiet — it fires more than anything else.</summary>
     public void PlayButton()
     {
-        if (buttonClip != null && audioSource != null) audioSource.PlayOneShot(buttonClip, 0.6f);
+        if (buttonClip != null && audioSource != null) audioSource.PlayOneShot(buttonClip, 0.4f);
     }
 
     public void PlayTurnChange()

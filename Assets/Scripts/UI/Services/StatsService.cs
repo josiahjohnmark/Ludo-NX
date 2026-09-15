@@ -24,16 +24,35 @@ namespace LudoNX.UI
         public int highestScore;
         public int fastestWinSeconds;
 
+        /// <summary>Cumulative match-points across all games. Fed by RecordMatch.</summary>
+        public int totalPoints;
+
+        /// <summary>Total time spent in matches, seconds. Fed by RecordMatch.</summary>
+        public int totalPlaySeconds;
+
         // Finish positions 1st..4th
         public int finish1, finish2, finish3, finish4;
 
         // Split records
         public int twoPlayerMatches, twoPlayerWins;
         public int fourPlayerMatches, fourPlayerWins;
+        public int casualMatches, casualWins;
+        public int rankedMatches, rankedWins;
+        public int privateMatches, privateWins;
 
+        // ── Computed ──────────────────────────────────────────────────────────────────────────
         public float WinRate => matches == 0 ? 0f : wins / (float)matches;
-        public float TwoPlayerWinRate => twoPlayerMatches == 0 ? 0f : twoPlayerWins / (float)twoPlayerMatches;
-        public float FourPlayerWinRate => fourPlayerMatches == 0 ? 0f : fourPlayerWins / (float)fourPlayerMatches;
+        public float TwoPlayerWinRate   => twoPlayerMatches  == 0 ? 0f : twoPlayerWins  / (float)twoPlayerMatches;
+        public float FourPlayerWinRate  => fourPlayerMatches == 0 ? 0f : fourPlayerWins / (float)fourPlayerMatches;
+        public float CasualWinRate      => casualMatches     == 0 ? 0f : casualWins     / (float)casualMatches;
+        public float RankedWinRate      => rankedMatches     == 0 ? 0f : rankedWins     / (float)rankedMatches;
+        public float PrivateWinRate     => privateMatches    == 0 ? 0f : privateWins    / (float)privateMatches;
+
+        /// <summary>Alias for highestScore so screens can use a self-describing name.</summary>
+        public int bestScore => highestScore;
+
+        /// <summary>Alias for timesCaptured — how many times the player was sent home.</summary>
+        public int captured => timesCaptured;
     }
 
     public static class StatsService

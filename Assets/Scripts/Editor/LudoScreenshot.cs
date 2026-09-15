@@ -29,6 +29,85 @@ public static class LudoScreenshot
     [MenuItem("Ludo NX/12. Capture 1080x1920")]
     public static void Capture16by9() => Capture("preview_1080x1920", 1080, 1920);
 
+    [MenuItem("Ludo NX/Capture Home Screen")]
+    public static void CaptureHomeScreen()
+    {
+        CaptureScreenPrefab("Assets/Resources/UI/Screens/Home.prefab", "screen_home_game_feel", 1080, 1920);
+    }
+
+    [MenuItem("Ludo NX/Capture Shop Screen")]
+    public static void CaptureShopScreen()
+    {
+        CaptureScreenPrefab("Assets/Resources/UI/Screens/Shop.prefab", "screen_shop_ash", 1080, 1920);
+    }
+
+    public static string CaptureScreenPrefab(string prefabPath, string outputName, int width, int height)
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        if (prefab == null)
+        {
+            Debug.LogError($"[LudoScreenshot] Prefab not found: {prefabPath}");
+            return null;
+        }
+
+        var camGo = new GameObject("TempCam", typeof(Camera));
+        var cam = camGo.GetComponent<Camera>();
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = new Color(0.12f, 0.13f, 0.15f, 1f);
+        cam.nearClipPlane = 0.1f;
+        cam.farClipPlane = 100f;
+
+        var canvasGo = new GameObject("CaptureCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        var canvas = canvasGo.GetComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceCamera;
+        canvas.worldCamera = cam;
+        canvas.planeDistance = 10f;
+
+        var scaler = canvasGo.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1080, 1920);
+        scaler.matchWidthOrHeight = 0.5f;
+
+        var instance = Object.Instantiate(prefab);
+        instance.transform.SetParent(canvasGo.transform, false);
+        var rtInstance = instance.GetComponent<RectTransform>();
+        if (rtInstance != null)
+        {
+            rtInstance.anchorMin = Vector2.zero;
+            rtInstance.anchorMax = Vector2.one;
+            rtInstance.offsetMin = Vector2.zero;
+            rtInstance.offsetMax = Vector2.zero;
+        }
+
+        Canvas.ForceUpdateCanvases();
+
+        RenderTexture rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+        cam.targetTexture = rt;
+        cam.Render();
+
+        RenderTexture.active = rt;
+        Texture2D shot = new Texture2D(width, height, TextureFormat.RGB24, false);
+        shot.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+        shot.Apply();
+
+        RenderTexture.active = null;
+        cam.targetTexture = null;
+        rt.Release();
+        Object.DestroyImmediate(rt);
+        Object.DestroyImmediate(camGo);
+        Object.DestroyImmediate(canvasGo);
+        Object.DestroyImmediate(instance);
+
+        Directory.CreateDirectory(OutDir);
+        string outPath = $"{OutDir}/{outputName}.png";
+        File.WriteAllBytes(outPath, shot.EncodeToPNG());
+        Object.DestroyImmediate(shot);
+
+        AssetDatabase.ImportAsset(outPath, ImportAssetOptions.ForceUpdate);
+        Debug.Log($"[LudoScreenshot] Captured screen prefab to {outPath}");
+        return outPath;
+    }
+
     /// <summary>Renders to Assets/Screenshots/&lt;name&gt;.png and returns the asset path.</summary>
     public static string Capture(string name, int width, int height)
     {

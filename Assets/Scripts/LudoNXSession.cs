@@ -188,7 +188,64 @@ public class LudoNXSession : MonoBehaviour
 
     public float WinRate => matchesPlayed == 0 ? 0f : matchesWon / (float)matchesPlayed;
 
-    // ── Match results ──────────────────────────────────────────────────────────────────────
+    // ── Profile identity stubs ─────────────────────────────────────────────────────────────
+    // These are placeholders for a future account service. The values are derived from what
+    // is already persisted so the Profile and Stats screens compile and display something
+    // sensible in offline play. Swap out the getters when a backend exists.
+
+    /// <summary>Six-digit display ID derived from name hash. Stable for a given save.</summary>
+    public string PlayerId
+    {
+        get
+        {
+            int hash = playerName.GetHashCode();
+            return Mathf.Abs(hash % 1000000).ToString("D6");
+        }
+    }
+
+    /// <summary>Rank title based on level bracket.</summary>
+    public string RankTitle
+    {
+        get
+        {
+            int lv = Level;
+            if (lv < 5)  return "BRONZE I";
+            if (lv < 10) return "BRONZE II";
+            if (lv < 20) return "SILVER I";
+            if (lv < 35) return "SILVER II";
+            if (lv < 50) return "GOLD I";
+            if (lv < 70) return "GOLD II";
+            if (lv < 90) return "PLATINUM";
+            return "DIAMOND";
+        }
+    }
+
+    /// <summary>League display name. Will be driven by matchmaking tier.</summary>
+    public string LeagueName => "OPEN LEAGUE";
+
+    /// <summary>Country code. Will be pulled from the account service.</summary>
+    public string Country => "—";
+
+    /// <summary>Join date. Will be pulled from the account service.</summary>
+    public string JoinDate => "—";
+
+    /// <summary>Current XP within this level (equals nxPoints for simplicity until levels are tuned).</summary>
+    public int Xp => nxPoints;
+
+    /// <summary>XP needed to reach next level.</summary>
+    public int XpToNextLevel
+    {
+        get
+        {
+            int lv = Level;
+            return lv * 100;
+        }
+    }
+
+    /// <summary>Progress through current level, 0–1. Alias for LevelProgress01.</summary>
+    public float XpFraction => LevelProgress01;
+
+
 
     /// <summary>
     /// Banks the outcome of a finished match. <paramref name="matchPoints"/> is the player's

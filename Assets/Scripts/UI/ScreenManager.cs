@@ -18,7 +18,7 @@ namespace LudoNX.UI
         public static ScreenManager Instance { get; private set; }
 
         /// <summary>Cleared before each play session; see UIStaticReset.</summary>
-        internal static void ResetStatics() { Instance = null; }
+        public static void ResetStatics() { Instance = null; }
 
         [Header("Startup")]
         [Tooltip("Open a screen automatically when the scene starts.")]
@@ -32,19 +32,37 @@ namespace LudoNX.UI
 
         private Canvas _canvas;
         private RectTransform _screenRoot;
+        private RectTransform _navRoot;
         private RectTransform _modalRoot;
         private UIScreen _active;
+        private HomeNavBar _bottomNav;
         private bool _busy;
 
         public Canvas Canvas => _canvas;
+        public RectTransform ScreenRoot => _screenRoot;
+        public RectTransform NavRoot => _navRoot;
         public RectTransform ModalRoot => _modalRoot;
         public UIScreen Active => _active;
+        public HomeNavBar BottomNav => _bottomNav;
         public int Depth => _stack.Count;
 
         private void Awake()
         {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+            if (Instance != null && Instance != this)
+            {
+                if (Instance.gameObject == null) Instance = null;
+                else { Destroy(gameObject); return; }
+            }
             Instance = this;
+
+            // Suppress any legacy preview canvas left over in the scene
+            var previewCanvas = GameObject.Find("[PREVIEW] Home Canvas");
+            if (previewCanvas != null)
+            {
+                previewCanvas.SetActive(false);
+                Destroy(previewCanvas);
+            }
+
             BuildCanvas();
         }
 
@@ -63,27 +81,123 @@ namespace LudoNX.UI
             if (scaler == null) scaler = gameObject.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1080f, 1920f);
-            // Match on WIDTH. Width is the dimension a portrait design is fixed to: at 1080
-            // reference width the canvas is always 1080 units across, whatever the device, and a
-            // taller phone simply gets more vertical room. Matching height instead scales by
-            // deviceHeight/1920, so a 20:9 phone scales by 1.25 and squeezes the 1080-wide design
-            // into 864 units - every element authored near an edge then renders off-screen.
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0f;
 
+            var responsive = GetComponent<UIResponsiveScaler>();
+            if (responsive == null) responsive = gameObject.AddComponent<UIResponsiveScaler>();
+            responsive.Apply();
+
             if (GetComponent<GraphicRaycaster>() == null) gameObject.AddComponent<GraphicRaycaster>();
 
-            // Screens and modals live inside the safe area so a back button never hides under a
-            // notch and a bottom row never sits beneath the gesture bar. The canvas itself stays
-            // full-bleed, so page backgrounds still reach the physical edges.
+            // ScreenRoot does NOT get a SafeAreaFitter — screens manage their own
+            // safe area offsets internally. The Home screen's top bar bleeds past the
+            // notch/camera cutout, with its inner content placed below the safe zone.
             _screenRoot = MakeFullRect("ScreenRoot", transform);
-            _screenRoot.gameObject.AddComponent<SafeAreaFitter>();
+
+            // NavRoot does NOT get a SafeAreaFitter — the bottom navigation bar
+            // bleeds to the very bottom edge of the screen (Bottom=0).
+            // The bar manages its own internal layout and safe zone offsets.
+            _navRoot = MakeFullRect("NavRoot", transform);
+
             _modalRoot = MakeFullRect("ModalRoot", transform);
-            _modalRoot.gameObject.AddComponent<SafeAreaFitter>();
+            var sfModal = _modalRoot.gameObject.AddComponent<SafeAreaFitter>();
+            sfModal.verticalOnly = false;
+        }
+
+        public void EnsureBottomNav()
+        {
+            if (_bottomNav != null) return;
+            var prefab = Resources.Load<GameObject>("UI/Components/UniversalNavBar");
+            if (prefab == null)
+            {
+                prefab = Resources.Load<GameObject>("UI/Components/BottomNavBar");
+            }
+            if (prefab != null)
+            {
+                var go = Instantiate(prefab, _navRoot != null ? _navRoot : transform);
+                go.name = "UniversalNavBar";
+                _bottomNav = go.GetComponent<HomeNavBar>();
+                var rt = go.transform as RectTransform;
+                if (rt != null)
+                {
+                    // Normalise the anchoring so the bar always bleeds to the bottom
+                    // edge, but keep the prefab's own height - it is authored to the
+                    // design reference and hardcoding a height here squashes it.
+                    float authoredHeight = rt.sizeDelta.y;
+                    rt.anchorMin = new Vector2(0f, 0f);
+                    rt.anchorMax = new Vector2(1f, 0f);
+                    rt.pivot = new Vector2(0.5f, 0f);
+                    rt.anchoredPosition = Vector2.zero;
+                    rt.sizeDelta = new Vector2(0f, authoredHeight > 0f ? authoredHeight : 180f);
+                }
+            }
+        }
+
+        public static bool IsHubScreen(ScreenId id)
+        {
+            switch (id)
+            {
+                case ScreenId.Home:
+                case ScreenId.Shop:
+                case ScreenId.ShopItemDetail:
+                case ScreenId.PawnCollection:
+                case ScreenId.Friends:
+                case ScreenId.PlayerStats:
+                case ScreenId.Missions:
+                case ScreenId.Events:
+                case ScreenId.EventDetail:
+                case ScreenId.Profile:
+                case ScreenId.Settings:
+                case ScreenId.Wallet:
+                case ScreenId.Energy:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public void UpdateBottomNavVisibility(ScreenId id)
+        {
+            EnsureBottomNav();
+            if (_bottomNav == null) return;
+
+            bool isHub = IsHubScreen(id);
+            SetBottomNavVisible(isHub);
+            if (isHub)
+            {
+                _bottomNav.SyncToScreen(id);
+            }
+        }
+
+        public void SetBottomNavVisible(bool visible, bool immediate = false)
+        {
+            if (_bottomNav == null) return;
+            var cg = _bottomNav.GetComponent<CanvasGroup>();
+            if (cg == null) cg = _bottomNav.gameObject.AddComponent<CanvasGroup>();
+
+            float targetAlpha = visible ? 1f : 0f;
+            cg.blocksRaycasts = visible;
+            cg.interactable = visible;
+
+            if (immediate)
+            {
+                cg.alpha = targetAlpha;
+                _bottomNav.gameObject.SetActive(visible);
+            }
+            else
+            {
+                if (visible) _bottomNav.gameObject.SetActive(true);
+                UITween.Fade(cg, targetAlpha, 0.22f, () =>
+                {
+                    if (!visible && _bottomNav != null) _bottomNav.gameObject.SetActive(false);
+                });
+            }
         }
 
         private void Start()
         {
+            EnsureBottomNav();
             if (openOnStart) ResetTo(startScreen);
         }
 
@@ -140,6 +254,8 @@ namespace LudoNX.UI
         public void SetScreensVisible(bool visible)
         {
             if (_screenRoot != null) _screenRoot.gameObject.SetActive(visible);
+            if (!visible) SetBottomNavVisible(false, immediate: true);
+            else if (_active != null) UpdateBottomNavVisibility(_active.Id);
         }
 
         private void Show(ScreenId id, object args, bool forward)
@@ -150,6 +266,9 @@ namespace LudoNX.UI
                 Debug.LogError("[ScreenManager] No prefab for screen '" + id + "'. Expected Resources/UI/Screens/" + id);
                 return;
             }
+
+            UpdateBottomNavVisibility(id);
+
             if (next == _active)
             {
                 next.OnShow(args);

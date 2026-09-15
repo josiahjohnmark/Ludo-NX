@@ -14,7 +14,17 @@ namespace LudoNX.UI
         Result,
         Profile,
         Settings,
-        Shop
+        Shop,
+        MatchLobby,
+        PawnCollection,
+        Wallet,
+        Energy,
+        Missions,
+        Events,
+        EventDetail,
+        ShopItemDetail,
+        PlayerStats,
+        Friends
     }
 
     /// <summary>

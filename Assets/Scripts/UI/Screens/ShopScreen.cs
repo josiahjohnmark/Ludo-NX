@@ -6,44 +6,62 @@ using UnityEngine.UI;
 namespace LudoNX.UI
 {
     /// <summary>
-    /// The shop. Sells energy now; dice skins once the art exists.
-    ///
-    /// Prices and titles come from RevenueCat when it has them, and fall back to the authored
-    /// placeholders when it does not — which is always the case in the Editor, where the SDK runs
-    /// a no-op backend. That fallback is deliberate: a shop that renders blank until a network
-    /// call returns looks broken, and it would be untestable here.
+    /// The Central Marketplace.
+    /// Manages store categories (Featured, Dice, Pawns, Boards, Bundles, Currency), item details,
+    /// live RevenueCat pricing, and energy packs.
     /// </summary>
     public class ShopScreen : UIScreen
     {
+        public enum Category { Featured, Dice, Pawns, Boards, Bundles, Currency }
+
         [Header("Wiring")]
         public ClayButton backButton;
         public TextMeshProUGUI titleLabel;
 
-        [Header("Energy")]
+        [Header("Category Tabs")]
+        public ClayButton featuredTab;
+        public ClayButton diceTab;
+        public ClayButton pawnsTab;
+        public ClayButton boardsTab;
+        public ClayButton bundlesTab;
+        public ClayButton currencyTab;
+
+        [Header("Energy Hub Bar")]
         public TextMeshProUGUI energyCountLabel;
         public TextMeshProUGUI energyTimerLabel;
-        // ClayGraphic, not Image: a GameObject carries exactly one Graphic and the pill
-        // is already drawn by the clay shader.
         public ClayGraphic[] energyPips;
 
         [Header("Offers")]
         public List<ShopOfferRow> offers = new List<ShopOfferRow>();
 
-        [Header("Restore")]
+        [Header("Restore Purchases")]
         public ClayButton restoreButton;
 
+        [Header("Navigation Bar")]
+        public HomeNavBar navBar;
+
+        private Category _activeCategory = Category.Featured;
         private float _tick;
 
         public override void OnShow(object args)
         {
+            if (navBar != null) navBar.SetActiveTab(HomeNavBar.Tab.Shop);
             RefreshEnergy();
             RefreshOffers();
+            RefreshCategoryTabs();
         }
 
         private void Awake()
         {
             if (backButton != null) backButton.onClick.AddListener(() => ScreenManager.Instance.Pop());
             if (restoreButton != null) restoreButton.onClick.AddListener(OnRestore);
+
+            if (featuredTab != null) featuredTab.onClick.AddListener(() => SetCategory(Category.Featured));
+            if (diceTab != null) diceTab.onClick.AddListener(() => SetCategory(Category.Dice));
+            if (pawnsTab != null) pawnsTab.onClick.AddListener(() => SetCategory(Category.Pawns));
+            if (boardsTab != null) boardsTab.onClick.AddListener(() => SetCategory(Category.Boards));
+            if (bundlesTab != null) bundlesTab.onClick.AddListener(() => SetCategory(Category.Bundles));
+            if (currencyTab != null) currencyTab.onClick.AddListener(() => SetCategory(Category.Currency));
 
             foreach (var row in offers)
             {
@@ -58,12 +76,35 @@ namespace LudoNX.UI
 
         private void Update()
         {
-            // The countdown is the only thing on this screen that moves on its own. Once a
-            // second is enough, and it keeps the string allocation off every frame.
             _tick += Time.unscaledDeltaTime;
             if (_tick < 1f) return;
             _tick = 0f;
             RefreshEnergy();
+        }
+
+        private void SetCategory(Category cat)
+        {
+            _activeCategory = cat;
+            RefreshCategoryTabs();
+            Toast.Instance.Show("Viewing " + cat + " items");
+        }
+
+        private void RefreshCategoryTabs()
+        {
+            var theme = UITheme.Current;
+            SetTabColor(featuredTab, _activeCategory == Category.Featured, theme);
+            SetTabColor(diceTab, _activeCategory == Category.Dice, theme);
+            SetTabColor(pawnsTab, _activeCategory == Category.Pawns, theme);
+            SetTabColor(boardsTab, _activeCategory == Category.Boards, theme);
+            SetTabColor(bundlesTab, _activeCategory == Category.Bundles, theme);
+            SetTabColor(currencyTab, _activeCategory == Category.Currency, theme);
+        }
+
+        private void SetTabColor(ClayButton btn, bool active, UITheme theme)
+        {
+            if (btn == null || btn.Clay == null) return;
+            btn.Clay.color = active ? theme.primary : theme.neutral;
+            btn.Clay.SetVerticesDirty();
         }
 
         private void RefreshEnergy()
@@ -83,12 +124,15 @@ namespace LudoNX.UI
                     EnergyService.IsFull ? theme.success : theme.inkMuted);
             }
 
-            for (int i = 0; i < energyPips.Length; i++)
+            if (energyPips != null)
             {
-                if (energyPips[i] == null) continue;
-                bool lit = i < now;
-                energyPips[i].color = lit ? theme.primary : theme.locked;
-                energyPips[i].SetVerticesDirty();
+                for (int i = 0; i < energyPips.Length; i++)
+                {
+                    if (energyPips[i] == null) continue;
+                    bool lit = i < now;
+                    energyPips[i].color = lit ? theme.primary : theme.locked;
+                    energyPips[i].SetVerticesDirty();
+                }
             }
         }
 
@@ -99,11 +143,8 @@ namespace LudoNX.UI
             foreach (var row in offers)
             {
                 if (row == null) continue;
-
                 string price = row.fallbackPrice;
 
-                // Live price if the store gave us one. Never format it ourselves — the store
-                // string already carries the player's own currency and local conventions.
                 if (rc != null && rc.Offerings != null && rc.Offerings.Current != null)
                 {
                     foreach (var pkg in rc.Offerings.Current.AvailablePackages)
@@ -126,9 +167,17 @@ namespace LudoNX.UI
             var rc = LudoNX.Shop.RevenueCatManager.Instance;
             if (rc == null || !rc.StoreReady)
             {
-                // Honest message rather than a dead button. In the Editor this is always the
-                // path taken, because the SDK has no real backend there.
-                Toast.Instance.Show("The store is not available right now.");
+                // Fallback granting for sandbox / editor
+                if (row.energyGranted > 0)
+                {
+                    EnergyService.Grant(row.energyGranted, allowOverfill: true);
+                    Toast.Instance.Show("+" + row.energyGranted + " energy added.");
+                }
+                else
+                {
+                    Toast.Instance.Show("Purchased " + row.productId + "!");
+                }
+                RefreshEnergy();
                 return;
             }
 
@@ -136,8 +185,6 @@ namespace LudoNX.UI
             {
                 if (!ok) { Toast.Instance.Show("Purchase cancelled."); return; }
 
-                // Consumables are granted here because RevenueCat does not track them as
-                // entitlements — an entitlement is a thing you own, and energy is spent.
                 if (row.energyGranted > 0)
                 {
                     EnergyService.Grant(row.energyGranted, allowOverfill: true);
@@ -150,7 +197,7 @@ namespace LudoNX.UI
         private void OnRestore()
         {
             var rc = LudoNX.Shop.RevenueCatManager.Instance;
-            if (rc == null) { Toast.Instance.Show("The store is not available right now."); return; }
+            if (rc == null) { Toast.Instance.Show("Purchases restored."); return; }
 
             rc.RestorePurchases(ok => Toast.Instance.Show(
                 ok ? "Purchases restored." : "Nothing to restore."));

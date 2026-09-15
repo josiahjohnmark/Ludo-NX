@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using LudoNX.UI;
 using TMPro;
@@ -50,7 +50,7 @@ public static class LudoNXScreenAuthor
             fonts = ScriptableObject.CreateInstance<UIFontSet>();
             AssetDatabase.CreateAsset(fonts, ResRoot + "/UIFontSet.asset");
         }
-        fonts.display = LoadFont("Baloo2-ExtraBold");
+        fonts.display = LoadFont("LilitaOne-Regular");
         fonts.body = LoadFont("Nunito-Bold");
         fonts.bodyLight = LoadFont("Nunito-SemiBold");
         fonts.numeric = LoadFont("PlusJakartaSans-Bold");
@@ -75,6 +75,17 @@ public static class LudoNXScreenAuthor
         icons.diceLogo = LoadAsSprite("Assets/Art/UI/Loader/DiceLogo.png");
         icons.loaderLine = LoadAsSprite("Assets/Art/UI/Loader/LoaderLine.png");
         icons.softGlow = LoadAsSprite("Assets/art_assets/generated/ui_glow.png");
+        icons.backgroundIllustration = LoadAsSprite("Assets/Art/UI/Backgrounds/Tournament_banner.jpeg");
+        icons.bgHomeStadium = LoadAsSprite("Assets/Art/UI/Backgrounds/bg_home_stadium.jpg");
+        icons.bgShopVault = LoadAsSprite("Assets/Art/UI/Backgrounds/bg_shop_vault.jpg");
+        icons.bgBattleArena = LoadAsSprite("Assets/Art/UI/Backgrounds/bg_battle_arena.jpg");
+        icons.bgTournamentHall = LoadAsSprite("Assets/Art/UI/Backgrounds/bg_tournament_hall.jpg");
+        icons.mascot = LoadAsSprite("Assets/Art/UI/Icons/cool_ludo_mascot.png");
+        icons.coin3D = LoadAsSprite("Assets/Art/UI/Icons/coin_3d.png");
+        icons.gem3D = LoadAsSprite("Assets/Art/UI/Icons/gem_3d.png");
+        icons.gemGreen3D = LoadAsSprite("Assets/Art/UI/Icons/gem_green_3d.png");
+        icons.heart3D = LoadAsSprite("Assets/Art/UI/Icons/heart_3d.png");
+        icons.shield3D = LoadAsSprite("Assets/Art/UI/Icons/shield_3d.png");
 
         LoadIconLibrary(icons);
         LoadAvatars(icons);
@@ -189,93 +200,453 @@ public static class LudoNXScreenAuthor
     private static TMP_FontAsset LoadFont(string n) =>
         AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontDir + "/" + n + ".asset");
 
-    // â”€â”€ Home â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    private static Color Hex(string rrggbb) => UITheme.Hex(rrggbb);
 
-    [MenuItem("Ludo NX/UI/1. Build Home Screen", priority = 1)]
+    // ── Home ─────────────────────────────────────────────────────────────────
+
+    [MenuItem("Ludo NX/UI/1. Build Home Screen (Figma UI)", priority = 1)]
     public static void BuildHome()
+    {
+        LudoHomeScreenFigmaImporter.ImportAndAssemble();
+    }
+
+    [MenuItem("Ludo NX/UI/Build Legacy Procedural Home", priority = 25)]
+    public static void BuildLegacyHome()
     {
         CreateSupportAssets();
         var T = UITheme.Current;
+        var icons = UIIconSet.Current;
 
         GameObject root = NewScreenRoot("Home", ScreenId.Home);
         var home = root.AddComponent<HomeScreen>();
         Transform p = root.transform;
 
+        // Background: Deep emerald felt table with midnight navy leather frame & gold Art Deco accents
         UIFactory.Page(p);
 
-        // â”€â”€ Top bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        var avatar = UIFactory.CircleButton("Avatar", p, 112f, new Vector2(-424f, 806f), T.panelHigh);
-        var avatarInner = UIFactory.Clay("AvatarInner", avatar.content, new Vector2(84f, 84f),
+        // ── Top Bar (Mobile Safe Zone: y = 848f) ──────────────────────────────────
+        float topY = 848f;
+
+        var topBarBg = UIFactory.Clay("TopBarBg", p, new Vector2(1040f, 96f), new Vector2(0f, topY),
+                                      T.navBarBg, ClayGraphic.Shape.Pill);
+        topBarBg.raycastTarget = false;
+        topBarBg.shadowSpread = 20f;
+        topBarBg.shadowAlpha = 0.35f;
+        topBarBg.innerHighlight = 0.20f;
+
+        // Avatar Capsule with Ranked Border & Level Crest (Left)
+        var avatar = UIFactory.CircleButton("Avatar", p, 84f, new Vector2(-410f, topY), T.panelHigh);
+        avatar.Clay.shadowSpread = 20f;
+        avatar.Clay.shadowAlpha = 0.25f;
+
+        // Dynamic Ranked Avatar Frame as outer border ring behind avatar face
+        var avatarRankBorder = UIFactory.Clay("RankFrame", avatar.content, new Vector2(88f, 88f),
+                                              Vector2.zero, T.gold, ClayGraphic.Shape.Circle);
+        avatarRankBorder.raycastTarget = false;
+        avatarRankBorder.shadowSpread = 14f;
+        avatarRankBorder.shadowAlpha = 0.35f;
+        avatarRankBorder.innerHighlight = 0.45f;
+        avatarRankBorder.transform.SetAsFirstSibling();
+
+        var avatarInner = UIFactory.Clay("AvatarInner", avatar.content, new Vector2(72f, 72f),
                                          Vector2.zero, T.secondary, ClayGraphic.Shape.Circle);
         avatarInner.raycastTarget = false;
         avatarInner.shadowAlpha = 0f;
-        avatar.gameObject.AddComponent<ProfileAvatarSlot>().diameter = 84f;
+        avatar.gameObject.AddComponent<ProfileAvatarSlot>().diameter = 72f;
 
-        var nameLabel = UIFactory.Body("PlayerName", p, new Vector2(420f, 60f), new Vector2(-130f, 806f),
-                                       "Player", T.inkOnGround, UIFontSet.SizeBody);
+        // Level Crest with Stage Badge (1-12) overlapping bottom-right of avatar
+        var levelBadge = UIFactory.Clay("LevelBadge", avatar.transform, new Vector2(34f, 34f),
+                                        new Vector2(26f, -24f), T.gold, ClayGraphic.Shape.Circle);
+        levelBadge.raycastTarget = false;
+        levelBadge.shadowSpread = 10f;
+        levelBadge.shadowAlpha = 0.35f;
+        var lvlNum = UIFactory.Label("LvlNum", levelBadge.transform, new Vector2(34f, 34f), Vector2.zero,
+                                    "12", UIFontSet.Current.display, 18f, Hex("0A1128"), TextAlignmentOptions.Center);
+
+        var nameLabel = UIFactory.Body("PlayerName", p, new Vector2(160f, 30f), new Vector2(-255f, topY + 14f),
+                                       "Josiah", Color.white, 28f);
+        nameLabel.font = UIFontSet.Current.display;
         nameLabel.alignment = TextAlignmentOptions.Left;
 
-        var settings = UIFactory.CircleButton("SettingsButton", p, 100f, new Vector2(432f, 806f), T.neutral);
-        UIFactory.Icon("GearIcon", settings.content, new Vector2(50f, 50f), Vector2.zero,
-                       UIIconSet.Icon("settings"), T.InkOn(T.neutral));
+        var levelLabel = UIFactory.Label("LevelLabel", p, new Vector2(160f, 22f), new Vector2(-255f, topY - 14f),
+                                         "PRO • LVL 12", UIFontSet.Current.body, 18f, T.gold, TextAlignmentOptions.Left);
 
-        // â”€â”€ Logo mark: the same die and disc as the loader, so the brand is one thing â”€â”€â”€â”€â”€
-        var icons = UIIconSet.Current;
-        var disc = UIFactory.Clay("LogoDisc", p, new Vector2(300f, 300f), new Vector2(0f, 452f),
-                                  Color.white, ClayGraphic.Shape.Circle);
-        disc.raycastTarget = false;
-        disc.shadowSpread = 46f;
-        disc.shadowAlpha = 0.10f;
-        disc.innerHighlight = 0.10f;
-        disc.innerShadow = 0.04f;
-        disc.gradientStrength = 0.02f;
-        if (icons != null && icons.diceLogo != null)
-            UIFactory.Icon("Dice", disc.transform, new Vector2(232f, 232f), Vector2.zero,
-                           icons.diceLogo, Color.white);
+        // Energy Chip with 3D Heart/Bolt + Live Timer + Plus Button
+        var energyChip = UIFactory.Button("EnergyChip", p, new Vector2(190f, 64f), new Vector2(-35f, topY),
+                                          T.panel, null, shape: ClayGraphic.Shape.Pill);
+        energyChip.Clay.shadowSpread = 16f;
+        energyChip.Clay.shadowAlpha = 0.25f;
+        energyChip.Clay.innerHighlight = 0.25f;
+        if (icons != null && icons.heart3D != null)
+            UIFactory.Icon("HeartIcon", energyChip.content, new Vector2(40f, 40f), new Vector2(-60f, 0f),
+                           icons.heart3D, Color.white);
+        else
+            UIFactory.Icon("TimerIcon", energyChip.content, new Vector2(28f, 28f), new Vector2(-60f, 0f),
+                           UIIconSet.Icon("timer"), T.primary);
 
-        // â”€â”€ Wordmark â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        var word = UIFactory.Label("Wordmark", p, new Vector2(1000f, 130f), new Vector2(0f, 244f),
-                                   "Ludo NX", UIFontSet.Current.numeric, 86f, T.inkOnGround);
-        word.characterSpacing = -2f;
-        UIFactory.Label("Tagline", p, new Vector2(1000f, 60f), new Vector2(0f, 160f),
-                        "Every capture counts", UIFontSet.Current.bodyLight, 36f, T.inkOnGroundDim);
+        var energyLabel = UIFactory.Label("EnergyText", energyChip.content, new Vector2(75f, 26f), new Vector2(-10f, 10f),
+                                          "18/20", UIFontSet.Current.numeric, 22f, Color.white, TextAlignmentOptions.Center);
+        var energyTimer = UIFactory.Label("EnergyTimer", energyChip.content, new Vector2(75f, 18f), new Vector2(-10f, -12f),
+                                          "04:12", UIFontSet.Current.numeric, 15f, T.gold, TextAlignmentOptions.Center);
 
-        // â”€â”€ Hero action â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        var play = UIFactory.Button("PlayButton", p, new Vector2(840f, 208f), new Vector2(0f, -46f),
-                                    T.primary, "PLAY", 54f, ClayGraphic.Shape.Pill, glow: 0.16f, hero: true);
-        play.Clay.glowSpread = 40f;
+        var energyPlus = UIFactory.Clay("Plus", energyChip.content, new Vector2(32f, 32f), new Vector2(65f, 0f),
+                                        T.success, ClayGraphic.Shape.Circle);
+        energyPlus.raycastTarget = false;
+        UIFactory.Label("PlusTxt", energyPlus.transform, new Vector2(32f, 32f), new Vector2(0f, 2f),
+                        "+", UIFontSet.Current.display, 22f, Color.white, TextAlignmentOptions.Center);
 
-        // No PROFILE or STATS buttons here. The avatar in the top bar is already the route to
-        // the profile, and statistics now live inside it â€” a second button to the same screen
-        // is just a wider tap target for a place the player can already reach.
+        // Coins Chip with 3D Coin + Plus Button
+        var coinsChip = UIFactory.Button("CoinsChip", p, new Vector2(200f, 64f), new Vector2(185f, topY),
+                                         T.panel, null, shape: ClayGraphic.Shape.Pill);
+        coinsChip.Clay.shadowSpread = 16f;
+        coinsChip.Clay.shadowAlpha = 0.25f;
+        coinsChip.Clay.innerHighlight = 0.25f;
+        if (icons != null && icons.coin3D != null)
+            UIFactory.Icon("Coin3D", coinsChip.content, new Vector2(44f, 44f), new Vector2(-68f, 0f),
+                           icons.coin3D, Color.white);
+        else
+            UIFactory.Icon("CoinIcon", coinsChip.content, new Vector2(30f, 30f), new Vector2(-68f, 0f),
+                           UIIconSet.Icon("emoji_events"), T.gold);
+        var coinsLabel = UIFactory.Label("CoinsText", coinsChip.content, new Vector2(95f, 36f), new Vector2(-5f, 0f),
+                                         "12,450", UIFontSet.Current.numeric, 24f, T.gold, TextAlignmentOptions.Center);
+        var coinsPlus = UIFactory.Clay("Plus", coinsChip.content, new Vector2(32f, 32f), new Vector2(70f, 0f),
+                                       T.success, ClayGraphic.Shape.Circle);
+        coinsPlus.raycastTarget = false;
+        UIFactory.Label("PlusTxt", coinsPlus.transform, new Vector2(32f, 32f), new Vector2(0f, 2f),
+                        "+", UIFontSet.Current.display, 22f, Color.white, TextAlignmentOptions.Center);
 
-        // â”€â”€ Locked teaser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        var tour = UIFactory.Button("TournamentsButton", p, new Vector2(840f, 148f), new Vector2(0f, -320f),
-                                    T.locked, null, shape: ClayGraphic.Shape.Panel);
-        tour.Clay.cornerRadius = T.radiusLg;
-        tour.Clay.shadowAlpha = 0.18f;
-        var tourLabel = UIFactory.Body("Label", tour.content, new Vector2(560f, 60f), new Vector2(-96f, 0f),
-                                       "TOURNAMENTS", T.inkDim, 32f);
-        tourLabel.alignment = TextAlignmentOptions.Left;
-        tourLabel.characterSpacing = 4f;
+        // Settings Button (Right)
+        var settings = UIFactory.CircleButton("SettingsButton", p, 68f, new Vector2(415f, topY), T.panelHigh);
+        settings.Clay.shadowSpread = 18f;
+        settings.Clay.shadowAlpha = 0.30f;
+        settings.Clay.innerHighlight = 0.35f;
+        UIFactory.Icon("GearIcon", settings.content, new Vector2(36f, 36f), Vector2.zero,
+                       UIIconSet.Icon("settings"), Color.white);
 
-        var soonPill = UIFactory.Clay("SoonPill", tour.content, new Vector2(168f, 66f), new Vector2(292f, 0f),
+        // ── Floating Live-Ops Badges (Monopoly GO Signature) ─────────────────────
+        // Left: Grand Tournament Arena Capsule
+        var tour = UIFactory.Button("TournamentsButton", p, new Vector2(230f, 130f), new Vector2(-390f, 570f),
+                                    T.panel, null, shape: ClayGraphic.Shape.Panel);
+        tour.Clay.cornerRadius = T.radiusMd;
+        tour.Clay.shadowAlpha = 0.30f;
+        tour.Clay.shadowSpread = 18f;
+        tour.Clay.innerHighlight = 0.25f;
+        var tourGold = UIFactory.Clay("GoldAccent", tour.content, new Vector2(210f, 3f), new Vector2(0f, 58f),
                                       T.gold, ClayGraphic.Shape.Pill);
-        soonPill.raycastTarget = false;
-        soonPill.shadowAlpha = 0.2f;
-        var soon = UIFactory.Body("SoonLabel", soonPill.transform, new Vector2(168f, 66f), Vector2.zero,
-                                  "SOON", T.groundTop, 26f);
-        soon.characterSpacing = 6f;
-        soon.fontStyle = FontStyles.Bold;
+        tourGold.raycastTarget = false;
+        UIFactory.Icon("TrophyIcon", tour.content, new Vector2(36f, 36f), new Vector2(0f, 28f),
+                       UIIconSet.Icon("emoji_events"), T.gold);
+        var tourTitle = UIFactory.Label("TourTitle", tour.content, new Vector2(220f, 22f), new Vector2(0f, -4f),
+                                       "TOURNAMENT", UIFontSet.Current.body, 16f, Color.white, TextAlignmentOptions.Center);
+        var tourSub = UIFactory.Label("TourSub", tour.content, new Vector2(220f, 20f), new Vector2(0f, -24f),
+                                      "Rank #3 • 18h left", UIFontSet.Current.bodyLight, 14f, T.gold, TextAlignmentOptions.Center);
 
-        // â”€â”€ Wire â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // Right: Daily Fortune Streak Capsule
+        var streakWidget = UIFactory.Button("StreakButton", p, new Vector2(230f, 130f), new Vector2(390f, 570f),
+                                            T.panel, null, shape: ClayGraphic.Shape.Panel);
+        streakWidget.Clay.cornerRadius = T.radiusMd;
+        streakWidget.Clay.shadowAlpha = 0.30f;
+        streakWidget.Clay.shadowSpread = 18f;
+        streakWidget.Clay.innerHighlight = 0.25f;
+        var streakGold = UIFactory.Clay("GoldAccent", streakWidget.content, new Vector2(210f, 3f), new Vector2(0f, 58f),
+                                        T.gold, ClayGraphic.Shape.Pill);
+        streakGold.raycastTarget = false;
+        UIFactory.Icon("FlameIcon", streakWidget.content, new Vector2(36f, 36f), new Vector2(0f, 28f),
+                       UIIconSet.Icon("timer"), Hex("F97316"));
+        UIFactory.Label("StreakTitle", streakWidget.content, new Vector2(220f, 22f), new Vector2(0f, -4f),
+                        "DAILY STREAK", UIFontSet.Current.body, 16f, Color.white, TextAlignmentOptions.Center);
+        UIFactory.Label("StreakSub", streakWidget.content, new Vector2(220f, 20f), new Vector2(0f, -24f),
+                        "5-Day • 24h left", UIFontSet.Current.bodyLight, 14f, Hex("F97316"), TextAlignmentOptions.Center);
+
+        // ── Center Stage: Pure Typographic 3D LUDO NX Logo (Independent UI Text Layer) ────
+        var logoRoot = UIFactory.Rect("WordmarkLogo", p, new Vector2(600f, 110f), new Vector2(0f, 570f));
+
+        // 3D Shadow extrusion layer for the text logo
+        var logoShadow = UIFactory.Label("WordmarkShadow", logoRoot.transform, new Vector2(600f, 110f), new Vector2(0f, -6f),
+                                         "LUDO NX", UIFontSet.Current.display, 92f, Hex("020A05"), TextAlignmentOptions.Center);
+        logoShadow.characterSpacing = 6f;
+        logoShadow.raycastTarget = false;
+
+        // Foreground metallic gold & platinum wordmark text logo
+        var logoForeground = UIFactory.Label("WordmarkText", logoRoot.transform, new Vector2(600f, 110f), Vector2.zero,
+                                             "LUDO NX", UIFontSet.Current.display, 92f, T.gold, TextAlignmentOptions.Center);
+        logoForeground.characterSpacing = 6f;
+        logoForeground.fontStyle = FontStyles.Bold;
+        logoForeground.raycastTarget = false;
+
+        // Season subtitle pill (Obsidian capsule with gold hairline border & gold text)
+        var tagBadge = UIFactory.Clay("SeasonPill", p, new Vector2(430f, 40f), new Vector2(0f, 430f),
+                                      T.gold, ClayGraphic.Shape.Pill);
+        tagBadge.raycastTarget = false;
+        tagBadge.shadowSpread = 14f;
+        tagBadge.shadowAlpha = 0.35f;
+
+        var tagInner = UIFactory.Clay("TagInner", tagBadge.transform, new Vector2(424f, 34f), Vector2.zero,
+                                      Hex("0B1728"), ClayGraphic.Shape.Pill);
+        tagInner.raycastTarget = false;
+
+        var tagLabel = UIFactory.Label("Tagline", tagInner.transform, new Vector2(400f, 30f), Vector2.zero,
+                                       "SEASON 1 • CHAMPIONSHIP", UIFontSet.Current.body, 17f, T.gold, TextAlignmentOptions.Center);
+        tagLabel.characterSpacing = 2f;
+        tagLabel.fontStyle = FontStyles.Bold;
+
+        // ── Hero Action: Weighted Luxury Ruby & Gold PLAY Button ────────────────
+        var playGoldRing = UIFactory.Clay("PlayGoldRing", p, new Vector2(934f, 167f), new Vector2(0f, 260f),
+                                          T.gold, ClayGraphic.Shape.Pill);
+        playGoldRing.raycastTarget = false;
+        playGoldRing.shadowSpread = 28f;
+        playGoldRing.shadowAlpha = 0.45f;
+        playGoldRing.innerHighlight = 0.50f;
+
+        var play = UIFactory.Button("PlayButton", p, new Vector2(920f, 155f), new Vector2(0f, 260f),
+                                    T.primary, null, 64f, ClayGraphic.Shape.Pill, glow: 0.45f, hero: true);
+        play.Clay.glowSpread = 50f;
+        play.Clay.innerHighlight = 0.45f;
+        play.breathe = true;
+        var playIcon = UIFactory.Icon("PlayIcon", play.content, new Vector2(52f, 52f), new Vector2(-110f, 10f),
+                                      UIIconSet.Icon("play_arrow"), Color.white);
+        var playTxt = UIFactory.Label("PlayText", play.content, new Vector2(300f, 65f), new Vector2(25f, 12f),
+                                      "PLAY", UIFontSet.Current.display, 64f, Color.white);
+        playTxt.characterSpacing = 4f;
+
+        var playSubPill = UIFactory.Clay("PlaySubPill", play.content, new Vector2(380f, 34f), new Vector2(0f, -42f),
+                                         new Color(0f, 0f, 0f, 0.45f), ClayGraphic.Shape.Pill);
+        playSubPill.raycastTarget = false;
+        UIFactory.Label("SubText", playSubPill.transform, new Vector2(370f, 30f), Vector2.zero,
+                        "CLASSIC 4P  •  1x MULTIPLIER", UIFontSet.Current.body, 19f, new Color(1f, 0.95f, 0.8f));
+
+        // ── Daily Objective Card (Clean White Linen Slab with Gold Accent) ────────
+        var missionsCard = UIFactory.Button("MissionsCard", p, new Vector2(920f, 120f), new Vector2(0f, 90f),
+                                            Hex("FFFFFF"), null, shape: ClayGraphic.Shape.Panel);
+        missionsCard.Clay.cornerRadius = T.radiusLg;
+        missionsCard.Clay.shadowAlpha = 0.30f;
+        missionsCard.Clay.shadowSpread = 24f;
+        missionsCard.Clay.innerHighlight = 0.15f;
+
+        var missGold = UIFactory.Clay("GoldAccent", missionsCard.content, new Vector2(880f, 4f), new Vector2(0f, 56f),
+                                      T.gold, ClayGraphic.Shape.Pill);
+        missGold.raycastTarget = false;
+
+        if (icons != null && icons.gemGreen3D != null)
+            UIFactory.Icon("TaskIcon", missionsCard.content, new Vector2(46f, 46f), new Vector2(-380f, 0f),
+                           icons.gemGreen3D, Color.white);
+        else
+            UIFactory.Icon("TaskIcon", missionsCard.content, new Vector2(44f, 44f), new Vector2(-380f, 0f),
+                           UIIconSet.Icon("check"), T.success);
+
+        var missTitle = UIFactory.Body("MissTitle", missionsCard.content, new Vector2(520f, 32f), new Vector2(-60f, 14f),
+                                       "DAILY OBJECTIVES", Hex("121826"), 22f);
+        missTitle.font = UIFontSet.Current.body;
+        missTitle.fontStyle = FontStyles.Bold;
+        missTitle.alignment = TextAlignmentOptions.Left;
+
+        var missSub = UIFactory.Label("MissSub", missionsCard.content, new Vector2(520f, 26f), new Vector2(-60f, -14f),
+                                      "Capture 3 Pawns • 2/3 Complete", UIFontSet.Current.body, 18f, Hex("64748B"), TextAlignmentOptions.Left);
+
+        var claimPill = UIFactory.Clay("ClaimPill", missionsCard.content, new Vector2(130f, 48f), new Vector2(360f, 0f),
+                                       T.success, ClayGraphic.Shape.Pill);
+        claimPill.raycastTarget = false;
+        var claimTxt = UIFactory.Body("ClaimLabel", claimPill.transform, new Vector2(130f, 48f), Vector2.zero,
+                                      "+50 NX", Color.white, 21f);
+        claimTxt.characterSpacing = 2f;
+        claimTxt.fontStyle = FontStyles.Bold;
+
+        // ── Dual Mode Shortcuts (Classic vs Quick Rush) ──────────────────────────
+        var classicBtn = UIFactory.Button("ClassicModeCard", p, new Vector2(450f, 136f), new Vector2(-238f, -75f),
+                                          T.secondary, null, shape: ClayGraphic.Shape.Panel);
+        classicBtn.Clay.cornerRadius = T.radiusMd;
+        classicBtn.Clay.shadowAlpha = 0.35f;
+        classicBtn.Clay.shadowSpread = 22f;
+        classicBtn.Clay.innerHighlight = 0.35f;
+
+        var classicGoldLine = UIFactory.Clay("GoldAccent", classicBtn.content, new Vector2(420f, 4f), new Vector2(0f, 62f),
+                                             T.gold, ClayGraphic.Shape.Pill);
+        classicGoldLine.raycastTarget = false;
+
+        if (icons != null && icons.pawns != null && icons.pawns.Length > 0 && icons.pawns[0] != null)
+            UIFactory.Icon("PawnIcon", classicBtn.content, new Vector2(50f, 50f), new Vector2(-145f, 0f),
+                           icons.pawns[0], Color.white);
+        var classicTitle = UIFactory.Label("ClassicTitle", classicBtn.content, new Vector2(250f, 36f), new Vector2(30f, 16f),
+                                           "CLASSIC", UIFontSet.Current.display, 28f, Color.white, TextAlignmentOptions.Left);
+        var classicSub = UIFactory.Label("ClassicSub", classicBtn.content, new Vector2(250f, 28f), new Vector2(30f, -16f),
+                                         "4 Players • Classic", UIFontSet.Current.body, 19f, new Color(0.85f, 0.92f, 1f), TextAlignmentOptions.Left);
+
+        var quickRushBtn = UIFactory.Button("QuickRushCard", p, new Vector2(450f, 136f), new Vector2(238f, -75f),
+                                            T.neutral, null, shape: ClayGraphic.Shape.Panel);
+        quickRushBtn.Clay.cornerRadius = T.radiusMd;
+        quickRushBtn.Clay.shadowAlpha = 0.35f;
+        quickRushBtn.Clay.shadowSpread = 22f;
+        quickRushBtn.Clay.innerHighlight = 0.35f;
+
+        var rushGoldLine = UIFactory.Clay("GoldAccent", quickRushBtn.content, new Vector2(420f, 4f), new Vector2(0f, 62f),
+                                          T.gold, ClayGraphic.Shape.Pill);
+        rushGoldLine.raycastTarget = false;
+
+        UIFactory.Icon("RushIcon", quickRushBtn.content, new Vector2(46f, 46f), new Vector2(-145f, 0f),
+                       UIIconSet.Icon("timer"), Color.white);
+        var rushTitle = UIFactory.Label("RushTitle", quickRushBtn.content, new Vector2(250f, 36f), new Vector2(30f, 16f),
+                                        "QUICK RUSH", UIFontSet.Current.display, 28f, Color.white, TextAlignmentOptions.Left);
+        var rushSub = UIFactory.Label("RushSub", quickRushBtn.content, new Vector2(250f, 28f), new Vector2(30f, -16f),
+                                      "2 Pawns • Blitz", UIFontSet.Current.body, 19f, new Color(0.85f, 1f, 0.90f), TextAlignmentOptions.Left);
+
+        // ── Bottom Nav Bar (5 Tabs: Shop, Missions, Home, Collections, Friends) ──
+        home.navBar = BuildNavBar(p, T, HomeNavBar.Tab.Home);
+
+        // Wire
         home.playButton = play;
         home.settingsButton = settings;
         home.avatarButton = avatar;
+        home.avatarRankBorder = avatarRankBorder;
+        home.levelBadge = levelBadge;
+        home.levelStageLabel = lvlNum;
         home.tournamentsButton = tour;
+        home.streakButton = streakWidget;
+        home.missionsButton = missionsCard;
+        home.classicModeButton = classicBtn;
+        home.quickModeButton = quickRushBtn;
         home.playerNameLabel = nameLabel;
+        home.playerLevelLabel = levelLabel;
+        home.energyChipButton = energyChip;
+        home.energyChipLabel = energyLabel;
+        home.energyTimerLabel = energyTimer;
+        home.coinsChipButton = coinsChip;
+        home.coinsChipLabel = coinsLabel;
 
         SavePrefab(root, ScreenDir + "/Home.prefab");
+    }
+
+    private static HomeNavBar BuildNavBar(Transform parent, UITheme T, HomeNavBar.Tab currentTab)
+    {
+        var icons = UIIconSet.Current;
+        var barRoot = UIFactory.Rect("NavBar", parent, new Vector2(980f, 120f), new Vector2(0f, -885f));
+
+        // Dock base panel (Brushed obsidian glass console deck)
+        var dockBg = UIFactory.Clay("NavDock", barRoot, new Vector2(980f, 112f), Vector2.zero,
+                                    T.navBarBg, ClayGraphic.Shape.Panel, 26f);
+        dockBg.raycastTarget = false;
+        dockBg.shadowSpread = 20f;
+        dockBg.shadowAlpha = 0.35f;
+        dockBg.innerHighlight = 0.15f;
+
+        // Sleek 24k gold hairline top rim
+        var goldRim = UIFactory.Clay("GoldRim", barRoot, new Vector2(940f, 3f), new Vector2(0f, 55f),
+                                     T.navGoldBorder, ClayGraphic.Shape.Pill);
+        goldRim.raycastTarget = false;
+
+        var nav = barRoot.gameObject.AddComponent<HomeNavBar>();
+        nav.items = new List<HomeNavBar.NavItem>();
+
+        // 5 User-requested tabs: Shop, Missions, Home, Collections, Friends
+        HomeNavBar.Tab[] tabs = {
+            HomeNavBar.Tab.Shop,
+            HomeNavBar.Tab.Missions,
+            HomeNavBar.Tab.Home,
+            HomeNavBar.Tab.Collection,
+            HomeNavBar.Tab.Friends
+        };
+
+        ScreenId[] screens = {
+            ScreenId.Shop,
+            ScreenId.Missions,
+            ScreenId.Home,
+            ScreenId.PawnCollection,
+            ScreenId.Friends
+        };
+
+        string[] labels = { "SHOP", "MISSIONS", "HOME", "COLLECTIONS", "FRIENDS" };
+        Sprite[] customIcons = {
+            icons != null && icons.coin3D != null ? icons.coin3D : UIIconSet.Icon("inventory"),
+            icons != null && icons.gemGreen3D != null ? icons.gemGreen3D : UIIconSet.Icon("check"),
+            UIIconSet.Icon("home"),
+            UIIconSet.Icon("collections") ?? UIIconSet.Icon("inventory"),
+            UIIconSet.Icon("group") ?? UIIconSet.Icon("groups")
+        };
+
+        float podW = 172f;
+        float podH = 88f;
+        float startX = -360f;
+        float stepX = 180f;
+
+        for (int i = 0; i < 5; i++)
+        {
+            float x = startX + i * stepX;
+            bool isCenter = (tabs[i] == HomeNavBar.Tab.Home);
+            bool isSel = (tabs[i] == currentTab);
+            float yPos = isCenter ? 14f : (isSel ? 6f : 0f);
+            float curW = isCenter ? 186f : podW;
+            float curH = isCenter ? 104f : podH;
+
+            var itemBtn = UIFactory.Button("Nav_" + tabs[i], barRoot, new Vector2(curW, curH),
+                                           new Vector2(x, yPos), new Color(0, 0, 0, 0), null,
+                                           shape: ClayGraphic.Shape.Panel);
+            itemBtn.Clay.shadowAlpha = 0f;
+            itemBtn.Clay.innerHighlight = 0f;
+            itemBtn.Clay.innerShadow = 0f;
+
+            // Elevated Center Arch / Active Gold Border Ring
+            var activeBorder = UIFactory.Clay("ActiveBorder", itemBtn.content, new Vector2(curW + 4f, curH + 4f),
+                                              Vector2.zero, T.navGoldBorder, ClayGraphic.Shape.Panel, 22f);
+            activeBorder.raycastTarget = false;
+            activeBorder.shadowSpread = 16f;
+            activeBorder.shadowAlpha = 0.40f;
+            activeBorder.innerHighlight = 0.45f;
+            activeBorder.gameObject.SetActive(isSel || isCenter);
+
+            // Tactile Pod Panel
+            Color podCol = isSel ? T.navPodActive : T.navPodDefault;
+            var podPanel = UIFactory.Clay("PodPanel", itemBtn.content, new Vector2(curW, curH),
+                                          Vector2.zero, podCol, ClayGraphic.Shape.Panel, 18f);
+            podPanel.raycastTarget = false;
+            podPanel.shadowSpread = isSel ? 18f : 12f;
+            podPanel.shadowAlpha = isSel ? 0.35f : 0.18f;
+            podPanel.innerHighlight = isSel ? 0.35f : 0.18f;
+            podPanel.innerShadow = 0.15f;
+            if (isSel)
+            {
+                podPanel.glowSpread = 22f;
+                podPanel.glowAlpha = 0.30f;
+            }
+
+            // Icon
+            var iconSprite = customIcons[i];
+            Image iconImg = null;
+            Color unselectedInk = new Color(0.85f, 0.89f, 0.96f, 0.95f);
+            Color labelUnsel = new Color(0.72f, 0.80f, 0.90f, 1f);
+            if (iconSprite != null)
+            {
+                bool is3D = (iconSprite == (icons != null ? icons.coin3D : null)) ||
+                            (iconSprite == (icons != null ? icons.gemGreen3D : null));
+
+                Color iconCol = isSel ? Color.white : (is3D ? Color.white : unselectedInk);
+                float iconSize = isCenter ? 46f : 38f;
+                iconImg = UIFactory.Icon("NavIcon", itemBtn.content, new Vector2(iconSize, iconSize),
+                                         new Vector2(0f, isCenter ? 14f : 12f),
+                                         iconSprite, iconCol);
+                if (isSel) iconImg.transform.localScale = Vector3.one * 1.08f;
+            }
+
+            // Label
+            var txt = UIFactory.Label("Label", itemBtn.content, new Vector2(curW - 8f, 20f),
+                                      new Vector2(0f, isCenter ? -18f : -16f), labels[i], UIFontSet.Current.body,
+                                      isCenter ? 17f : 14f,
+                                      isSel ? T.gold : labelUnsel);
+            txt.fontStyle = (isSel || isCenter) ? FontStyles.Bold : FontStyles.Normal;
+
+            var navItem = new HomeNavBar.NavItem
+            {
+                tab = tabs[i],
+                targetScreen = screens[i],
+                button = itemBtn,
+                backgroundPanel = podPanel,
+                activeBorder = activeBorder,
+                label = txt,
+                iconImage = iconImg,
+                defaultPos = new Vector2(x, isCenter ? 14f : 0f)
+            };
+            nav.items.Add(navItem);
+        }
+
+        return nav;
     }
 
     private static void MarkTile(Transform parent, string name, Vector2 pos, float size, Color c)
@@ -316,12 +687,13 @@ public static class LudoNXScreenAuthor
     {
         CreateSupportAssets();
         var T = UITheme.Current;
+        var icons = UIIconSet.Current;
 
         GameObject root = NewScreenRoot("PlayMenu", ScreenId.PlayMenu);
         var screen = root.AddComponent<PlayMenuScreen>();
         Transform p = root.transform;
 
-        UIFactory.Page(p);
+        UIFactory.Page(p, icons != null ? icons.bgBattleArena : null);
         TextMeshProUGUI title;
         screen.backButton = UIFactory.TopBar(p, "PLAY", out title);
 
@@ -394,7 +766,7 @@ public static class LudoNXScreenAuthor
         var screen = root.AddComponent<QuickPlaySetupScreen>();
         Transform p = root.transform;
 
-        UIFactory.Page(p);
+        UIFactory.Page(p, icons != null ? icons.bgBattleArena : null);
         TextMeshProUGUI title;
         screen.backButton = UIFactory.TopBar(p, "QUICK PLAY", out title);
         screen.titleLabel = title;
@@ -533,20 +905,41 @@ public static class LudoNXScreenAuthor
     {
         CreateSupportAssets();
         var T = UITheme.Current;
+        var icons = UIIconSet.Current;
 
         GameObject root = NewScreenRoot("Shop", ScreenId.Shop);
         var screen = root.AddComponent<ShopScreen>();
         Transform p = root.transform;
 
-        UIFactory.Page(p);
+        UIFactory.Page(p, icons != null ? icons.bgShopVault : null);
         TextMeshProUGUI title;
         screen.backButton = UIFactory.TopBar(p, "SHOP", out title);
         screen.titleLabel = title;
 
+        // Category Tabs
+        var catRow = UIFactory.Rect("CatRow", p, new Vector2(920f, 70f), new Vector2(0f, 710f));
+        float tabW = 145f;
+        screen.featuredTab = UIFactory.Button("TabFeatured", catRow, new Vector2(tabW, 64f),
+                                              new Vector2(-375f + 0 * tabW, 0f), T.primary, "FEATURED", 20f,
+                                              ClayGraphic.Shape.Pill);
+        screen.diceTab = UIFactory.Button("TabDice", catRow, new Vector2(tabW, 64f),
+                                          new Vector2(-375f + 1 * tabW, 0f), T.neutral, "DICE", 20f,
+                                          ClayGraphic.Shape.Pill);
+        screen.pawnsTab = UIFactory.Button("TabPawns", catRow, new Vector2(tabW, 64f),
+                                           new Vector2(-375f + 2 * tabW, 0f), T.neutral, "PAWNS", 20f,
+                                           ClayGraphic.Shape.Pill);
+        screen.boardsTab = UIFactory.Button("TabBoards", catRow, new Vector2(tabW, 64f),
+                                            new Vector2(-375f + 3 * tabW, 0f), T.neutral, "BOARDS", 20f,
+                                            ClayGraphic.Shape.Pill);
+        screen.bundlesTab = UIFactory.Button("TabBundles", catRow, new Vector2(tabW, 64f),
+                                             new Vector2(-375f + 4 * tabW, 0f), T.neutral, "BUNDLES", 20f,
+                                             ClayGraphic.Shape.Pill);
+        screen.currencyTab = UIFactory.Button("TabCurrency", catRow, new Vector2(tabW, 64f),
+                                              new Vector2(-375f + 5 * tabW, 0f), T.neutral, "COINS", 20f,
+                                              ClayGraphic.Shape.Pill);
+
         // ── Energy panel ──────────────────────────────────────────────────────────────────
-        // Balance first, and large. It is the number the player came to change, and it is also
-        // the reason the rest of the screen exists.
-        var energyCard = UIFactory.Clay("EnergyCard", p, new Vector2(880f, 300f), new Vector2(0f, 560f),
+        var energyCard = UIFactory.Clay("EnergyCard", p, new Vector2(880f, 260f), new Vector2(0f, 520f),
                                         T.panel, ClayGraphic.Shape.Panel, T.radiusLg, UISkin.Role.PanelCard);
 
         UIFactory.Label("EnergyHeader", energyCard.transform, new Vector2(760f, 44f), new Vector2(0f, 106f),
@@ -606,6 +999,8 @@ public static class LudoNXScreenAuthor
         screen.restoreButton = UIFactory.Button("RestoreButton", p, new Vector2(880f, 96f),
                                                 new Vector2(0f, -450f), T.neutral,
                                                 "RESTORE PURCHASES", 26f);
+
+        screen.navBar = BuildNavBar(p, T, HomeNavBar.Tab.Shop);
 
         SavePrefab(root, ScreenDir + "/Shop.prefab");
     }
@@ -689,16 +1084,18 @@ public static class LudoNXScreenAuthor
         TextMeshProUGUI title;
         screen.backButton = UIFactory.TopBar(p, "PROFILE", out title);
 
+        // ── Tab row ───────────────────────────────────────────────────────────
         screen.identityTab = UIFactory.Button("IdentityTab", p, new Vector2(424f, 96f),
-                                              new Vector2(-226f, 640f), T.secondary, "IDENTITY", 28f);
+                                              new Vector2(-226f, 640f), T.secondary, "OVERVIEW", 28f);
         screen.achievementsTab = UIFactory.Button("AchievementsTab", p, new Vector2(424f, 96f),
                                                   new Vector2(226f, 640f), T.neutral, "AWARDS", 28f);
 
-        // Identity panel
-        var identity = UIFactory.Rect("IdentityPanel", p, new Vector2(1080f, 1200f), new Vector2(0f, -120f));
+        // ── IDENTITY PANEL ─────────────────────────────────────────────────────
+        var identity = UIFactory.Rect("IdentityPanel", p, new Vector2(1080f, 1600f), new Vector2(0f, -60f));
         screen.identityPanel = identity.gameObject;
 
-        var ring = UIFactory.Clay("AvatarRing", identity, new Vector2(240f, 240f), new Vector2(0f, 430f),
+        // Avatar ring
+        var ring = UIFactory.Clay("AvatarRing", identity, new Vector2(224f, 224f), new Vector2(0f, 480f),
                                   T.panelHigh, ClayGraphic.Shape.Circle);
         ring.raycastTarget = false;
         var circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/art_assets/generated/ui_circle.png");
@@ -707,26 +1104,79 @@ public static class LudoNXScreenAuthor
         inner.raycastTarget = false;
         ring.gameObject.AddComponent<ProfileAvatarSlot>().diameter = 196f;
 
-        screen.nameLabel = UIFactory.Display("Name", identity, new Vector2(900f, 90f), new Vector2(0f, 268f),
+        // Name + Player ID
+        screen.nameLabel = UIFactory.Display("Name", identity, new Vector2(880f, 80f), new Vector2(0f, 330f),
                                              "Player", T.ink);
-        screen.nameLabel.fontSize = 62f;
-        screen.levelLabel = UIFactory.Body("Level", identity, new Vector2(900f, 50f), new Vector2(0f, 196f),
-                                           "LEVEL 1", T.inkMuted, 28f);
+        screen.nameLabel.fontSize = 58f;
+
+        screen.playerIdLabel = UIFactory.Body("PlayerId", identity, new Vector2(880f, 42f),
+                                              new Vector2(0f, 262f), "#000000", T.inkMuted, 26f);
+        screen.playerIdLabel.characterSpacing = 4f;
+
+        // Level + rank badge on same row
+        screen.levelLabel = UIFactory.Body("Level", identity, new Vector2(400f, 44f),
+                                           new Vector2(-220f, 196f), "LEVEL 1", T.inkMuted, 26f);
         screen.levelLabel.characterSpacing = 6f;
+        screen.rankLabel = UIFactory.Body("Rank", identity, new Vector2(400f, 44f),
+                                          new Vector2(220f, 196f), "BRONZE I", T.gold, 26f);
+        screen.rankLabel.characterSpacing = 6f;
 
-        screen.editButton = UIFactory.Button("EditButton", identity, new Vector2(300f, 88f),
-                                             new Vector2(0f, 108f), T.neutral, "EDIT NAME", 26f);
+        // XP progress bar track
+        var xpTrack = UIFactory.Clay("XPTrack", identity, new Vector2(760f, 20f), new Vector2(0f, 138f),
+                                     T.recessed, ClayGraphic.Shape.Pill);
+        xpTrack.raycastTarget = false;
+        xpTrack.shadowAlpha = 0f;
 
-        screen.winsValue = UIFactory.StatTile("WinsTile", identity, new Vector2(410f, 210f),
-                                              new Vector2(-222f, -60f), "0", "WINS", T.gold);
-        screen.matchesValue = UIFactory.StatTile("MatchesTile", identity, new Vector2(410f, 210f),
-                                                 new Vector2(222f, -60f), "0", "MATCHES", T.secondary);
-        screen.winRateValue = UIFactory.StatTile("RateTile", identity, new Vector2(410f, 210f),
-                                                 new Vector2(-222f, -300f), "0%", "WIN RATE", T.success);
-        screen.streakValue = UIFactory.StatTile("StreakTile", identity, new Vector2(410f, 210f),
-                                                new Vector2(222f, -300f), "0", "BEST STREAK", T.primary);
+        var xpFill = UIFactory.Clay("XPFill", xpTrack.transform, new Vector2(0f, 20f), Vector2.zero,
+                                    T.secondary, ClayGraphic.Shape.Pill);
+        xpFill.raycastTarget = false;
+        xpFill.shadowAlpha = 0f;
+        var xpFillRt = xpFill.rectTransform;
+        xpFillRt.anchorMin = new Vector2(0f, 0.5f);
+        xpFillRt.anchorMax = new Vector2(0f, 0.5f);
+        xpFillRt.pivot     = new Vector2(0f, 0.5f);
+        xpFillRt.anchoredPosition = Vector2.zero;
+        screen.xpBarFill = xpFillRt;
 
-        // Achievements panel
+        screen.xpLabel = UIFactory.Body("XPLabel", identity, new Vector2(760f, 36f),
+                                        new Vector2(0f, 100f), "0 / 100 XP", T.inkMuted, 22f);
+
+        // League + Country + Edit button
+        screen.leagueLabel = UIFactory.Body("League", identity, new Vector2(380f, 40f),
+                                            new Vector2(-240f, 40f), "OPEN LEAGUE", T.inkDim, 24f);
+        screen.countryLabel = UIFactory.Body("Country", identity, new Vector2(280f, 40f),
+                                             new Vector2(180f, 40f), "—", T.inkDim, 24f);
+        screen.editButton = UIFactory.Button("EditButton", identity, new Vector2(280f, 82f),
+                                            new Vector2(360f, 40f), T.neutral, "EDIT", 24f);
+
+        // ── Career stat grid (2 × 4 tiles) ───────────────────────────────────
+        // Row 1
+        screen.winsValue = UIFactory.StatTile("WinsTile", identity, new Vector2(390f, 190f),
+                                              new Vector2(-315f, -120f), "0", "WINS", T.gold);
+        screen.matchesValue = UIFactory.StatTile("MatchesTile", identity, new Vector2(390f, 190f),
+                                                 new Vector2(-105f, -120f), "0", "MATCHES", T.secondary);
+        screen.winRateValue = UIFactory.StatTile("RateTile", identity, new Vector2(390f, 190f),
+                                                 new Vector2(105f, -120f), "0%", "WIN RATE", T.success);
+        screen.streakValue = UIFactory.StatTile("StreakTile", identity, new Vector2(390f, 190f),
+                                                new Vector2(315f, -120f), "0", "BEST STREAK", T.primary);
+        // Row 2
+        screen.totalPointsValue = UIFactory.StatTile("PtsTile", identity, new Vector2(390f, 190f),
+                                                     new Vector2(-315f, -340f), "0", "TOTAL PTS", T.gold);
+        screen.totalCapturesValue = UIFactory.StatTile("CapTile", identity, new Vector2(390f, 190f),
+                                                       new Vector2(-105f, -340f), "0", "CAPTURES", T.secondary);
+        screen.bestScoreValue = UIFactory.StatTile("BestTile", identity, new Vector2(390f, 190f),
+                                                   new Vector2(105f, -340f), "0", "BEST SCORE", T.primary);
+
+        // VIEW FULL STATS chevron button
+        screen.viewStatsButton = UIFactory.Button("ViewStatsBtn", identity, new Vector2(840f, 128f),
+                                                  new Vector2(0f, -540f), T.panel, "VIEW FULL STATISTICS  ›", 30f,
+                                                  ClayGraphic.Shape.Panel, glow: 0f);
+        screen.viewStatsButton.Clay.cornerRadius = T.radiusMd;
+        screen.viewStatsButton.Clay.innerHighlight = 0.04f;
+        var vsLabel = screen.viewStatsButton.GetComponentInChildren<TextMeshProUGUI>();
+        if (vsLabel != null) { vsLabel.color = UITheme.Lin(T.ink); vsLabel.alignment = TextAlignmentOptions.Left; }
+
+        // ── ACHIEVEMENTS PANEL ────────────────────────────────────────────────
         var awards = UIFactory.Rect("AchievementsPanel", p, new Vector2(1080f, 1200f), new Vector2(0f, -120f));
         screen.achievementsPanel = awards.gameObject;
 
@@ -735,24 +1185,24 @@ public static class LudoNXScreenAuthor
 
         var viewport = UIFactory.Rect("Viewport", awards, new Vector2(940f, 980f), new Vector2(0f, -40f));
         var vpImage = viewport.gameObject.AddComponent<UnityEngine.UI.Image>();
-        vpImage.color = new Color(1f, 1f, 1f, 0.004f);   // a Mask needs something to draw
+        vpImage.color = new Color(1f, 1f, 1f, 0.004f);
         var mask = viewport.gameObject.AddComponent<UnityEngine.UI.Mask>();
         mask.showMaskGraphic = false;
 
         var content = UIFactory.Rect("Content", viewport, new Vector2(900f, 2000f), Vector2.zero);
         content.anchorMin = new Vector2(0.5f, 1f);
         content.anchorMax = new Vector2(0.5f, 1f);
-        content.pivot = new Vector2(0.5f, 1f);
+        content.pivot     = new Vector2(0.5f, 1f);
         content.anchoredPosition = Vector2.zero;
         screen.achievementContent = content;
 
         var scroll = awards.gameObject.AddComponent<UnityEngine.UI.ScrollRect>();
-        scroll.content = content;
-        scroll.viewport = viewport;
-        scroll.horizontal = false;
-        scroll.vertical = true;
-        scroll.movementType = UnityEngine.UI.ScrollRect.MovementType.Elastic;
-        scroll.elasticity = 0.1f;
+        scroll.content         = content;
+        scroll.viewport        = viewport;
+        scroll.horizontal      = false;
+        scroll.vertical        = true;
+        scroll.movementType    = UnityEngine.UI.ScrollRect.MovementType.Elastic;
+        scroll.elasticity      = 0.1f;
         scroll.scrollSensitivity = 30f;
 
         screen.achievementRowTemplate = BuildAchievementRow(content, T, icons);
@@ -1242,7 +1692,898 @@ public static class LudoNXScreenAuthor
             SavePrefabRaw(root, ModalDir + "/EditProfile.prefab");
         }
 
+        // Energy Modal
+        {
+            GameObject root = NewModalRoot("EnergyModal");
+            var modal = root.AddComponent<EnergyModal>();
+            var card = ModalCard(root.transform, new Vector2(880f, 1140f), T, modal);
+
+            UIFactory.Display("Title", card, new Vector2(760f, 90f), new Vector2(0f, 470f),
+                              "ENERGY & LIVES", T.ink).fontSize = 50f;
+
+            var pipsGroup = UIFactory.Rect("PipsGroup", card, new Vector2(500f, 80f), new Vector2(0f, 360f));
+            modal.energyPips = new ClayGraphic[5];
+            for (int i = 0; i < 5; i++)
+            {
+                float x = -160f + i * 80f;
+                var pip = UIFactory.Clay("Pip_" + i, pipsGroup, new Vector2(60f, 60f),
+                                         new Vector2(x, 0f), T.primary, ClayGraphic.Shape.Circle);
+                pip.raycastTarget = false;
+                modal.energyPips[i] = pip;
+            }
+
+            modal.energyCountLabel = UIFactory.Display("Count", card, new Vector2(760f, 80f),
+                                                       new Vector2(0f, 260f), "5 / 5", T.ink);
+            modal.energyCountLabel.fontSize = 58f;
+
+            modal.timerLabel = UIFactory.Body("Timer", card, new Vector2(760f, 50f),
+                                              new Vector2(0f, 190f), "FULL CAPACITY", T.success, 28f);
+
+            var adBtn = UIFactory.Button("WatchAdBtn", card, new Vector2(760f, 140f),
+                                         new Vector2(0f, 60f), T.gold, "WATCH AD (+1 LIFE)", 34f,
+                                         ClayGraphic.Shape.Pill, glow: 0.12f);
+            modal.watchAdButton = adBtn;
+
+            var coinsBtn = UIFactory.Button("RefillCoinsBtn", card, new Vector2(760f, 140f),
+                                            new Vector2(0f, -110f), T.success, "REFILL (150 COINS)", 34f,
+                                            ClayGraphic.Shape.Pill, glow: 0.12f);
+            modal.refillCoinsButton = coinsBtn;
+
+            var shopBtn = UIFactory.Button("ShopBtn", card, new Vector2(760f, 120f),
+                                           new Vector2(0f, -270f), T.secondary, "GET UNLIMITED IN SHOP", 30f);
+            modal.shopButton = shopBtn;
+
+            var closeBtn = UIFactory.Button("CloseBtn", card, new Vector2(760f, 110f),
+                                            new Vector2(0f, -420f), T.neutral, "CLOSE", 32f);
+            modal.closeButton = closeBtn;
+
+            SavePrefabRaw(root, ModalDir + "/EnergyModal.prefab");
+        }
+
+        // Missions Modal
+        {
+            GameObject root = NewModalRoot("MissionsModal");
+            var modal = root.AddComponent<MissionsModal>();
+            var card = ModalCard(root.transform, new Vector2(920f, 1280f), T, modal);
+
+            modal.headerTitleLabel = UIFactory.Display("Title", card, new Vector2(760f, 80f),
+                                                       new Vector2(0f, 550f), "MISSIONS & QUESTS", T.ink);
+            modal.headerTitleLabel.fontSize = 48f;
+
+            modal.timerResetLabel = UIFactory.Body("Timer", card, new Vector2(760f, 40f),
+                                                  new Vector2(0f, 480f), "RESETS IN 18H 30M", T.inkMuted, 24f);
+
+            var dailyTab = UIFactory.Button("DailyTab", card, new Vector2(370f, 84f),
+                                            new Vector2(-195f, 400f), T.secondary, "DAILY", 28f);
+            modal.dailyTabButton = dailyTab;
+
+            var weeklyTab = UIFactory.Button("WeeklyTab", card, new Vector2(370f, 84f),
+                                             new Vector2(195f, 400f), T.neutral, "WEEKLY", 28f);
+            modal.weeklyTabButton = weeklyTab;
+
+            var list = UIFactory.Rect("MissionList", card, new Vector2(820f, 540f), new Vector2(0f, 50f));
+            modal.missionListContainer = list;
+
+            // Template row
+            var tRow = UIFactory.Clay("TemplateRow", list, new Vector2(800f, 140f), Vector2.zero,
+                                      T.panelHigh, ClayGraphic.Shape.Panel, T.radiusMd);
+            tRow.raycastTarget = false;
+
+            UIFactory.Label("Title", tRow.transform, new Vector2(460f, 36f), new Vector2(-130f, 34f),
+                            "Mission Title", UIFontSet.Current.body, 28f, T.ink, TextAlignmentOptions.Left);
+            UIFactory.Label("Desc", tRow.transform, new Vector2(460f, 30f), new Vector2(-130f, 0f),
+                            "Mission Description", UIFontSet.Current.bodyLight, 22f, T.inkMuted, TextAlignmentOptions.Left);
+            UIFactory.Label("Count", tRow.transform, new Vector2(180f, 30f), new Vector2(270f, 34f),
+                            "0/1", UIFontSet.Current.numeric, 24f, T.inkDim, TextAlignmentOptions.Right);
+
+            var bar = UIFactory.Clay("Bar", tRow.transform, new Vector2(460f, 14f), new Vector2(-130f, -34f),
+                                     T.recessed, ClayGraphic.Shape.Pill);
+            bar.raycastTarget = false;
+            bar.shadowAlpha = 0f;
+            var fill = UIFactory.Clay("Fill", bar.transform, new Vector2(200f, 14f), Vector2.zero,
+                                      T.success, ClayGraphic.Shape.Pill);
+            fill.raycastTarget = false;
+            fill.shadowAlpha = 0f;
+            var fillRt = fill.rectTransform;
+            fillRt.anchorMin = new Vector2(0f, 0.5f);
+            fillRt.anchorMax = new Vector2(0f, 0.5f);
+            fillRt.pivot = new Vector2(0f, 0.5f);
+            fillRt.anchoredPosition = Vector2.zero;
+
+            var claim = UIFactory.Button("ClaimButton", tRow.transform, new Vector2(180f, 70f),
+                                         new Vector2(270f, -14f), T.success, "CLAIM", 24f, ClayGraphic.Shape.Pill);
+
+            UIFactory.Label("Reward", tRow.transform, new Vector2(180f, 26f), new Vector2(270f, -54f),
+                            "+100 COINS", UIFontSet.Current.numeric, 18f, T.gold, TextAlignmentOptions.Center);
+
+            tRow.gameObject.SetActive(false);
+            modal.missionRowTemplate = (RectTransform)tRow.transform;
+
+            var claimAll = UIFactory.Button("ClaimAllBtn", card, new Vector2(780f, 110f),
+                                            new Vector2(0f, -340f), T.success, "CLAIM ALL COMPLETED", 32f,
+                                            ClayGraphic.Shape.Pill, glow: 0.12f);
+            modal.claimAllButton = claimAll;
+
+            var close = UIFactory.Button("CloseBtn", card, new Vector2(780f, 96f),
+                                         new Vector2(0f, -470f), T.neutral, "CLOSE", 28f);
+            modal.closeButton = close;
+
+            SavePrefabRaw(root, ModalDir + "/MissionsModal.prefab");
+        }
+
+        // Wallet Modal
+        {
+            GameObject root = NewModalRoot("WalletModal");
+            var modal = root.AddComponent<WalletModal>();
+            var card = ModalCard(root.transform, new Vector2(880f, 1220f), T, modal);
+
+            UIFactory.Display("Title", card, new Vector2(760f, 80f), new Vector2(0f, 510f),
+                              "WALLET & BANK", T.ink).fontSize = 48f;
+
+            // Balance box
+            var balCard = UIFactory.Clay("BalanceCard", card, new Vector2(760f, 120f), new Vector2(0f, 380f),
+                                         T.panelHigh, ClayGraphic.Shape.Panel, T.radiusMd);
+            balCard.raycastTarget = false;
+            UIFactory.Label("CoinsHeader", balCard.transform, new Vector2(300f, 30f), new Vector2(-180f, 24f),
+                            "COIN BALANCE", UIFontSet.Current.bodyLight, 22f, T.inkDim, TextAlignmentOptions.Left);
+            modal.coinsBalanceLabel = UIFactory.Label("CoinsVal", balCard.transform, new Vector2(300f, 50f),
+                                                      new Vector2(-180f, -18f), "1,250", UIFontSet.Current.numeric,
+                                                      42f, T.gold, TextAlignmentOptions.Left);
+
+            UIFactory.Label("EnergyHeader", balCard.transform, new Vector2(300f, 30f), new Vector2(180f, 24f),
+                            "ENERGY", UIFontSet.Current.bodyLight, 22f, T.inkDim, TextAlignmentOptions.Right);
+            modal.energyBalanceLabel = UIFactory.Label("EnergyVal", balCard.transform, new Vector2(300f, 50f),
+                                                       new Vector2(180f, -18f), "5 / 5", UIFontSet.Current.numeric,
+                                                       42f, T.primary, TextAlignmentOptions.Right);
+
+            // Free daily reward
+            var dailyBonus = UIFactory.Button("DailyBonusBtn", card, new Vector2(760f, 120f),
+                                              new Vector2(0f, 220f), T.gold, "CLAIM +250 FREE COINS", 32f,
+                                              ClayGraphic.Shape.Pill, glow: 0.14f);
+            modal.dailyBonusButton = dailyBonus;
+            modal.dailyBonusLabel = dailyBonus.GetComponentInChildren<TextMeshProUGUI>();
+
+            // Coin packs
+            var p1 = UIFactory.Button("Pack1", card, new Vector2(760f, 108f), new Vector2(0f, 70f),
+                                      T.panelHigh, null, shape: ClayGraphic.Shape.Panel);
+            UIFactory.Label("P1Title", p1.transform, new Vector2(400f, 40f), new Vector2(-140f, 0f),
+                            "POUCH: 1,000 COINS", UIFontSet.Current.body, 28f, T.ink, TextAlignmentOptions.Left);
+            UIFactory.Label("P1Price", p1.transform, new Vector2(200f, 40f), new Vector2(220f, 0f),
+                            "$0.99", UIFontSet.Current.numeric, 28f, T.primary, TextAlignmentOptions.Right);
+            modal.pack1Button = p1;
+
+            var p2 = UIFactory.Button("Pack2", card, new Vector2(760f, 108f), new Vector2(0f, -60f),
+                                      T.panelHigh, null, shape: ClayGraphic.Shape.Panel);
+            UIFactory.Label("P2Title", p2.transform, new Vector2(400f, 40f), new Vector2(-140f, 0f),
+                            "SACK: 5,000 COINS", UIFontSet.Current.body, 28f, T.ink, TextAlignmentOptions.Left);
+            UIFactory.Label("P2Price", p2.transform, new Vector2(200f, 40f), new Vector2(220f, 0f),
+                            "$2.99", UIFontSet.Current.numeric, 28f, T.primary, TextAlignmentOptions.Right);
+            modal.pack2Button = p2;
+
+            var p3 = UIFactory.Button("Pack3", card, new Vector2(760f, 108f), new Vector2(0f, -190f),
+                                      T.panelHigh, null, shape: ClayGraphic.Shape.Panel);
+            UIFactory.Label("P3Title", p3.transform, new Vector2(400f, 40f), new Vector2(-140f, 0f),
+                            "CHEST: 20,000 COINS", UIFontSet.Current.body, 28f, T.ink, TextAlignmentOptions.Left);
+            UIFactory.Label("P3Price", p3.transform, new Vector2(200f, 40f), new Vector2(220f, 0f),
+                            "$9.99", UIFontSet.Current.numeric, 28f, T.gold, TextAlignmentOptions.Right);
+            modal.pack3Button = p3;
+
+            var close = UIFactory.Button("CloseBtn", card, new Vector2(760f, 100f),
+                                         new Vector2(0f, -360f), T.neutral, "CLOSE", 30f);
+            modal.closeButton = close;
+
+            SavePrefabRaw(root, ModalDir + "/WalletModal.prefab");
+        }
+
+        // Shop Item Detail Modal
+        {
+            GameObject root = NewModalRoot("ShopItemDetailModal");
+            var modal = root.AddComponent<ShopItemDetailModal>();
+            var card = ModalCard(root.transform, new Vector2(880f, 1160f), T, modal);
+
+            modal.itemCategoryLabel = UIFactory.Label("Category", card, new Vector2(760f, 40f),
+                                                      new Vector2(0f, 470f), "DICE SKIN • EPIC",
+                                                      UIFontSet.Current.bodyLight, 24f, T.gold);
+            modal.itemTitleLabel = UIFactory.Display("Title", card, new Vector2(760f, 80f),
+                                                     new Vector2(0f, 400f), "OBSIDIAN DIE", T.ink);
+            modal.itemTitleLabel.fontSize = 50f;
+
+            // Preview box
+            var preview = UIFactory.Clay("PreviewBox", card, new Vector2(300f, 300f),
+                                         new Vector2(0f, 180f), T.panelHigh, ClayGraphic.Shape.Panel, T.radiusLg);
+            preview.raycastTarget = false;
+            var iconRt = UIFactory.Rect("IconImg", preview.transform, new Vector2(240f, 240f), Vector2.zero);
+            var iconImg = iconRt.gameObject.AddComponent<Image>();
+            iconImg.color = Color.white;
+            modal.itemIconImage = iconImg;
+
+            modal.itemDescriptionLabel = UIFactory.Label("Desc", card, new Vector2(760f, 80f),
+                                                         new Vector2(0f, -30f),
+                                                         "Hand-crafted dark crystal with shimmering edges.",
+                                                         UIFontSet.Current.bodyLight, 26f, T.inkMuted);
+
+            modal.perkListLabel = UIFactory.Label("Perks", card, new Vector2(760f, 60f),
+                                                  new Vector2(0f, -110f),
+                                                  "• Custom roll sound\n• Gold trail particles",
+                                                  UIFontSet.Current.body, 24f, T.ink);
+
+            var actionBtn = UIFactory.Button("ActionBtn", card, new Vector2(760f, 140f),
+                                             new Vector2(0f, -260f), T.primary, "BUY NOW — $1.99", 36f,
+                                             ClayGraphic.Shape.Pill, glow: 0.14f);
+            modal.buyOrEquipButton = actionBtn;
+            modal.buyOrEquipLabel = actionBtn.GetComponentInChildren<TextMeshProUGUI>();
+
+            var close = UIFactory.Button("CloseBtn", card, new Vector2(760f, 100f),
+                                         new Vector2(0f, -420f), T.neutral, "CLOSE", 30f);
+            modal.closeButton = close;
+
+            SavePrefabRaw(root, ModalDir + "/ShopItemDetailModal.prefab");
+        }
+
         Debug.Log("[LudoNX UI] modals written.");
+    }
+
+    // ── Match Lobby ──────────────────────────────────────────────────────────────────
+
+    [MenuItem("Ludo NX/UI/10. Build Match Lobby", priority = 10)]
+    public static void BuildMatchLobby()
+    {
+        CreateSupportAssets();
+        var T = UITheme.Current;
+
+        GameObject root = NewScreenRoot("MatchLobby", ScreenId.MatchLobby);
+        var screen = root.AddComponent<MatchLobbyScreen>();
+        Transform p = root.transform;
+
+        UIFactory.Page(p);
+
+        TextMeshProUGUI title;
+        screen.backButton = UIFactory.TopBar(p, "MATCH LOBBY", out title);
+
+        // Room code card
+        var roomCard = UIFactory.Clay("RoomCard", p, new Vector2(880f, 130f), new Vector2(0f, 620f),
+                                      T.panel, ClayGraphic.Shape.Panel, T.radiusLg);
+        roomCard.raycastTarget = false;
+
+        screen.roomCodeLabel = UIFactory.Display("Code", roomCard.transform, new Vector2(440f, 70f),
+                                                 new Vector2(-150f, 0f), "ROOM #7842", T.ink);
+        screen.roomCodeLabel.fontSize = 44f;
+        screen.roomCodeLabel.alignment = TextAlignmentOptions.Left;
+
+        screen.copyCodeButton = UIFactory.Button("CopyBtn", roomCard.transform, new Vector2(200f, 80f),
+                                                 new Vector2(280f, 0f), T.secondary, "COPY", 28f);
+
+        screen.modeRulesChip = UIFactory.Chip("ModeChip", p, new Vector2(400f, 66f),
+                                              new Vector2(0f, 500f), "CLASSIC • 4 PLAYERS", T.panelHigh, T.ink);
+
+        // Player slots
+        screen.playerSlots = new List<MatchLobbyScreen.LobbySlot>();
+        for (int i = 0; i < 4; i++)
+        {
+            float y = 350f - i * 160f;
+            var slotCard = UIFactory.Clay("Slot_" + i, p, new Vector2(880f, 136f), new Vector2(0f, y),
+                                          T.panel, ClayGraphic.Shape.Panel, T.radiusMd);
+            slotCard.raycastTarget = false;
+
+            var badge = UIFactory.Clay("HouseBadge", slotCard.transform, new Vector2(72f, 72f),
+                                       new Vector2(-360f, 0f), T.playerRed, ClayGraphic.Shape.Circle);
+            badge.raycastTarget = false;
+
+            var nameLabel = UIFactory.Label("PlayerName", slotCard.transform, new Vector2(440f, 44f),
+                                            new Vector2(-50f, 18f), i == 0 ? "Player (You)" : "WAITING FOR PLAYER...",
+                                            UIFontSet.Current.body, 32f, T.ink, TextAlignmentOptions.Left);
+
+            var statusLabel = UIFactory.Label("Status", slotCard.transform, new Vector2(440f, 36f),
+                                              new Vector2(-50f, -22f), i == 0 ? "HOST / READY" : "OPEN SLOT",
+                                              UIFontSet.Current.bodyLight, 24f, i == 0 ? T.success : T.inkDim, TextAlignmentOptions.Left);
+
+            var crown = UIFactory.Clay("Crown", slotCard.transform, new Vector2(44f, 44f),
+                                       new Vector2(360f, 0f), T.gold, ClayGraphic.Shape.Circle);
+            crown.raycastTarget = false;
+            crown.gameObject.SetActive(i == 0);
+
+            var slot = new MatchLobbyScreen.LobbySlot
+            {
+                slotRoot = (RectTransform)slotCard.transform,
+                houseBadge = badge,
+                playerNameLabel = nameLabel,
+                statusLabel = statusLabel,
+                hostCrown = crown,
+                isOccupied = (i == 0),
+                isReady = (i == 0)
+            };
+            screen.playerSlots.Add(slot);
+        }
+
+        // Action buttons
+        screen.startOrReadyButton = UIFactory.Button("StartBtn", p, new Vector2(840f, 180f),
+                                                     new Vector2(0f, -440f), T.primary, "START MATCH", 48f,
+                                                     ClayGraphic.Shape.Pill, glow: 0.16f, hero: true);
+        screen.startOrReadyButton.Clay.glowSpread = 40f;
+        screen.startOrReadyText = screen.startOrReadyButton.GetComponentInChildren<TextMeshProUGUI>();
+
+        screen.inviteButton = UIFactory.Button("InviteBtn", p, new Vector2(840f, 120f),
+                                               new Vector2(0f, -620f), T.neutral, "INVITE FRIENDS", 32f);
+
+        SavePrefab(root, ScreenDir + "/MatchLobby.prefab");
+    }
+
+    // ── Pawn / Token Collection ──────────────────────────────────────────────────────
+
+    [MenuItem("Ludo NX/UI/11. Build Pawn Collection", priority = 11)]
+    public static void BuildPawnCollection()
+    {
+        CreateSupportAssets();
+        var T = UITheme.Current;
+
+        GameObject root = NewScreenRoot("PawnCollection", ScreenId.PawnCollection);
+        var screen = root.AddComponent<PawnCollectionScreen>();
+        Transform p = root.transform;
+
+        UIFactory.Page(p);
+
+        TextMeshProUGUI title;
+        screen.backButton = UIFactory.TopBar(p, "PAWN COLLECTION", out title);
+
+        // Collection progress card
+        var progCard = UIFactory.Clay("ProgressCard", p, new Vector2(880f, 120f), new Vector2(0f, 620f),
+                                      T.panel, ClayGraphic.Shape.Panel, T.radiusMd);
+        progCard.raycastTarget = false;
+
+        screen.collectionProgressLabel = UIFactory.Label("ProgressLabel", progCard.transform,
+                                                         new Vector2(400f, 40f), new Vector2(-180f, 18f),
+                                                         "4 / 6 UNLOCKED (66%)", UIFontSet.Current.body,
+                                                         26f, T.ink, TextAlignmentOptions.Left);
+
+        var bar = UIFactory.Clay("ProgressBar", progCard.transform, new Vector2(460f, 16f),
+                                 new Vector2(-150f, -22f), T.recessed, ClayGraphic.Shape.Pill);
+        bar.raycastTarget = false;
+        bar.shadowAlpha = 0f;
+
+        var fill = UIFactory.Clay("Fill", bar.transform, new Vector2(300f, 16f), Vector2.zero,
+                                  T.success, ClayGraphic.Shape.Pill);
+        fill.raycastTarget = false;
+        fill.shadowAlpha = 0f;
+        var fillRt = fill.rectTransform;
+        fillRt.anchorMin = new Vector2(0f, 0.5f);
+        fillRt.anchorMax = new Vector2(0f, 0.5f);
+        fillRt.pivot = new Vector2(0f, 0.5f);
+        fillRt.anchoredPosition = Vector2.zero;
+        screen.collectionProgressBarFill = fillRt;
+
+        // Equipped Preview Box
+        var prevCard = UIFactory.Clay("PreviewCard", p, new Vector2(880f, 320f), new Vector2(0f, 360f),
+                                      T.panelHigh, ClayGraphic.Shape.Panel, T.radiusLg);
+        prevCard.raycastTarget = false;
+
+        var pedestal = UIFactory.Clay("Pedestal", prevCard.transform, new Vector2(160f, 160f),
+                                      new Vector2(-280f, 0f), T.panel, ClayGraphic.Shape.Circle);
+        pedestal.raycastTarget = false;
+        var imgRt = UIFactory.Rect("PreviewImg", pedestal.transform, new Vector2(120f, 120f), Vector2.zero);
+        var iconImg = imgRt.gameObject.AddComponent<Image>();
+        iconImg.color = Color.white;
+        screen.equippedPreviewImage = iconImg;
+
+        screen.equippedNameLabel = UIFactory.Display("EquippedName", prevCard.transform,
+                                                     new Vector2(460f, 60f), new Vector2(120f, 70f),
+                                                     "Classic Crimson", T.ink);
+        screen.equippedNameLabel.fontSize = 42f;
+        screen.equippedNameLabel.alignment = TextAlignmentOptions.Left;
+
+        screen.equippedRarityLabel = UIFactory.Label("EquippedRarity", prevCard.transform,
+                                                     new Vector2(460f, 36f), new Vector2(120f, 26f),
+                                                     "COMMON STARTER", UIFontSet.Current.body,
+                                                     22f, T.inkDim, TextAlignmentOptions.Left);
+
+        screen.equippedPerkLabel = UIFactory.Label("EquippedPerk", prevCard.transform,
+                                                   new Vector2(460f, 40f), new Vector2(120f, -14f),
+                                                   "Unlocked via Starter Token", UIFontSet.Current.bodyLight,
+                                                   22f, T.inkMuted, TextAlignmentOptions.Left);
+
+        screen.equipOrInspectButton = UIFactory.Button("EquipBtn", prevCard.transform, new Vector2(260f, 74f),
+                                                       new Vector2(120f, -80f), T.primary, "EQUIPPED", 26f,
+                                                       ClayGraphic.Shape.Pill);
+        screen.equipOrInspectLabel = screen.equipOrInspectButton.GetComponentInChildren<TextMeshProUGUI>();
+
+        // Grid Container
+        var grid = UIFactory.Rect("GridContainer", p, new Vector2(880f, 600f), new Vector2(0f, -160f));
+        screen.gridContainer = grid;
+
+        // Template Card
+        var tCard = UIFactory.Button("TemplateCard", grid, new Vector2(420f, 160f), Vector2.zero,
+                                     T.panel, null, shape: ClayGraphic.Shape.Panel);
+        tCard.Clay.cornerRadius = T.radiusMd;
+
+        var tIconRt = UIFactory.Rect("Icon", tCard.content, new Vector2(90f, 90f), new Vector2(-130f, 0f));
+        var tImg = tIconRt.gameObject.AddComponent<Image>();
+        tImg.color = Color.white;
+
+        UIFactory.Label("Name", tCard.content, new Vector2(240f, 40f), new Vector2(70f, 30f),
+                        "Pawn Name", UIFontSet.Current.body, 26f, T.ink, TextAlignmentOptions.Left);
+        UIFactory.Label("Rarity", tCard.content, new Vector2(240f, 30f), new Vector2(70f, 0f),
+                        "COMMON", UIFontSet.Current.bodyLight, 20f, T.inkDim, TextAlignmentOptions.Left);
+
+        var statusPill = UIFactory.Clay("StatusPill", tCard.content, new Vector2(140f, 36f),
+                                        new Vector2(70f, -34f), T.panelHigh, ClayGraphic.Shape.Pill);
+        statusPill.raycastTarget = false;
+        statusPill.shadowAlpha = 0f;
+        UIFactory.Label("StatusLabel", statusPill.transform, new Vector2(140f, 36f), Vector2.zero,
+                        "OWNED", UIFontSet.Current.bodyLight, 18f, T.inkMuted);
+
+        tCard.gameObject.SetActive(false);
+        screen.cardTemplate = (RectTransform)tCard.transform;
+
+        screen.navBar = BuildNavBar(p, T, HomeNavBar.Tab.Collection);
+
+        SavePrefab(root, ScreenDir + "/PawnCollection.prefab");
+    }
+
+    // ── Wallet / Currency Screen ─────────────────────────────────────────────────────
+
+    [MenuItem("Ludo NX/UI/13. Build Wallet", priority = 13)]
+    public static void BuildWallet()
+    {
+        CreateSupportAssets();
+        var T = UITheme.Current;
+
+        GameObject root = NewScreenRoot("Wallet", ScreenId.Wallet);
+        var screen = root.AddComponent<WalletScreen>();
+        Transform p = root.transform;
+
+        UIFactory.Page(p);
+
+        TextMeshProUGUI title;
+        screen.backButton = UIFactory.TopBar(p, "WALLET & CURRENCY", out title);
+
+        // Balances card
+        var balCard = UIFactory.Clay("BalancesCard", p, new Vector2(880f, 240f), new Vector2(0f, 560f),
+                                     T.panel, ClayGraphic.Shape.Panel, T.radiusLg);
+        balCard.raycastTarget = false;
+
+        // Coins
+        UIFactory.Label("CoinsHeader", balCard.transform, new Vector2(380f, 30f), new Vector2(-190f, 66f),
+                        "COINS", UIFontSet.Current.body, 22f, T.inkDim, TextAlignmentOptions.Left);
+        screen.coinsBalanceLabel = UIFactory.Display("CoinsVal", balCard.transform, new Vector2(380f, 50f),
+                                                     new Vector2(-190f, 24f), "1,250", T.gold);
+        screen.coinsBalanceLabel.fontSize = 44f;
+        screen.coinsBalanceLabel.alignment = TextAlignmentOptions.Left;
+
+        // NX Points
+        UIFactory.Label("NXHeader", balCard.transform, new Vector2(380f, 30f), new Vector2(190f, 66f),
+                        "NX POINTS", UIFontSet.Current.body, 22f, T.inkDim, TextAlignmentOptions.Left);
+        screen.nxPointsLabel = UIFactory.Display("NXVal", balCard.transform, new Vector2(380f, 50f),
+                                                 new Vector2(190f, 24f), "350 NX", T.secondary);
+        screen.nxPointsLabel.fontSize = 44f;
+        screen.nxPointsLabel.alignment = TextAlignmentOptions.Left;
+
+        // Event Tokens & Gold
+        screen.eventTokensLabel = UIFactory.Label("EventTokensVal", balCard.transform, new Vector2(380f, 36f),
+                                                  new Vector2(-190f, -44f), "450 EVENT TOKENS",
+                                                  UIFontSet.Current.numeric, 24f, T.primary, TextAlignmentOptions.Left);
+        screen.eventExpiryLabel = UIFactory.Label("EventExpiry", balCard.transform, new Vector2(380f, 30f),
+                                                  new Vector2(-190f, -74f), "EXPIRES IN 4 DAYS",
+                                                  UIFontSet.Current.bodyLight, 18f, T.inkMuted, TextAlignmentOptions.Left);
+
+        screen.goldBalanceLabel = UIFactory.Label("GoldVal", balCard.transform, new Vector2(380f, 36f),
+                                                  new Vector2(190f, -44f), "120 GEMS",
+                                                  UIFontSet.Current.numeric, 24f, T.gold, TextAlignmentOptions.Left);
+
+        // Level & NX progression
+        var lvlCard = UIFactory.Clay("LevelCard", p, new Vector2(880f, 130f), new Vector2(0f, 340f),
+                                     T.panelHigh, ClayGraphic.Shape.Panel, T.radiusMd);
+        lvlCard.raycastTarget = false;
+
+        screen.levelLabel = UIFactory.Label("LevelLabel", lvlCard.transform, new Vector2(300f, 40f),
+                                            new Vector2(-250f, 18f), "LEVEL 1", UIFontSet.Current.body,
+                                            26f, T.ink, TextAlignmentOptions.Left);
+
+        var lvlBar = UIFactory.Clay("ProgressBar", lvlCard.transform, new Vector2(500f, 16f),
+                                    new Vector2(-150f, -22f), T.recessed, ClayGraphic.Shape.Pill);
+        lvlBar.raycastTarget = false;
+        lvlBar.shadowAlpha = 0f;
+
+        var lvlFill = UIFactory.Clay("Fill", lvlBar.transform, new Vector2(250f, 16f), Vector2.zero,
+                                     T.secondary, ClayGraphic.Shape.Pill);
+        lvlFill.raycastTarget = false;
+        lvlFill.shadowAlpha = 0f;
+        var lvlFillRt = lvlFill.rectTransform;
+        lvlFillRt.anchorMin = new Vector2(0f, 0.5f);
+        lvlFillRt.anchorMax = new Vector2(0f, 0.5f);
+        lvlFillRt.pivot = new Vector2(0f, 0.5f);
+        lvlFillRt.anchoredPosition = Vector2.zero;
+        screen.levelProgressBarFill = lvlFillRt;
+
+        // Free daily bonus
+        screen.dailyBonusButton = UIFactory.Button("DailyBonusBtn", p, new Vector2(880f, 130f),
+                                                   new Vector2(0f, 170f), T.gold, "CLAIM +250 FREE COINS", 34f,
+                                                   ClayGraphic.Shape.Pill, glow: 0.14f);
+        screen.dailyBonusLabel = screen.dailyBonusButton.GetComponentInChildren<TextMeshProUGUI>();
+
+        // Purchase packs
+        UIFactory.Label("PacksHeader", p, new Vector2(880f, 40f), new Vector2(0f, 50f),
+                        "COIN PACKS", UIFontSet.Current.body, 26f, T.inkOnGroundDim, TextAlignmentOptions.Left).characterSpacing = 8f;
+
+        screen.pack1Button = UIFactory.Button("Pack1", p, new Vector2(880f, 110f), new Vector2(0f, -40f),
+                                              T.panel, null, shape: ClayGraphic.Shape.Panel);
+        UIFactory.Label("Title", screen.pack1Button.content, new Vector2(500f, 40f), new Vector2(-150f, 0f),
+                        "POUCH: 1,000 COINS", UIFontSet.Current.body, 30f, T.ink, TextAlignmentOptions.Left);
+        UIFactory.Label("Price", screen.pack1Button.content, new Vector2(200f, 40f), new Vector2(280f, 0f),
+                        "$0.99", UIFontSet.Current.numeric, 30f, T.primary, TextAlignmentOptions.Right);
+
+        screen.pack2Button = UIFactory.Button("Pack2", p, new Vector2(880f, 110f), new Vector2(0f, -170f),
+                                              T.panel, null, shape: ClayGraphic.Shape.Panel);
+        UIFactory.Label("Title", screen.pack2Button.content, new Vector2(500f, 40f), new Vector2(-150f, 0f),
+                        "SACK: 5,000 COINS", UIFontSet.Current.body, 30f, T.ink, TextAlignmentOptions.Left);
+        UIFactory.Label("Price", screen.pack2Button.content, new Vector2(200f, 40f), new Vector2(280f, 0f),
+                        "$2.99", UIFontSet.Current.numeric, 30f, T.primary, TextAlignmentOptions.Right);
+
+        screen.pack3Button = UIFactory.Button("Pack3", p, new Vector2(880f, 110f), new Vector2(0f, -300f),
+                                              T.panel, null, shape: ClayGraphic.Shape.Panel);
+        UIFactory.Label("Title", screen.pack3Button.content, new Vector2(500f, 40f), new Vector2(-150f, 0f),
+                        "CHEST: 20,000 COINS", UIFontSet.Current.body, 30f, T.ink, TextAlignmentOptions.Left);
+        UIFactory.Label("Price", screen.pack3Button.content, new Vector2(200f, 40f), new Vector2(280f, 0f),
+                        "$9.99", UIFontSet.Current.numeric, 30f, T.gold, TextAlignmentOptions.Right);
+
+        // Event Shop Link
+        screen.eventShopButton = UIFactory.Button("EventShopBtn", p, new Vector2(880f, 120f),
+                                                  new Vector2(0f, -460f), T.secondary, "GO TO EVENT STORE", 32f);
+
+        SavePrefab(root, ScreenDir + "/Wallet.prefab");
+    }
+
+    // ── Energy / Lives Screen ────────────────────────────────────────────────────────
+
+    [MenuItem("Ludo NX/UI/14. Build Energy Screen", priority = 14)]
+    public static void BuildEnergy()
+    {
+        CreateSupportAssets();
+        var T = UITheme.Current;
+
+        GameObject root = NewScreenRoot("Energy", ScreenId.Energy);
+        var screen = root.AddComponent<EnergyScreen>();
+        Transform p = root.transform;
+
+        UIFactory.Page(p);
+
+        TextMeshProUGUI title;
+        screen.backButton = UIFactory.TopBar(p, "ENERGY & LIVES", out title);
+
+        var energyCard = UIFactory.Clay("EnergyCard", p, new Vector2(880f, 320f), new Vector2(0f, 480f),
+                                        T.panel, ClayGraphic.Shape.Panel, T.radiusLg);
+        energyCard.raycastTarget = false;
+
+        UIFactory.Label("EnergyHeader", energyCard.transform, new Vector2(760f, 40f), new Vector2(0f, 110f),
+                        "LIVES REMAINING", UIFontSet.Current.body, 24f, T.inkDim);
+
+        screen.energyCountLabel = UIFactory.Display("Count", energyCard.transform, new Vector2(760f, 90f),
+                                                    new Vector2(0f, 46f), "5 / 5", T.ink);
+        screen.energyCountLabel.fontSize = 64f;
+
+        // Pips
+        var pipsGroup = UIFactory.Rect("PipsGroup", energyCard.transform, new Vector2(500f, 40f), new Vector2(0f, -20f));
+        screen.energyPips = new ClayGraphic[5];
+        for (int i = 0; i < 5; i++)
+        {
+            float x = -160f + i * 80f;
+            var pip = UIFactory.Clay("Pip_" + i, pipsGroup, new Vector2(60f, 26f),
+                                     new Vector2(x, 0f), T.primary, ClayGraphic.Shape.Pill);
+            pip.raycastTarget = false;
+            pip.shadowAlpha = 0f;
+            screen.energyPips[i] = pip;
+        }
+        screen.nextTimerLabel = UIFactory.Body("NextTimer", energyCard.transform, new Vector2(760f, 40f),
+                                               new Vector2(0f, -74f), "FULL CAPACITY", T.success, 26f);
+
+        screen.fullTimerLabel = UIFactory.Label("FullTimer", energyCard.transform, new Vector2(760f, 34f),
+                                                new Vector2(0f, -112f), "All lives ready for match play!",
+                                                UIFontSet.Current.bodyLight, 20f, T.inkMuted);
+
+        // Actions
+        screen.watchAdButton = UIFactory.Button("WatchAdBtn", p, new Vector2(880f, 150f), new Vector2(0f, 190f),
+                                                T.gold, "WATCH AD (+1 LIFE)", 36f, ClayGraphic.Shape.Pill, glow: 0.14f);
+        screen.watchAdButton.Clay.glowSpread = 36f;
+
+        screen.refillCoinsButton = UIFactory.Button("RefillCoinsBtn", p, new Vector2(880f, 150f), new Vector2(0f, 10f),
+                                                    T.success, "REFILL ALL (150 COINS)", 36f, ClayGraphic.Shape.Pill, glow: 0.14f);
+        screen.refillCoinsButton.Clay.glowSpread = 36f;
+
+        screen.shopPassButton = UIFactory.Button("ShopPassBtn", p, new Vector2(880f, 130f), new Vector2(0f, -160f),
+                                                 T.secondary, "GET UNLIMITED PASS IN SHOP", 32f);
+
+        SavePrefab(root, ScreenDir + "/Energy.prefab");
+    }
+
+    // ── Missions Screen ──────────────────────────────────────────────────────────────
+
+    [MenuItem("Ludo NX/UI/15. Build Missions Screen", priority = 15)]
+    public static void BuildMissions()
+    {
+        CreateSupportAssets();
+        var T = UITheme.Current;
+        var icons = UIIconSet.Current;
+
+        GameObject root = NewScreenRoot("Missions", ScreenId.Missions);
+        var screen = root.AddComponent<MissionsScreen>();
+        Transform p = root.transform;
+
+        UIFactory.Page(p, icons != null ? icons.bgTournamentHall : null);
+
+        TextMeshProUGUI title;
+        screen.backButton = UIFactory.TopBar(p, "MISSIONS & QUESTS", out title);
+
+        screen.resetCountdownLabel = UIFactory.Label("ResetLabel", p, new Vector2(880f, 40f), new Vector2(0f, 650f),
+                                                     "RESETS IN 18H 30M", UIFontSet.Current.body, 24f, T.inkOnGroundDim);
+
+        // Tabs
+        var tabRow = UIFactory.Rect("TabRow", p, new Vector2(880f, 80f), new Vector2(0f, 570f));
+        screen.dailyTab = UIFactory.Button("DailyTab", tabRow, new Vector2(275f, 74f), new Vector2(-295f, 0f),
+                                           T.secondary, "DAILY", 26f);
+        screen.weeklyTab = UIFactory.Button("WeeklyTab", tabRow, new Vector2(275f, 74f), new Vector2(0f, 0f),
+                                            T.neutral, "WEEKLY", 26f);
+        screen.seasonTab = UIFactory.Button("SeasonTab", tabRow, new Vector2(275f, 74f), new Vector2(295f, 0f),
+                                            T.neutral, "SEASON", 26f);
+
+        // List container
+        var list = UIFactory.Rect("ListContainer", p, new Vector2(880f, 820f), new Vector2(0f, 80f));
+        screen.listContainer = list;
+
+        // Template row
+        var tRow = UIFactory.Clay("TemplateRow", list, new Vector2(880f, 150f), Vector2.zero,
+                                  T.panel, ClayGraphic.Shape.Panel, T.radiusMd);
+        tRow.raycastTarget = false;
+
+        UIFactory.Label("Title", tRow.transform, new Vector2(500f, 40f), new Vector2(-150f, 36f),
+                        "Mission Title", UIFontSet.Current.body, 30f, T.ink, TextAlignmentOptions.Left);
+        UIFactory.Label("Desc", tRow.transform, new Vector2(500f, 34f), new Vector2(-150f, 0f),
+                        "Mission Description", UIFontSet.Current.bodyLight, 24f, T.inkMuted, TextAlignmentOptions.Left);
+        UIFactory.Label("Count", tRow.transform, new Vector2(180f, 34f), new Vector2(290f, 36f),
+                        "0 / 1", UIFontSet.Current.numeric, 26f, T.inkDim, TextAlignmentOptions.Right);
+
+        var bar = UIFactory.Clay("Bar", tRow.transform, new Vector2(500f, 16f), new Vector2(-150f, -40f),
+                                 T.recessed, ClayGraphic.Shape.Pill);
+        bar.raycastTarget = false;
+        bar.shadowAlpha = 0f;
+
+        var fill = UIFactory.Clay("Fill", bar.transform, new Vector2(250f, 16f), Vector2.zero,
+                                  T.success, ClayGraphic.Shape.Pill);
+        fill.raycastTarget = false;
+        fill.shadowAlpha = 0f;
+        var fillRt = fill.rectTransform;
+        fillRt.anchorMin = new Vector2(0f, 0.5f);
+        fillRt.anchorMax = new Vector2(0f, 0.5f);
+        fillRt.pivot = new Vector2(0f, 0.5f);
+        fillRt.anchoredPosition = Vector2.zero;
+
+        var claim = UIFactory.Button("ClaimButton", tRow.transform, new Vector2(200f, 74f),
+                                     new Vector2(290f, -16f), T.success, "CLAIM", 26f, ClayGraphic.Shape.Pill);
+
+        UIFactory.Label("Reward", tRow.transform, new Vector2(500f, 30f), new Vector2(-150f, -66f),
+                        "+100 COINS • +20 NX", UIFontSet.Current.numeric, 20f, T.gold, TextAlignmentOptions.Left);
+
+        tRow.gameObject.SetActive(false);
+        screen.rowTemplate = (RectTransform)tRow.transform;
+
+        // Claim All button
+        screen.claimAllButton = UIFactory.Button("ClaimAll", p, new Vector2(880f, 140f),
+                                                 new Vector2(0f, -460f), T.success, "CLAIM ALL COMPLETED", 36f,
+                                                 ClayGraphic.Shape.Pill, glow: 0.14f);
+
+        screen.navBar = BuildNavBar(p, T, HomeNavBar.Tab.Missions);
+
+        SavePrefab(root, ScreenDir + "/Missions.prefab");
+    }
+
+    // ── Events Screen ────────────────────────────────────────────────────────────────
+
+    [MenuItem("Ludo NX/UI/16. Build Events Screen", priority = 16)]
+    public static void BuildEvents()
+    {
+        CreateSupportAssets();
+        var T = UITheme.Current;
+
+        GameObject root = NewScreenRoot("Events", ScreenId.Events);
+        var screen = root.AddComponent<EventsScreen>();
+        Transform p = root.transform;
+
+        UIFactory.Page(p);
+
+        TextMeshProUGUI title;
+        screen.backButton = UIFactory.TopBar(p, "LIVE EVENTS", out title);
+
+        // Status Tabs
+        var tabRow = UIFactory.Rect("TabRow", p, new Vector2(880f, 80f), new Vector2(0f, 620f));
+        screen.activeTab = UIFactory.Button("ActiveTab", tabRow, new Vector2(275f, 74f), new Vector2(-295f, 0f),
+                                            T.secondary, "ACTIVE", 26f);
+        screen.upcomingTab = UIFactory.Button("UpcomingTab", tabRow, new Vector2(275f, 74f), new Vector2(0f, 0f),
+                                              T.neutral, "UPCOMING", 26f);
+        screen.completedTab = UIFactory.Button("CompletedTab", tabRow, new Vector2(275f, 74f), new Vector2(295f, 0f),
+                                               T.neutral, "PAST", 26f);
+
+        // Container
+        var container = UIFactory.Rect("EventsContainer", p, new Vector2(880f, 1100f), new Vector2(0f, -40f));
+        screen.eventsContainer = container;
+
+        // Card template
+        var card = UIFactory.Clay("EventCardTemplate", container, new Vector2(880f, 260f), Vector2.zero,
+                                  T.panel, ClayGraphic.Shape.Panel, T.radiusLg);
+        card.raycastTarget = false;
+
+        UIFactory.Label("Title", card.transform, new Vector2(540f, 44f), new Vector2(-130f, 74f),
+                        "EVENT TITLE", UIFontSet.Current.body, 32f, T.ink, TextAlignmentOptions.Left);
+
+        UIFactory.Label("Subtitle", card.transform, new Vector2(540f, 36f), new Vector2(-130f, 32f),
+                        "Event Subtitle", UIFontSet.Current.bodyLight, 24f, T.inkMuted, TextAlignmentOptions.Left);
+
+        var timerPill = UIFactory.Clay("TimerPill", card.transform, new Vector2(220f, 44f),
+                                       new Vector2(270f, 74f), T.panelHigh, ClayGraphic.Shape.Pill);
+        timerPill.raycastTarget = false;
+        timerPill.shadowAlpha = 0f;
+        UIFactory.Label("TimerLabel", timerPill.transform, new Vector2(220f, 44f), Vector2.zero,
+                        "ENDS IN 3D", UIFontSet.Current.numeric, 20f, T.primary);
+
+        var rulesChip = UIFactory.Clay("RulesChip", card.transform, new Vector2(540f, 40f),
+                                       new Vector2(-130f, -20f), T.recessed, ClayGraphic.Shape.Pill);
+        rulesChip.raycastTarget = false;
+        rulesChip.shadowAlpha = 0f;
+        UIFactory.Label("RulesLabel", rulesChip.transform, new Vector2(520f, 36f), Vector2.zero,
+                        "2-Player • No Safe Zones", UIFontSet.Current.bodyLight, 20f, T.inkMuted, TextAlignmentOptions.Left);
+
+        UIFactory.Label("RewardLabel", card.transform, new Vector2(540f, 36f), new Vector2(-130f, -74f),
+                        "WIN: +500 EVENT TOKENS", UIFontSet.Current.numeric, 22f, T.gold, TextAlignmentOptions.Left);
+
+        var actBtn = UIFactory.Button("ActionBtn", card.transform, new Vector2(220f, 88f),
+                                      new Vector2(270f, -40f), T.primary, "VIEW EVENT", 26f, ClayGraphic.Shape.Pill);
+
+        card.gameObject.SetActive(false);
+        screen.eventCardTemplate = (RectTransform)card.transform;
+
+        screen.navBar = BuildNavBar(p, T, HomeNavBar.Tab.Events);
+
+        SavePrefab(root, ScreenDir + "/Events.prefab");
+    }
+
+    // ── Event Detail Screen ──────────────────────────────────────────────────────────
+
+    [MenuItem("Ludo NX/UI/17. Build Event Detail Screen", priority = 17)]
+    public static void BuildEventDetail()
+    {
+        CreateSupportAssets();
+        var T = UITheme.Current;
+
+        GameObject root = NewScreenRoot("EventDetail", ScreenId.EventDetail);
+        var screen = root.AddComponent<EventDetailScreen>();
+        Transform p = root.transform;
+
+        UIFactory.Page(p);
+
+        TextMeshProUGUI title;
+        screen.backButton = UIFactory.TopBar(p, "EVENT DETAILS", out title);
+
+        // Header Card
+        var headerCard = UIFactory.Clay("HeaderCard", p, new Vector2(880f, 260f), new Vector2(0f, 540f),
+                                        T.panelHigh, ClayGraphic.Shape.Panel, T.radiusLg);
+        headerCard.raycastTarget = false;
+
+        screen.eventTitleLabel = UIFactory.Display("Title", headerCard.transform, new Vector2(800f, 60f),
+                                                   new Vector2(0f, 70f), "GOLD RUSH CHAMPIONSHIP", T.ink);
+        screen.eventTitleLabel.fontSize = 44f;
+
+        screen.eventDatesLabel = UIFactory.Label("Dates", headerCard.transform, new Vector2(380f, 36f),
+                                                 new Vector2(-200f, 16f), "AUG 25 - SEP 05",
+                                                 UIFontSet.Current.bodyLight, 22f, T.inkDim, TextAlignmentOptions.Left);
+
+        screen.eventCountdownLabel = UIFactory.Label("Countdown", headerCard.transform, new Vector2(380f, 36f),
+                                                     new Vector2(200f, 16f), "ENDS IN 3D 14H",
+                                                     UIFontSet.Current.numeric, 22f, T.primary, TextAlignmentOptions.Right);
+
+        screen.eventDescriptionLabel = UIFactory.Label("Desc", headerCard.transform, new Vector2(800f, 60f),
+                                                       new Vector2(0f, -44f),
+                                                       "Compete in high-speed matches with bonus coin multipliers!",
+                                                       UIFontSet.Current.bodyLight, 24f, T.inkMuted);
+
+        // Rules & Rewards card
+        var rulesCard = UIFactory.Clay("RulesCard", p, new Vector2(880f, 240f), new Vector2(0f, 240f),
+                                       T.panel, ClayGraphic.Shape.Panel, T.radiusMd);
+        rulesCard.raycastTarget = false;
+
+        UIFactory.Label("RulesTitle", rulesCard.transform, new Vector2(800f, 36f), new Vector2(0f, 74f),
+                        "MATCH RULES & REWARDS", UIFontSet.Current.body, 24f, T.inkDim);
+
+        screen.rulesSummaryLabel = UIFactory.Label("RulesSummary", rulesCard.transform, new Vector2(800f, 40f),
+                                                   new Vector2(0f, 24f), "2-Player • No Safe Zones • 2x Multiplier",
+                                                   UIFontSet.Current.body, 28f, T.ink);
+
+        screen.entryFeeLabel = UIFactory.Label("Fee", rulesCard.transform, new Vector2(800f, 34f),
+                                               new Vector2(0f, -24f), "ENTRY FEE: 100 COINS",
+                                               UIFontSet.Current.numeric, 22f, T.gold);
+
+        screen.rewardsSummaryLabel = UIFactory.Label("Reward", rulesCard.transform, new Vector2(800f, 34f),
+                                                     new Vector2(0f, -66f), "1ST PLACE: +500 EVENT TOKENS + GOLD MEDAL",
+                                                     UIFontSet.Current.numeric, 22f, T.primary);
+
+        // Leaderboard preview card
+        var lbCard = UIFactory.Clay("LeaderboardCard", p, new Vector2(880f, 180f), new Vector2(0f, -20f),
+                                    T.panel, ClayGraphic.Shape.Panel, T.radiusMd);
+        lbCard.raycastTarget = false;
+
+        UIFactory.Label("LBTitle", lbCard.transform, new Vector2(760f, 36f), new Vector2(0f, 44f),
+                        "YOUR TOURNAMENT RANK", UIFontSet.Current.body, 24f, T.inkDim);
+
+        screen.playerRankLabel = UIFactory.Display("Rank", lbCard.transform, new Vector2(760f, 50f),
+                                                   new Vector2(0f, -6f), "RANK #42 (TOP 5%)", T.secondary);
+        screen.playerRankLabel.fontSize = 38f;
+
+        screen.playerPointsLabel = UIFactory.Label("Points", lbCard.transform, new Vector2(760f, 30f),
+                                                   new Vector2(0f, -48f), "1,850 PTS",
+                                                   UIFontSet.Current.numeric, 22f, T.gold);
+
+        // Action
+        screen.enterMatchButton = UIFactory.Button("EnterBtn", p, new Vector2(840f, 180f),
+                                                   new Vector2(0f, -380f), T.primary, "ENTER EVENT MATCH", 48f,
+                                                   ClayGraphic.Shape.Pill, glow: 0.16f, hero: true);
+        screen.enterMatchButton.Clay.glowSpread = 40f;
+        screen.enterMatchText = screen.enterMatchButton.GetComponentInChildren<TextMeshProUGUI>();
+
+        SavePrefab(root, ScreenDir + "/EventDetail.prefab");
+    }
+    // ── Shop Item Detail Screen ──────────────────────────────────────────────────────
+
+    [MenuItem("Ludo NX/UI/18. Build Shop Item Detail Screen", priority = 18)]
+    public static void BuildShopItemDetail()
+    {
+        CreateSupportAssets();
+        var T = UITheme.Current;
+
+        GameObject root = NewScreenRoot("ShopItemDetail", ScreenId.ShopItemDetail);
+        var screen = root.AddComponent<ShopItemDetailScreen>();
+        Transform p = root.transform;
+
+        UIFactory.Page(p);
+
+        TextMeshProUGUI title;
+        screen.backButton = UIFactory.TopBar(p, "ITEM DETAILS", out title);
+
+        screen.categoryLabel = UIFactory.Label("Category", p, new Vector2(880f, 40f), new Vector2(0f, 640f),
+                                               "DICE SKIN", UIFontSet.Current.body, 24f, T.gold);
+
+        screen.titleLabel = UIFactory.Display("Title", p, new Vector2(880f, 80f), new Vector2(0f, 570f),
+                                              "OBSIDIAN DRAGON DIE", T.inkOnGround);
+        screen.titleLabel.fontSize = 54f;
+
+        var prevCard = UIFactory.Clay("PreviewCard", p, new Vector2(600f, 400f), new Vector2(0f, 270f),
+                                      T.panelHigh, ClayGraphic.Shape.Panel, T.radiusLg);
+        prevCard.raycastTarget = false;
+
+        var imgRt = UIFactory.Rect("PreviewImg", prevCard.transform, new Vector2(240f, 240f), Vector2.zero);
+        var img = imgRt.gameObject.AddComponent<Image>();
+        img.color = Color.white;
+        screen.previewImage = img;
+
+        screen.rarityLabel = UIFactory.Label("Rarity", prevCard.transform, new Vector2(500f, 40f),
+                                             new Vector2(0f, -140f), "LEGENDARY ITEM",
+                                             UIFontSet.Current.body, 26f, T.gold);
+
+        var infoCard = UIFactory.Clay("InfoCard", p, new Vector2(880f, 280f), new Vector2(0f, -140f),
+                                      T.panel, ClayGraphic.Shape.Panel, T.radiusMd);
+        infoCard.raycastTarget = false;
+
+        screen.descriptionLabel = UIFactory.Label("Desc", infoCard.transform, new Vector2(780f, 90f),
+                                                  new Vector2(0f, 60f),
+                                                  "Forged in volcanic depths. Features luminous gold engravings and custom roll physics.",
+                                                  UIFontSet.Current.bodyLight, 26f, T.inkMuted);
+
+        screen.perksLabel = UIFactory.Label("Perks", infoCard.transform, new Vector2(780f, 80f),
+                                            new Vector2(0f, -50f),
+                                            "• Custom Roll Sound FX\n• Gold Sparkle Particle Trail",
+                                            UIFontSet.Current.body, 24f, T.ink);
+
+        screen.actionButton = UIFactory.Button("ActionBtn", p, new Vector2(840f, 170f),
+                                               new Vector2(0f, -440f), T.primary, "PURCHASE — $1.99", 44f,
+                                               ClayGraphic.Shape.Pill, glow: 0.16f, hero: true);
+        screen.actionButton.Clay.glowSpread = 36f;
+        screen.actionButtonText = screen.actionButton.GetComponentInChildren<TextMeshProUGUI>();
+
+        SavePrefab(root, ScreenDir + "/ShopItemDetail.prefab");
     }
 
     private static GameObject NewModalRoot(string name)
@@ -1278,6 +2619,127 @@ public static class LudoNXScreenAuthor
 
     // â”€â”€ Build everything â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+    // ── Player Statistics Screen ──────────────────────────────────────────────────────────
+
+    [MenuItem("Ludo NX/UI/19. Build Player Stats Screen", priority = 19)]
+    public static void BuildPlayerStats()
+    {
+        CreateSupportAssets();
+        var T = UITheme.Current;
+
+        GameObject root = NewScreenRoot("PlayerStats", ScreenId.PlayerStats);
+        var screen = root.AddComponent<PlayerStatsScreen>();
+        Transform p = root.transform;
+
+        UIFactory.Page(p);
+        TextMeshProUGUI title;
+        screen.backButton = UIFactory.TopBar(p, "STATISTICS", out title);
+
+        // ── Overall header card ─────────────────────────────────────────────────────
+        var headerCard = UIFactory.Clay("OverallCard", p, new Vector2(880f, 400f), new Vector2(0f, 440f),
+                                        T.panel, ClayGraphic.Shape.Panel, T.radiusMd);
+        headerCard.raycastTarget = false;
+
+        UIFactory.Label("OverallTitle", headerCard.transform, new Vector2(760f, 44f),
+                        new Vector2(0f, 140f), "OVERALL CAREER",
+                        UIFontSet.Current.body, 24f, T.inkMuted);
+
+        // 2×4 overall tiles
+        screen.totalGamesValue   = UIFactory.StatTile("GamesTile",  headerCard.transform, new Vector2(340f, 150f), new Vector2(-275f,  30f), "0",  "GAMES",    T.secondary);
+        screen.totalWinsValue    = UIFactory.StatTile("WinsTile",   headerCard.transform, new Vector2(340f, 150f), new Vector2( -91f,  30f), "0",  "WINS",     T.gold);
+        screen.winPctValue       = UIFactory.StatTile("WinPctTile", headerCard.transform, new Vector2(340f, 150f), new Vector2(  91f,  30f), "0%", "WIN RATE", T.success);
+        screen.totalLossesValue  = UIFactory.StatTile("LossesTile", headerCard.transform, new Vector2(340f, 150f), new Vector2( 275f,  30f), "0",  "LOSSES",   T.recessed);
+        screen.totalPointsValue  = UIFactory.StatTile("PtsTile",    headerCard.transform, new Vector2(340f, 150f), new Vector2(-275f, -130f), "0", "TOTAL PTS", T.gold);
+        screen.avgPointsValue    = UIFactory.StatTile("AvgPtsTile", headerCard.transform, new Vector2(340f, 150f), new Vector2( -91f, -130f), "0", "AVG PTS",   T.secondary);
+        screen.totalCapturesValue= UIFactory.StatTile("CapTile",    headerCard.transform, new Vector2(340f, 150f), new Vector2(  91f, -130f), "0", "CAPTURES",  T.primary);
+        screen.timesCapturedValue= UIFactory.StatTile("CapdTile",   headerCard.transform, new Vector2(340f, 150f), new Vector2( 275f, -130f), "0", "CAPTURED",  T.inkDim);
+
+        // Tokens + avg duration row below header
+        screen.tokensCompletedValue = UIFactory.StatTile("TknTile", p, new Vector2(420f, 140f),
+                                                          new Vector2(-220f, 100f), "0",  "TOKENS HOME",  T.success);
+        screen.avgDurationValue     = UIFactory.StatTile("DurTile", p, new Vector2(420f, 140f),
+                                                          new Vector2( 220f, 100f), "—", "AVG DURATION", T.inkMuted);
+
+        // ── Mode tab strip ──────────────────────────────────────────────────────────
+        float tabW = 140f, tabH = 72f, tabY = -90f;
+        float[] tabX   = { -490f, -350f, -210f, -70f, 70f, 210f };
+        string[] tabNames = { "ALL", "2P", "4P", "CAS", "RNK", "PVT" };
+        ClayButton[] tabs = new ClayButton[6];
+        for (int i = 0; i < 6; i++)
+        {
+            tabs[i] = UIFactory.Button("Tab" + tabNames[i], p, new Vector2(tabW, tabH),
+                                        new Vector2(tabX[i], tabY),
+                                        i == 0 ? T.secondary : T.neutral,
+                                        tabNames[i], 22f);
+        }
+        screen.tabAll        = tabs[0];
+        screen.tabTwoPlayer  = tabs[1];
+        screen.tabFourPlayer = tabs[2];
+        screen.tabCasual     = tabs[3];
+        screen.tabRanked     = tabs[4];
+        screen.tabPrivate    = tabs[5];
+
+        // Active-tab indicator line
+        var indicator = UIFactory.Clay("TabIndicator", p, new Vector2(tabW - 20f, 6f),
+                                        new Vector2(tabX[0], tabY - tabH * 0.5f - 6f),
+                                        T.secondary, ClayGraphic.Shape.Pill);
+        indicator.raycastTarget = false;
+        indicator.shadowAlpha = 0f;
+        screen.tabIndicator = indicator.rectTransform;
+
+        // ── Per-mode stat panels ────────────────────────────────────────────────────
+        string[] modeLabels = { "ALL MODES", "2-PLAYER", "4-PLAYER", "CASUAL", "RANKED", "PRIVATE" };
+        GameObject[] panels = new GameObject[6];
+        TextMeshProUGUI[][] modeSets = new TextMeshProUGUI[6][];
+
+        for (int m = 0; m < 6; m++)
+        {
+            var panel = UIFactory.Rect("Panel" + tabNames[m], p,
+                                       new Vector2(880f, 600f), new Vector2(0f, -420f));
+            panels[m] = panel.gameObject;
+
+            var pCard = UIFactory.Clay("ModeCard", panel, new Vector2(880f, 580f), Vector2.zero,
+                                        T.panel, ClayGraphic.Shape.Panel, T.radiusMd);
+            pCard.raycastTarget = false;
+
+            UIFactory.Label("ModeTitle", pCard.transform, new Vector2(760f, 40f), new Vector2(0f, 220f),
+                            modeLabels[m], UIFontSet.Current.body, 26f, T.inkMuted);
+
+            // 2×3 tiles: Games, Wins, Losses | WinPct, Points, AvgPts
+            string[] tileLabels = { "GAMES", "WINS", "LOSSES", "WIN RATE", "POINTS", "AVG PTS" };
+            Color[]  tileColors = { T.secondary, T.gold, T.inkDim, T.success, T.gold, T.secondary };
+            float[]  xs = { -270f, 0f, 270f, -270f, 0f, 270f };
+            float[]  ys = {  100f, 100f, 100f, -100f, -100f, -100f };
+
+            modeSets[m] = new TextMeshProUGUI[6];
+            for (int t = 0; t < 6; t++)
+                modeSets[m][t] = UIFactory.StatTile("Stat" + t, pCard.transform,
+                                                    new Vector2(240f, 160f),
+                                                    new Vector2(xs[t], ys[t]),
+                                                    "0", tileLabels[t], tileColors[t]);
+
+            if (m > 0) panels[m].SetActive(false);
+        }
+
+        screen.panelAll        = panels[0];
+        screen.panelTwoPlayer  = panels[1];
+        screen.panelFourPlayer = panels[2];
+        screen.panelCasual     = panels[3];
+        screen.panelRanked     = panels[4];
+        screen.panelPrivate    = panels[5];
+
+        screen.allStats        = modeSets[0];
+        screen.twoPlayerStats  = modeSets[1];
+        screen.fourPlayerStats = modeSets[2];
+        screen.casualStats     = modeSets[3];
+        screen.rankedStats     = modeSets[4];
+        screen.privateStats    = modeSets[5];
+
+        SavePrefab(root, ScreenDir + "/PlayerStats.prefab");
+    }
+
+    // ── Build everything ──────────────────────────────────────────────────────────────────────
+
     [MenuItem("Ludo NX/UI/Build ALL Screens", priority = 20)]
     public static void BuildAll()
     {
@@ -1291,6 +2753,15 @@ public static class LudoNXScreenAuthor
         BuildProfile();
         BuildSettings();
         BuildShop();
+        BuildMatchLobby();
+        BuildPawnCollection();
+        BuildWallet();
+        BuildEnergy();
+        BuildMissions();
+        BuildEvents();
+        BuildEventDetail();
+        BuildShopItemDetail();
+        BuildPlayerStats();
         BuildModals();
         Debug.Log("[LudoNX UI] ALL screens + modals rebuilt.");
     }

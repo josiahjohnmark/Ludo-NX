@@ -106,6 +106,11 @@ namespace LudoNX.UI
                 content.anchoredPosition = new Vector2(
                     content.anchoredPosition.x, _contentRestY - SinkPixels * Mathf.Clamp01(v));
             }
+            if (!breathe)
+            {
+                float s = Mathf.Lerp(1f, 0.94f, Mathf.Clamp01(v));
+                transform.localScale = new Vector3(s, s, 1f);
+            }
             if (instant) UITween.Stop(_pressTween);
         }
 

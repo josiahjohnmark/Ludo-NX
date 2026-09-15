@@ -3,63 +3,102 @@ using UnityEngine;
 namespace LudoNX.UI
 {
     /// <summary>
-    /// Insets a full-screen RectTransform to the device's safe area.
+    /// Insets a RectTransform to the device's safe area across all mobile form factors:
+    /// standard phones, notch/Dynamic Island devices, center punch-hole cameras,
+    /// foldable inner/outer displays, trifolds, and tablets.
     ///
-    /// Without this, content sits under the status bar at the top and the gesture pill or
-    /// navigation bar at the bottom. On the phones this game targets that is 90-130px of the
-    /// canvas at each end — enough to bury a back button or clip the bottom row of a screen.
-    ///
-    /// Applied to a full-screen child of the canvas rather than to the canvas itself, so the
-    /// background still paints edge to edge while the controls stay clear of the hardware.
+    /// Applied to container RectTransforms rather than the canvas itself, allowing
+    /// background washes to remain edge-to-edge while interactive controls stay
+    /// clear of hardware cutouts and system gesture indicators.
     /// </summary>
     [ExecuteAlways]
     [RequireComponent(typeof(RectTransform))]
     [AddComponentMenu("Ludo NX/UI/Safe Area Fitter")]
     public class SafeAreaFitter : MonoBehaviour
     {
-        [Tooltip("Leave the sides alone. Portrait phones only cut into the top and bottom, and " +
-                 "insetting the sides needlessly narrows the playfield.")]
-        public bool verticalOnly = true;
+        [Header("Axis Constraints")]
+        [Tooltip("When true, only insets top/bottom. Recommended for standard portrait phones.")]
+        public bool verticalOnly = false;
 
-        private Rect _applied;
-        private ScreenOrientation _orientation;
-        private int _w, _h;
+        [Header("Extra Hardware Padding (Pixels)")]
+        [Tooltip("Additional top clearance for large Dynamic Islands and tall camera punch holes.")]
+        public float extraTopPadding = 8f;
 
-        private void OnEnable() { Apply(); }
+        [Tooltip("Additional bottom clearance for home gesture bars.")]
+        public float extraBottomPadding = 6f;
 
-        private void Update()
+        [Tooltip("Additional lateral clearance for curved waterfall edges or side fold creases.")]
+        public float extraSidePadding = 0f;
+
+        private Rect _appliedSafeArea;
+        private ScreenOrientation _appliedOrientation;
+        private int _appliedWidth;
+        private int _appliedHeight;
+        private RectTransform _rt;
+
+        private void Awake()
         {
-            if (Screen.safeArea == _applied && Screen.orientation == _orientation
-                && Screen.width == _w && Screen.height == _h) return;
+            _rt = (RectTransform)transform;
+        }
+
+        private void OnEnable()
+        {
             Apply();
         }
 
+        private void Update()
+        {
+            if (Screen.safeArea == _appliedSafeArea &&
+                Screen.orientation == _appliedOrientation &&
+                Screen.width == _appliedWidth &&
+                Screen.height == _appliedHeight)
+            {
+                return;
+            }
+
+            Apply();
+        }
+
+        /// <summary>
+        /// Recalculates anchor offsets based on current safe area dimensions.
+        /// </summary>
         public void Apply()
         {
             if (Screen.width <= 0 || Screen.height <= 0) return;
+            if (_rt == null) _rt = (RectTransform)transform;
 
-            _applied = Screen.safeArea;
-            _orientation = Screen.orientation;
-            _w = Screen.width;
-            _h = Screen.height;
+            _appliedSafeArea = Screen.safeArea;
+            _appliedOrientation = Screen.orientation;
+            _appliedWidth = Screen.width;
+            _appliedHeight = Screen.height;
 
-            Rect sa = _applied;
-            var rt = (RectTransform)transform;
+            Rect sa = _appliedSafeArea;
 
-            // Anchors are the right tool here: expressed as a 0-1 fraction of the parent they
-            // survive any canvas scale factor, so this needs no knowledge of the reference
-            // resolution or the device's density.
-            Vector2 min = new Vector2(sa.xMin / Screen.width, sa.yMin / Screen.height);
-            Vector2 max = new Vector2(sa.xMax / Screen.width, sa.yMax / Screen.height);
+            // Normalized coordinates (0..1)
+            float minX = sa.xMin / Screen.width;
+            float minY = sa.yMin / Screen.height;
+            float maxX = sa.xMax / Screen.width;
+            float maxY = sa.yMax / Screen.height;
 
-            if (verticalOnly) { min.x = 0f; max.x = 1f; }
+            if (verticalOnly)
+            {
+                minX = 0f;
+                maxX = 1f;
+            }
 
-            if (float.IsNaN(min.x) || float.IsNaN(min.y) || float.IsNaN(max.x) || float.IsNaN(max.y)) return;
+            if (float.IsNaN(minX) || float.IsNaN(minY) || float.IsNaN(maxX) || float.IsNaN(maxY)) return;
 
-            rt.anchorMin = min;
-            rt.anchorMax = max;
-            rt.offsetMin = Vector2.zero;
-            rt.offsetMax = Vector2.zero;
+            // Convert extra padding from reference pixels to normalized screen space
+            float topPadNorm = extraTopPadding / Mathf.Max(Screen.height, 1);
+            float bottomPadNorm = extraBottomPadding / Mathf.Max(Screen.height, 1);
+            float sidePadNorm = extraSidePadding / Mathf.Max(Screen.width, 1);
+
+            _rt.anchorMin = new Vector2(Mathf.Clamp01(minX + (verticalOnly ? 0f : sidePadNorm)),
+                                        Mathf.Clamp01(minY + bottomPadNorm));
+            _rt.anchorMax = new Vector2(Mathf.Clamp01(maxX - (verticalOnly ? 0f : sidePadNorm)),
+                                        Mathf.Clamp01(maxY - topPadNorm));
+            _rt.offsetMin = Vector2.zero;
+            _rt.offsetMax = Vector2.zero;
         }
     }
 }

@@ -49,68 +49,64 @@ namespace LudoNX.UI
         // only thing separating a card from the page — and a soft shadow is the first thing to
         // disappear on a phone in daylight. Every surface below now sits at least 12% clear of
         // the one behind it, so depth survives a cheap screen in bright light.
-        public Color groundTop = Hex("1E3F36");
-        public Color groundBottom = Hex("122A24");
-        public Color panel = Hex("F5F1EC");
-        public Color panelHigh = Hex("FFFFFF");
-        public Color recessed = Hex("E4DDD6");
-        public Color hairline = Hex("3A2D2A");
+        [Header("Ground — the felt table")]
+        public Color groundTop = Hex("0B2A1D");
+        public Color groundBottom = Hex("04140D");
+        public Color panel = Hex("0A1C16");
+        public Color panelHigh = Hex("122920");
+        public Color recessed = Hex("06120D");
+        public Color hairline = Hex("1E4D38");
 
         [Header("Corner washes — light pooling on the felt")]
-        // Warm pools rather than pastel tints: the ground is dark now, so these lift it toward
-        // the lamp rather than washing it toward white.
-        public Color washTopLeft = Hex("2E5A4C");
-        public Color washBottomRight = Hex("2A4E48");
+        public Color washTopLeft = Hex("164E35");
+        public Color washBottomRight = Hex("030D08");
 
         // ── Actions ────────────────────────────────────────────────────────────────────────
         [Header("Actions")]
-        // Muted rather than bright. Saturated primaries at full strength are what make an
-        // interface read as a toy; the same hues pulled back read as premium, and they sit
-        // properly against a dark ground instead of vibrating on it.
-        public Color primary = Hex("A8324A");
-        public Color primaryDeep = Hex("7E2136");
-        public Color secondary = Hex("2E5C80");
-        public Color secondaryDeep = Hex("1F415C");
-        public Color success = Hex("3C6B4C");
-        public Color successDeep = Hex("2A4E37");
-        public Color gold = Hex("D9A441");
-        public Color goldDeep = Hex("9A6E14");
-        public Color neutral = Hex("EFE9E1");
-        public Color neutralDeep = Hex("DCD3C8");
-        public Color locked = Hex("CFC6BD");
+        public Color primary = Hex("A61B34");
+        public Color primaryDeep = Hex("680D1D");
+        public Color secondary = Hex("1B3B6F");
+        public Color secondaryDeep = Hex("0F2242");
+        public Color success = Hex("16A34A");
+        public Color successDeep = Hex("14532D");
+        public Color gold = Hex("F5C842");
+        public Color goldDeep = Hex("B48218");
+        public Color neutral = Hex("1C2735");
+        public Color neutralDeep = Hex("101824");
+        public Color locked = Hex("1E2734");
+
+        [Header("Navigation Bar")]
+        public Color navBarBg = Hex("0B1320");
+        public Color navPodDefault = Hex("131B2A");
+        public Color navPodActive = Hex("1A2840");
+        public Color navGoldBorder = Hex("F5C842");
 
         // ── Ink ────────────────────────────────────────────────────────────────────────────
         [Header("Ink")]
-        public Color ink = Hex("1A1614");
-        public Color inkMuted = Hex("6B625B");
-        public Color inkDim = Hex("877C73");
+        public Color ink = Hex("FFFFFF");
+        public Color inkMuted = Hex("94A3B8");
+        public Color inkDim = Hex("64748B");
 
         /// <summary>Text sitting directly on the felt, where dark ink would vanish.</summary>
-        public Color inkOnGround = Hex("F5F1EC");
+        public Color inkOnGround = Hex("FFFFFF");
 
-        /// <summary>Secondary text on the felt. inkMuted is tuned for light cards and is
-        /// unreadable here; this is its counterpart for the dark ground.</summary>
-        public Color inkOnGroundDim = Hex("C2CFC7");
+        /// <summary>Secondary text on the felt.</summary>
+        public Color inkOnGroundDim = Hex("94A3B8");
 
         /// <summary>Text and icons sitting ON a saturated fill. Always white.</summary>
         public Color onAccent = Hex("FFFFFF");
 
         /// <summary>
-        /// Readable text colour for a given background. On a light theme a button can be either
-        /// a saturated crimson or a pale grey, and a single hard-coded label colour is illegible
-        /// on one of them — so pick by luminance instead of guessing per call site.
+        /// Readable text colour for a given background.
         /// </summary>
         public Color InkOn(Color background)
         {
             float lum = 0.299f * background.r + 0.587f * background.g + 0.114f * background.b;
-            return lum < 0.55f ? onAccent : ink;
+            return lum < 0.65f ? onAccent : Hex("0F172A");
         }
 
         // ── Player colours (must match the board — do not restyle these) ───────────────────
         [Header("Players")]
-        // Read off the strip you supplied. These are deliberately muted rather than the bright
-        // primaries the board art uses: they have to work as a full-screen page colour behind
-        // the board, and a saturated primary at that size is unreadable to sit a match on.
         public Color playerRed = Hex("A62D35");
         public Color playerGreen = Hex("3C6B4C");
         public Color playerYellow = Hex("E0A526");
@@ -132,13 +128,11 @@ namespace LudoNX.UI
         public float marginSide = 56f;
 
         // ── Clay defaults ──────────────────────────────────────────────────────────────────
-        // Softer and wider than the dark theme used. On a light page the shadow is the entire
-        // depth cue, so it wants to be large, low-opacity and barely visible up close.
         [Header("Clay")]
-        public float shadowSpread = 38f;
-        [Range(0f, 1f)] public float shadowAlpha = 0.16f;
-        [Range(0f, 1f)] public float innerHighlight = 0.18f;
-        [Range(0f, 1f)] public float innerShadow = 0.12f;
+        public float shadowSpread = 32f;
+        [Range(0f, 1f)] public float shadowAlpha = 0.35f;
+        [Range(0f, 1f)] public float innerHighlight = 0.32f;
+        [Range(0f, 1f)] public float innerShadow = 0.18f;
 
         // ── Motion (seconds) ───────────────────────────────────────────────────────────────
         // Slightly longer than before and, more importantly, no overshoot anywhere. Every
@@ -176,7 +170,7 @@ namespace LudoNX.UI
         /// For anything NOT drawn by the clay shader — a plain Image, TMP text — pass the
         /// colour through <see cref="Lin"/> so it gets the same conversion.
         /// </summary>
-        private static Color Hex(string rrggbb)
+        public static Color Hex(string rrggbb)
         {
             return new Color(
                 int.Parse(rrggbb.Substring(0, 2), System.Globalization.NumberStyles.HexNumber) / 255f,

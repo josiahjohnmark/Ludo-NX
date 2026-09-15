@@ -95,18 +95,47 @@ namespace LudoNX.UI
         /// bottom-right. Every screen opens with this, so the whole app shares one surface
         /// instead of each screen inventing its own background.
         /// </summary>
-        public static void Page(Transform parent)
+        /// <summary>
+        /// The living game ground: dark ash tabletop with large, spaced-out floating motifs
+        /// (translucent dice and pawns drifting softly with generous negative space).
+        /// Smoke layer is completely removed.
+        /// </summary>
+        public static void Page(Transform parent, Sprite customBg = null)
         {
+            // 1. Solid Ash Ground Layer
             Ground(parent, T.groundTop);
 
+            // 2. Corner Vignette / Glow Washes
             Sprite glow = UIIconSet.Current != null ? UIIconSet.Current.softGlow : null;
-            if (glow == null) return;
+            if (glow != null)
+            {
+                Icon("WashTopLeft", parent, new Vector2(1500f, 1500f), new Vector2(-460f, 860f),
+                     glow, T.washTopLeft);
+                Icon("WashBottomRight", parent, new Vector2(1400f, 1400f), new Vector2(470f, -880f),
+                     glow, T.washBottomRight);
+            }
 
-            // Oversized and anchored off-screen so only the falloff shows, never a visible disc.
-            Icon("WashTopLeft", parent, new Vector2(1500f, 1500f), new Vector2(-460f, 860f),
-                 glow, T.washTopLeft);
-            Icon("WashBottomRight", parent, new Vector2(1400f, 1400f), new Vector2(470f, -880f),
-                 glow, T.washBottomRight);
+            // 3. Spaced-out Floating Game Motifs (No smoke)
+            var motifsTex = Resources.Load<Texture2D>("bg_ash_floating_motifs");
+            if (motifsTex == null)
+            {
+                motifsTex = Resources.Load<Texture2D>("ash_motifs_spaced");
+            }
+
+            if (motifsTex != null)
+            {
+                var motifsRt = Stretch("FloatingMotifsLayer", parent);
+                var motifsRaw = motifsRt.gameObject.AddComponent<RawImage>();
+                motifsRaw.raycastTarget = false;
+                motifsRaw.texture = motifsTex;
+                motifsRaw.color = new Color(0.6f, 0.9f, 0.75f, 0.07f); // subtle whisper of motifs over rich emerald felt
+                motifsRaw.uvRect = new Rect(0, 0, 1f, 1f);
+
+                var scroller = motifsRt.gameObject.AddComponent<UISmokeScroll>();
+                scroller.motifsImage = motifsRaw;
+                scroller.motifsSpeedX = 0.002f;
+                scroller.motifsSpeedY = 0.003f;
+            }
         }
 
         /// <summary>A recessed groove — toggle tracks, progress rails, input wells.</summary>
@@ -241,24 +270,21 @@ namespace LudoNX.UI
         /// </summary>
         public static ClayButton TopBar(Transform parent, string title, out TextMeshProUGUI titleLabel)
         {
-            var back = CircleButton("BackButton", parent, 100f, new Vector2(-432f, 806f), T.neutral);
+            var back = CircleButton("BackButton", parent, 84f, new Vector2(-435f, 848f), T.panelHigh);
+            back.Clay.shadowSpread = 20f;
+            back.Clay.shadowAlpha = 0.12f;
 
-            // A chevron drawn from two clay strokes.
-            for (int i = 0; i < 2; i++)
+            Sprite chevron = UIIconSet.Icon("chevron_left") ?? UIIconSet.Icon("arrow_back_ios");
+            if (chevron != null)
             {
-                var stroke = Clay("Chevron" + i, back.content, new Vector2(44f, 14f),
-                                  new Vector2(4f, i == 0 ? 13f : -13f), T.ink, ClayGraphic.Shape.Pill);
-                stroke.transform.localRotation = Quaternion.Euler(0f, 0f, i == 0 ? 45f : -45f);
-                stroke.raycastTarget = false;
-                stroke.shadowAlpha = 0f;
-                stroke.innerHighlight = 0f;
-                stroke.innerShadow = 0f;
+                Icon("BackChevron", back.content, new Vector2(40f, 40f), Vector2.zero, chevron, T.ink);
             }
 
-            // On the felt, not on a card — dark ink would disappear into the ground.
-            titleLabel = Label("Title", parent, new Vector2(700f, 80f), new Vector2(0f, 806f), title,
+            titleLabel = Label("Title", parent, new Vector2(700f, 70f), new Vector2(0f, 848f), title,
                                UIFontSet.Current != null ? UIFontSet.Current.display : null,
-                               UIFontSet.SizeHeadline, T.inkOnGround);
+                               42f, Color.white);
+            titleLabel.characterSpacing = 3f;
+            titleLabel.fontStyle = FontStyles.Bold;
             return back;
         }
 

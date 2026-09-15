@@ -41,6 +41,24 @@ namespace LudoNX.UI
         [Tooltip("Radial falloff, tinted for the soft corner washes on the page.")]
         public Sprite softGlow;
 
+        [Tooltip("Full-bleed background illustration for all screens.")]
+        public Sprite backgroundIllustration;
+
+        [Header("Screen Backgrounds (Nano Banana 3D)")]
+        public Sprite bgHomeStadium;
+        public Sprite bgShopVault;
+        public Sprite bgBattleArena;
+        public Sprite bgTournamentHall;
+
+        [Header("3D Game Props & Mascot")]
+        [Tooltip("3D Royal Ludo mascot pawn.")]
+        public Sprite mascot;
+        public Sprite coin3D;
+        public Sprite gem3D;
+        public Sprite gemGreen3D;
+        public Sprite shield3D;
+        public Sprite heart3D;
+
         [Header("Icon library (names match the SVG filenames)")]
         public string[] iconNames = new string[0];
         public Sprite[] iconSprites = new Sprite[0];
