@@ -24,7 +24,13 @@ namespace LudoNX.UI
         EventDetail,
         ShopItemDetail,
         PlayerStats,
-        Friends
+        Friends,
+
+        // Added after the rebuild began. Appended rather than inserted: ScreenId is serialised on
+        // every screen prefab by value, so reordering this enum would silently repoint them.
+        DailyMissions,
+        MatchSetup,
+        MatchFound
     }
 
     /// <summary>

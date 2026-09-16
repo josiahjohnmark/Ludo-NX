@@ -145,6 +145,7 @@ namespace LudoNX.UI
                 case ScreenId.Friends:
                 case ScreenId.PlayerStats:
                 case ScreenId.Missions:
+                case ScreenId.DailyMissions:
                 case ScreenId.Events:
                 case ScreenId.EventDetail:
                 case ScreenId.Profile:

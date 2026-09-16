@@ -72,7 +72,7 @@ namespace LudoNX.UI
             }
             if (missionsButton != null)
             {
-                missionsButton.onClick.AddListener(() => ScreenManager.Instance.Push(ScreenId.Missions));
+                missionsButton.onClick.AddListener(() => ScreenManager.Instance.Push(ScreenId.DailyMissions));
             }
             if (streakButton != null)
             {
@@ -193,18 +193,24 @@ namespace LudoNX.UI
         private void OnEnergy() => ScreenManager.Instance.Push(ScreenId.Energy);
         private void OnWallet() => ScreenManager.Instance.Push(ScreenId.Wallet);
 
+        /// <summary>
+        /// Every card leads to the one setup screen, which shapes itself to the mode. The old
+        /// Quick Play Setup and Match Lobby screens are left in place but no longer reachable
+        /// from here — they are the previous art style, and a player must never cross between
+        /// the two looks mid-flow.
+        /// </summary>
         private void OnModeCardClicked(GameModeCarousel.Mode mode)
         {
             switch (mode)
             {
                 case GameModeCarousel.Mode.QuickPlay:
-                    ScreenManager.Instance.Push(ScreenId.QuickPlaySetup);
+                    ScreenManager.Instance.Push(ScreenId.MatchSetup, MatchSetupScreen.Flavour.VsComputer);
                     break;
                 case GameModeCarousel.Mode.Online:
-                    ScreenManager.Instance.Push(ScreenId.MatchLobby);
+                    ScreenManager.Instance.Push(ScreenId.MatchSetup, MatchSetupScreen.Flavour.QuickMatch);
                     break;
                 case GameModeCarousel.Mode.LocalPlay:
-                    ScreenManager.Instance.Push(ScreenId.QuickPlaySetup);
+                    ScreenManager.Instance.Push(ScreenId.MatchSetup, MatchSetupScreen.Flavour.PassAndPlay);
                     break;
             }
         }

@@ -23,7 +23,8 @@ public class LudoNXSession : MonoBehaviour
         PassAndPlay,    // Play with Friends — every house is a human on this device
         OnlineQuick,    // reserved — locked
         Ranked,         // reserved — locked
-        PrivateRoom     // reserved — locked
+        PrivateRoom,    // reserved — locked
+        QuickMatch      // 1v1 over four houses; the opponent is a bot until there is a server
     }
 
     /// <summary>
@@ -55,6 +56,31 @@ public class LudoNXSession : MonoBehaviour
 
     /// <summary>The house the player chose to control. Ignored in pass-and-play.</summary>
     public GameManager.PlayerColor pendingHumanColor = GameManager.PlayerColor.RED;
+
+    // ── Stakes and seats, written by the Match Setup screen ────────────────────────────────
+
+    /// <summary>
+    /// What the match is worth. Multiplies the NX Points won or lost, never the energy price —
+    /// see <see cref="LudoNX.UI.MultiplierService"/> for why, and for the capacity ladder that
+    /// decides which multipliers this account may stake.
+    /// </summary>
+    public int pendingMultiplier = 1;
+
+    /// <summary>
+    /// Two controllers, four houses: each side plays a diagonal, so one player drives red and
+    /// yellow while the other drives green and blue. Diagonals rather than neighbours because
+    /// opposite corners are the same distance home.
+    /// </summary>
+    public bool pendingTeamPlay;
+
+    /// <summary>Display name of the other side in a quick match; empty offline.</summary>
+    public string pendingOpponentName = "";
+
+    /// <summary>
+    /// Names for the houses that are not the player's, in board order. Pass-and-play fills this
+    /// with the friends sharing the phone; vs-computer fills it with the chosen bot names.
+    /// </summary>
+    public System.Collections.Generic.List<string> pendingSeatNames = new System.Collections.Generic.List<string>();
 
     /// <summary>
     /// The houses for the pending match, in turn order, with the player's chosen colour first.
@@ -273,6 +299,20 @@ public class LudoNXSession : MonoBehaviour
     /// <summary>Set by the most recent <see cref="RecordMatchResult"/> so the result screen can show it.</summary>
     public int LastCoinsEarned { get; private set; }
     public int LastNXEarned { get; private set; }
+
+    /// <summary>
+    /// Credits a reward that did not come from a match — a claimed mission, a daily reward.
+    /// Separate from <see cref="RecordMatchResult"/> because it must not touch the played/won
+    /// record: claiming a mission is not a match, and counting it as one would corrupt the
+    /// win rate shown on the profile.
+    /// </summary>
+    public void AddRewards(int coinsEarned, int nxEarned)
+    {
+        if (coinsEarned <= 0 && nxEarned <= 0) return;
+        coins += Mathf.Max(0, coinsEarned);
+        nxPoints += Mathf.Max(0, nxEarned);
+        Save();
+    }
 
     public bool TrySpendCoins(int amount)
     {
