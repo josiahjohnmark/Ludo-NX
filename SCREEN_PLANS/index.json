@@ -1,0 +1,60 @@
+{
+  "$meta": {
+    "name": "Ludo NX screen registry",
+    "version": "1.0.0",
+    "date": "2026-09-26",
+    "author": "Claude (director)",
+    "rule": "Pick the highest-priority screen that is not done and whose depends_on are all done. Read SCREEN_PLANS/specs/SHARED_RULES.md first, then screens/<id>.json. Only the owner sets status to done.",
+    "statuses": ["missing", "rebuild", "polish", "review", "done"],
+    "counts": { "total": 36, "missing": 14, "rebuild": 10, "polish": 12, "review": 0, "done": 0 }
+  },
+
+  "specs": [
+    { "id": "shared-rules", "file": "specs/SHARED_RULES.md", "one_line": "Applies to every screen. Read once per session." },
+    { "id": "match-hud-v2", "file": "specs/MATCH_HUD_V2.md", "one_line": "Gameplay screen: wood wallpaper, house-colour turn tint, emoji/RULES+timer/message action bar." },
+    { "id": "tokens-2-5d", "file": "specs/TOKENS_2_5D.md", "one_line": "How the pawns read as solid 3D pieces standing on a flat top-down board." }
+  ],
+
+  "screens": [
+
+    { "id": "match-hud",           "title": "Match HUD (gameplay)",        "type": "takeover",  "status": "rebuild", "priority": "P0", "assignee": "any",    "depends_on": ["tokens-2-5d"], "one_line": "The board, four player cards, dice, ROLL, and the new action bar. The screen the game is played on." },
+    { "id": "match-emoji-tray",    "title": "In-match emoji tray",         "type": "overlay",   "status": "missing", "priority": "P0", "assignee": "any",    "depends_on": ["match-hud"],   "one_line": "The 8-slot emote loadout, opened from the left button of the action bar." },
+    { "id": "match-message-tray",  "title": "In-match quick messages",     "type": "overlay",   "status": "missing", "priority": "P0", "assignee": "any",    "depends_on": ["match-hud"],   "one_line": "Canned phrases, opened from the right button of the action bar. Not free-text chat - see the file." },
+    { "id": "rules-how-to-play",   "title": "Rules / How to play",         "type": "popup",     "status": "missing", "priority": "P0", "assignee": "any",    "depends_on": [],              "one_line": "What the RULES button opens: how Ludo NX is played, in three short tabs." },
+    { "id": "pause",               "title": "Pause",                       "type": "popup",     "status": "polish",  "priority": "P0", "assignee": "any",    "depends_on": ["match-hud"],   "one_line": "Resume, sound, rules, leave. The only way out of a match." },
+
+    { "id": "result",              "title": "Result (victory + defeat)",   "type": "takeover",  "status": "rebuild", "priority": "P1", "assignee": "claude", "depends_on": ["match-hud"],   "one_line": "The celebration. Two states off one builder: VICTORY! and NICE TRY!" },
+    { "id": "home",                "title": "Home",                        "type": "hub",       "status": "rebuild", "priority": "P1", "assignee": "any",    "depends_on": ["shell-chrome"],"one_line": "The front door: logo, mode carousel, NX MISSIONS and NX CUP badges." },
+    { "id": "prematch-cards",      "title": "Pre-match cards (3 modes)",   "type": "popup",     "status": "rebuild", "priority": "P1", "assignee": "any",    "depends_on": ["home"],        "one_line": "QUICK MATCH, VS COMPUTER and PASS & PLAY on one hero-popup chassis." },
+    { "id": "shop",                "title": "Shop",                        "type": "hub",       "status": "rebuild", "priority": "P1", "assignee": "claude", "depends_on": ["shell-chrome"],"one_line": "Featured banner, four tabs, rarity-sorted product grid. Built to the approved v2 prototype." },
+    { "id": "shop-item-detail",    "title": "Shop item detail",            "type": "popup",     "status": "rebuild", "priority": "P1", "assignee": "any",    "depends_on": ["shop"],        "one_line": "Big rotating render on a plinth, rarity, what it changes, BUY or EQUIP." },
+    { "id": "shell-chrome",        "title": "Top bar + bottom nav",        "type": "component", "status": "polish",  "priority": "P1", "assignee": "any",    "depends_on": [],              "one_line": "The two pieces every hub shares. Fix these once and five screens improve." },
+    { "id": "profile",             "title": "Profile",                     "type": "popup",     "status": "rebuild", "priority": "P1", "assignee": "any",    "depends_on": ["shell-chrome"],"one_line": "Tall popup: avatar on the top edge, player ID with copy, STATS and BADGES tabs." },
+    { "id": "match-found",         "title": "Match found",                 "type": "takeover",  "status": "polish",  "priority": "P1", "assignee": "any",    "depends_on": [],              "one_line": "Diagonal house-colour split, both avatars, VS, countdown from 3." },
+    { "id": "match-intro-doors",   "title": "Match entry (doors)",         "type": "transition","status": "polish",  "priority": "P1", "assignee": "any",    "depends_on": ["match-found"], "one_line": "Doors close, board loads, doors open. Used here and nowhere else." },
+    { "id": "splash",              "title": "Splash / first load",         "type": "takeover",  "status": "polish",  "priority": "P1", "assignee": "any",    "depends_on": [],              "one_line": "Logo, mascot, a progress bar that tells the truth." },
+
+    { "id": "rankings",            "title": "Rankings",                    "type": "hub",       "status": "missing", "priority": "P2", "assignee": "claude", "depends_on": ["shell-chrome"],"one_line": "Podium, rank rows, pinned self row, reward bands. Waits for real players." },
+    { "id": "friends",             "title": "Friends",                     "type": "hub",       "status": "polish",  "priority": "P2", "assignee": "any",    "depends_on": ["shell-chrome"],"one_line": "LIST and REQUESTS tabs, search, friend rows with an online dot." },
+    { "id": "settings",            "title": "Settings",                    "type": "popup",     "status": "rebuild", "priority": "P2", "assignee": "any",    "depends_on": [],              "one_line": "Grouped toggles in a well, option buttons for the sub-pages, player ID, version." },
+    { "id": "settings-subpages",   "title": "Language, Legal, Notifications","type": "popup",   "status": "polish",  "priority": "P2", "assignee": "any",    "depends_on": ["settings"],    "one_line": "Three small popups that hang off Settings and share one builder." },
+    { "id": "missions",            "title": "Missions / Daily missions",   "type": "popup",     "status": "rebuild", "priority": "P2", "assignee": "any",    "depends_on": [],              "one_line": "Mission rows with progress and CLAIM, a bonus chest well, CLAIM ALL on the bottom edge." },
+    { "id": "currency-popups",     "title": "Wallet + Energy",             "type": "popup",     "status": "polish",  "priority": "P2", "assignee": "any",    "depends_on": [],              "one_line": "What the + on each top-bar pill opens. Two popups, one builder." },
+    { "id": "side-drawer",         "title": "Side drawer (menu)",          "type": "drawer",    "status": "missing", "priority": "P2", "assignee": "any",    "depends_on": ["shell-chrome"],"one_line": "What the top-bar burger opens: mascot hero and every destination as a row." },
+    { "id": "edit-profile",        "title": "Edit profile",                "type": "popup",     "status": "polish",  "priority": "P2", "assignee": "any",    "depends_on": ["profile"],     "one_line": "Change name and avatar. Validation and error states." },
+    { "id": "avatar-picker",       "title": "Avatar picker",               "type": "popup",     "status": "missing", "priority": "P2", "assignee": "any",    "depends_on": ["edit-profile"],"one_line": "Arch-top NX Card, grid of avatars, locked ones showing how to unlock." },
+    { "id": "confirm-dialog",      "title": "Confirm dialog",              "type": "popup",     "status": "polish",  "priority": "P2", "assignee": "any",    "depends_on": [],              "one_line": "One question, two buttons. Used by leave match, remove friend, delete account." },
+    { "id": "mini-profile",        "title": "Mini profile",                "type": "popup",     "status": "missing", "priority": "P2", "assignee": "any",    "depends_on": ["rankings"],    "one_line": "Tap anyone anywhere: avatar, level, win rate, ADD FRIEND." },
+    { "id": "player-stats",        "title": "Player stats",                "type": "popup",     "status": "polish",  "priority": "P2", "assignee": "any",    "depends_on": ["profile"],     "one_line": "The full career numbers, behind the profile's STATS tab." },
+
+    { "id": "paywall-offer",       "title": "Offer / paywall",             "type": "popup",     "status": "missing", "priority": "P3", "assignee": "claude", "depends_on": ["shop"],        "one_line": "STARTER PACK and NX CLUB. Must show price, period, renewal terms and the legal links." },
+    { "id": "daily-reward",        "title": "Daily reward",                "type": "takeover",  "status": "missing", "priority": "P3", "assignee": "any",    "depends_on": [],              "one_line": "Seven day cards, today lit and bouncing, day seven a chest." },
+    { "id": "level-up",            "title": "Level up",                    "type": "takeover",  "status": "missing", "priority": "P3", "assignee": "any",    "depends_on": [],              "one_line": "Rays, the new level as a hero number, what it unlocked, CONTINUE." },
+    { "id": "pack-opening",        "title": "Pack / chest opening",        "type": "takeover",  "status": "missing", "priority": "P3", "assignee": "any",    "depends_on": ["shop-item-detail"],"one_line": "The chest opens, items fly out in rarity order, the rarest last." },
+    { "id": "album",               "title": "Album / collection",          "type": "hub",       "status": "rebuild", "priority": "P3", "assignee": "any",    "depends_on": ["shop"],        "one_line": "Everything you own and everything you do not, as a grid with completion." },
+    { "id": "levels",              "title": "Levels track",                "type": "hub",       "status": "missing", "priority": "P3", "assignee": "any",    "depends_on": ["shell-chrome"],"one_line": "The level ladder and what each level unlocks. Decision D5." },
+    { "id": "events",              "title": "Events + event detail",       "type": "hub",       "status": "polish",  "priority": "P3", "assignee": "any",    "depends_on": ["shell-chrome"],"one_line": "Limited-time events list and one event's rules and rewards." },
+    { "id": "inbox",               "title": "Inbox",                       "type": "popup",     "status": "missing", "priority": "P3", "assignee": "any",    "depends_on": ["side-drawer"], "one_line": "Messages and gifts from the team, with a CLAIM on attachments." },
+    { "id": "connection-states",   "title": "Connection and error states", "type": "system",    "status": "missing", "priority": "P3", "assignee": "claude", "depends_on": ["match-hud"],   "one_line": "Reconnecting, opponent left, no network, maintenance. The screens nobody designs and every player sees." }
+  ]
+}

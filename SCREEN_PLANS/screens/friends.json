@@ -1,0 +1,56 @@
+{
+  "id": "friends",
+  "title": "Friends",
+  "type": "hub",
+  "status": "polish",
+  "priority": "P2",
+  "assignee": "any",
+  "one_line": "LIST and REQUESTS tabs, search, friend rows with an online dot.",
+
+  "bible_sections": ["6.2", "5.7", "5.10", "5.25", "4.2", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Screens/Friends.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXFriendsBuilder.cs",
+    "script": "Assets/Scripts/UI/Screens/FriendsScreen.cs",
+    "also": ["Assets/Scripts/UI/Friends/FriendRowView.cs", "Assets/Scripts/UI/Friends/FriendsDemoData.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Friends"
+  },
+
+  "depends_on": ["shell-chrome"],
+  "opens_from": ["bottom nav", "side-drawer"],
+  "opens": ["mini-profile", "confirm-dialog (remove friend)"],
+
+  "gaps": ["Title is huge black text floating on the ground - needs the nameplate treatment.", "Ground needs to match bg_menu_emboss.", "Corners need Lucky Six notches."],
+
+  "anatomy": [
+    { "zone": "Ground",   "spec": "bg_menu_emboss." },
+    { "zone": "Nameplate","spec": "FRIENDS." },
+    { "zone": "Tabs",     "spec": "Folder tabs LIST / REQUESTS. Decision of 14 Sep stands: two tabs only." },
+    { "zone": "Search",   "spec": "Input field (bible 5.25) above the list, search glyph leading, clear trailing." },
+    { "zone": "Rows",     "spec": "Friend row (bible 5.7): avatar + online dot, name, meta, trailing dots menu (Challenge = coming soon per the 14 Sep decision)." },
+    { "zone": "Request rows", "spec": "Accept (go) + decline (neutral) round buttons." }
+  ],
+
+  "components": ["5.4 NX Card", "5.7 Row (friend, request variants)", "5.10 Folder tabs", "5.14 Avatar (online dot)", "5.25 Input field"],
+
+  "copy": { "title": "FRIENDS", "tabs": ["LIST", "REQUESTS"], "search_placeholder": "Search by name or ID", "empty_list": "Add friends to see them here.", "empty_requests": "No pending requests.", "challenge_coming_soon": "Challenge - coming soon" },
+
+  "states": ["Populated list", "Populated requests", "Empty list - bible 5.22 empty state", "Empty requests", "Search with no results", "Loading - skeleton rows"],
+
+  "motion": ["Rows stagger in, 30 ms per row."],
+
+  "data": ["FriendsDemoData today - delete once T-C1/T-C2 ship real Firebase-backed friends."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not add a third tab without the owner - the 14 Sep decision was two.", "Do not build Challenge as a working feature - it stays 'coming soon'.", "Do not keep FriendsDemoData once real data ships."],
+
+  "acceptance": ["Nameplate FRIENDS replaces the floating title.", "Ground matches Home.", "Both tabs and the search field work, with empty states.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight.", "2. Swap the ground and add the nameplate + Lucky Six corners.", "3. Confirm the two-tab, dots-menu, Challenge-coming-soon decisions are intact.", "4. Add empty and no-results states if missing.", "5. Capture list, requests and empty. Postflight."],
+
+  "prompt": "Polish the Ludo NX Friends hub to the bible.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md section 6.2, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nSwap the ground to bg_menu_emboss, replace the huge floating black title with a proper FRIENDS nameplate on an NX Card with Lucky Six corners, and confirm the two folder tabs (LIST / REQUESTS), the search field, and the friend/request rows follow bible 5.7. The 14 September decisions stand: two tabs only, a dots menu on each row, and Challenge stays 'coming soon' rather than a working feature.\n\nAdd empty-list and empty-requests states if they are missing.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

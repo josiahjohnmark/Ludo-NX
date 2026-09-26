@@ -1,0 +1,49 @@
+{
+  "id": "currency-popups",
+  "title": "Wallet + Energy",
+  "type": "popup",
+  "status": "polish",
+  "priority": "P2",
+  "assignee": "any",
+  "one_line": "What the + on each top-bar pill opens. Two popups, one builder, one purpose: sell coins and energy without a separate inventory screen.",
+
+  "bible_sections": ["5.4", "5.8", "5.12", "5.13", "4.3", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Modals/WalletModal.prefab, EnergyModal.prefab",
+    "script": "Assets/Scripts/UI/Modals/WalletModal.cs, Assets/Scripts/UI/Modals/EnergyModal.cs",
+    "also": ["Assets/Scripts/UI/Services/EnergyService.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Wallet, Energy"
+  },
+
+  "depends_on": [],
+  "opens_from": ["shell-chrome (top-bar pill +)", "home (out of energy)", "prematch-cards (out of energy)"],
+  "opens": ["shop (ENERGY tab, from a tile)", "paywall-offer"],
+
+  "anatomy": [
+    { "zone": "Wallet",  "spec": "Standard NX Card, nameplate COINS, current balance as a hero number, coin tiers (bible 5.17-style small cards) each a price button." },
+    { "zone": "Energy",  "spec": "Standard NX Card, nameplate ENERGY, current/max with the regen bar (bible 5.12) and 'Next in M:SS', energy tiers as small cards, and if ads are in scope a WATCH AD (option) for +3." }
+  ],
+
+  "components": ["5.3 Nameplate", "5.4 NX Card", "5.8 Buttons", "5.12 Progress bar", "5.13 Currency pill", "5.17 Shop product card (tile variant)"],
+
+  "copy": { "coins_title": "COINS", "energy_title": "ENERGY", "next_in": "Next in {M}:{S}", "watch_ad": "WATCH AD" },
+
+  "states": ["Normal", "Energy full - hide the regen bar and 'Next in' entirely", "Purchase in flight", "Purchase failed"],
+
+  "motion": ["Balance changes count up.", "Standard popup open/close."],
+
+  "data": ["EnergyService for regen math.", "RevenueCat/coin-pack IAP for tiers, once T-B3 ships. Coin packs can be server-granted virtual currency, not necessarily real-money."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not build a separate full inventory screen - these two popups plus the shop are the whole economy surface.", "Do not show a regen bar when energy is already full."],
+
+  "acceptance": ["Opens from every pill + across every hub.", "Regen countdown is accurate and hides at full.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight.", "2. Rebuild both popups on the standard NX Card chassis.", "3. Wire balances and regen math to the real services.", "4. Wire tiers to IAP/grants once available; placeholder tiles until then.", "5. Capture both, full and regenerating. Postflight."],
+
+  "prompt": "Polish the Ludo NX Wallet and Energy popups.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 5.12 and 5.13, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nThese are what the + button on each top-bar pill opens. Standard NX Card chassis for both: COINS shows the balance as a hero number plus coin-tier tiles; ENERGY shows current/max with a regen progress bar and a 'Next in M:SS' line (hidden entirely once full), plus energy-tier tiles and, if ads are in scope, a WATCH AD option for +3.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

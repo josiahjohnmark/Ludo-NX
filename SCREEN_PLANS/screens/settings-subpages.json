@@ -1,0 +1,49 @@
+{
+  "id": "settings-subpages",
+  "title": "Language, Legal, Notifications, Support",
+  "type": "popup",
+  "status": "polish",
+  "priority": "P2",
+  "assignee": "any",
+  "one_line": "Four small popups that hang off Settings and share one builder and one chassis.",
+
+  "bible_sections": ["5.4", "5.11", "4.3", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Modals/LanguagePicker.prefab, TextPage.prefab",
+    "script": "Assets/Scripts/UI/Modals/ListPickerModal.cs, Assets/Scripts/UI/Modals/TextPageModal.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Language, Legal, Support"
+  },
+
+  "depends_on": ["settings"],
+  "opens_from": ["settings"],
+  "opens": [],
+
+  "anatomy": [
+    { "zone": "Language",      "spec": "Small NX Card, radio list (bible 5.11): each language a row, selected row cream50 with a tick. English is the main language and stays live text throughout the app so others can be added without redrawing art." },
+    { "zone": "Legal/Support", "spec": "TextPage chassis: nameplate (PRIVACY POLICY / TERMS OF SERVICE / SUPPORT), scrolling Nunito body text, close X." },
+    { "zone": "Notifications", "spec": "Small NX Card, toggle rows per notification category (friend requests, rewards, events)." }
+  ],
+
+  "components": ["5.4 NX Card (small)", "5.7 Row (radio variant)", "5.11 Toggle, Radio"],
+
+  "copy": { "titles": ["LANGUAGE", "PRIVACY POLICY", "TERMS OF SERVICE", "SUPPORT", "NOTIFICATIONS"] },
+
+  "states": ["Populated list", "Text page loading (fetching latest legal copy) - skeleton lines, never blank"],
+
+  "motion": ["Standard popup open/close."],
+
+  "data": ["Language list and legal text: local strings today; consider a remote config fetch for legal text so it can update without a build."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not bake any of these labels into art - SETTINGS, LEGAL, ENGLISH, HAUSA, IGBO must all be live text (IMPLEMENTATION_PLAN.md section 4.3 explicitly drops the baked versions)."],
+
+  "acceptance": ["All four sub-pages share the small-card chassis.", "Language selection persists.", "Legal text never shows blank while loading.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight.", "2. Confirm/rebuild the shared small-card chassis for all four sub-pages.", "3. Wire language selection to persist.", "4. Add a loading state for legal text if it is remote.", "5. Capture each sub-page. Postflight."],
+
+  "prompt": "Polish the four Ludo NX settings sub-pages: Language, Privacy Policy, Terms of Service, Support, Notifications.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nAll four share one small-NX-Card chassis and one builder. Language is a radio list with English as the live-text default (never baked - the old build had baked PNGs for ENGLISH, HAUSA, IGBO, TAROK; they must all be live text so more languages can be added later). Legal and Support are scrolling text pages with a nameplate and a close X. Notifications is a set of toggle rows by category.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

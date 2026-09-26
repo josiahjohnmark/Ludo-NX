@@ -1,0 +1,53 @@
+{
+  "id": "settings",
+  "title": "Settings",
+  "type": "popup",
+  "status": "rebuild",
+  "priority": "P2",
+  "assignee": "any",
+  "one_line": "Grouped toggles in a well, option buttons for the sub-pages, player ID, version, manage account.",
+
+  "bible_sections": ["6.6", "5.6", "5.8", "5.11", "4.3", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Screens/Settings.prefab",
+    "script": "Assets/Scripts/UI/Screens/SettingsScreen.cs",
+    "also": ["Assets/Scripts/UI/Services/SettingsService.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Settings"
+  },
+
+  "depends_on": [],
+  "opens_from": ["side-drawer", "pause"],
+  "opens": ["settings-subpages", "confirm-dialog (delete account)"],
+
+  "anatomy": [
+    { "zone": "Card",   "spec": "Standard NX Card popup." },
+    { "zone": "Nameplate", "spec": "SETTINGS." },
+    { "zone": "Toggles", "spec": "One cream well holding SOUND, MUSIC, VIBRATION, EMOTES rows with toggles (bible 5.11)." },
+    { "zone": "Options", "spec": "option amber buttons: LANGUAGE, NOTIFICATIONS, SUPPORT, LEGAL - each opens a settings-subpage." },
+    { "zone": "Identity", "spec": "Player ID with copy, app version, as captions." },
+    { "zone": "Manage account", "spec": "MANAGE ACCOUNT, neutral, opens account options including delete (via confirm-dialog, danger)." }
+  ],
+
+  "components": ["5.3 Nameplate", "5.4 NX Card", "5.6 Well", "5.8 Buttons", "5.9 Close X", "5.11 Toggle", "5.25 Input field (if renaming inline)"],
+
+  "copy": { "title": "SETTINGS", "toggles": ["Sound", "Music", "Vibration", "Emotes"], "options": ["LANGUAGE", "NOTIFICATIONS", "SUPPORT", "LEGAL"], "manage": "MANAGE ACCOUNT", "version_format": "Version {V}" },
+
+  "states": ["Guest account - shows Link Google as an option, not buried", "Signed in with Google - shows the linked email"],
+
+  "motion": ["Standard popup open/close."],
+
+  "data": ["SettingsService for every toggle - single source of truth shared with Pause."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not duplicate toggle state with Pause - one SettingsService.", "Do not bake LANGUAGE, LEGAL or any label into art - all live text so languages can be added later.", "Do not put Delete Account one tap away without a confirm dialog."],
+
+  "acceptance": ["Toggles match Pause's toggles live.", "Player ID copies.", "Delete account requires the confirm dialog with danger styling only inside it.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight.", "2. Rebuild on the NX Card chassis with nameplate and the toggle well.", "3. Wire toggles to SettingsService, shared with Pause.", "4. Add the four option buttons opening settings-subpages.", "5. Add player ID copy, version, and MANAGE ACCOUNT with delete behind a confirm.", "6. Capture guest and signed-in. Postflight."],
+
+  "prompt": "Rebuild the Ludo NX Settings popup.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md section 6.6, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nBuild it as a standard NX Card popup: nameplate SETTINGS, a cream well holding Sound/Music/Vibration/Emotes toggles, option-amber buttons for LANGUAGE/NOTIFICATIONS/SUPPORT/LEGAL, the player ID with copy and the app version as captions, and MANAGE ACCOUNT in neutral.\n\nThe toggles must read and write the same SettingsService that Pause uses - one source of truth, not two copies. Delete Account must always go through the confirm dialog (danger colour only appears inside that dialog, never here). For a guest account, surface Link Google as a visible option, not buried - a guest loses everything on reinstall.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

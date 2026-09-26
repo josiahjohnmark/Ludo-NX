@@ -1,0 +1,36 @@
+{
+  "$meta": {
+    "name": "Ludo NX screen plan schema",
+    "version": "1.0.0",
+    "date": "2026-09-26",
+    "note": "What each field in SCREEN_PLANS/screens/<id>.json means. Every screen file carries every required field."
+  },
+  "fields": {
+    "id": "Required. Kebab-case. Matches the filename and the index.json key.",
+    "title": "Required. Human name, as the owner would say it.",
+    "type": "Required. hub | popup | takeover | drawer | overlay | component | transition | system. Bible 4.1 allows only hub, popup and takeover as screens; the others are pieces that live inside one.",
+    "status": "Required. missing | rebuild | polish | review | done. Only the owner sets done.",
+    "priority": "Required. P0 | P1 | P2 | P3.",
+    "assignee": "Required. any | claude | owner. Gemini may take 'any'.",
+    "one_line": "Required. What this screen is for, in one sentence.",
+    "bible_sections": "Required. The bible sections that govern it. Read them before building.",
+    "specs": "Optional. Extra spec documents that govern this screen.",
+    "files": "Required. prefab, builder, script, test_menu. Where the work lands. A path that does not exist yet is the path to create.",
+    "depends_on": "Required (may be empty). Screen ids or specs that must be done first.",
+    "opens_from": "Required. How the player gets here.",
+    "opens": "Required. What this screen can open.",
+    "gaps": "Only for status rebuild/polish. What is wrong with what exists today.",
+    "anatomy": "Required. Ordered list of zones, top to bottom. Each has 'zone' and 'spec'. This is the layout.",
+    "components": "Required. Bible section 5 components used, quoted by number.",
+    "copy": "Required. Every string on the screen, keyed. Live text only - never baked.",
+    "states": "Required. Every state the screen can be in, including empty, loading and error.",
+    "motion": "Required. Timings, all from tokens.json motion.",
+    "data": "Required. What the screen reads, and from where. Says where demo data must be replaced by server data.",
+    "assets_needed": "Required (may be empty). Each: name, path, size, who (owner | generated | exists), prompt.",
+    "deviations": "Required (may be empty). Approved departures from the bible, with who approved and when. Anything not listed here is not approved.",
+    "do_not": "Required. The mistakes that have already been made on this screen or one like it.",
+    "acceptance": "Required. Tick every line before reporting done. This is on top of bible section 11.",
+    "steps": "Required. The build order. Follow it.",
+    "prompt": "Required. The paste-to-agent brief. Self-contained enough to start from, and points at this file for the detail."
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "levels",
+  "title": "Levels track",
+  "type": "hub",
+  "status": "missing",
+  "priority": "P3",
+  "assignee": "any",
+  "one_line": "The level ladder and what each level unlocks. Decision D5's answer for what the bottom nav's LEVELS tab shows.",
+
+  "bible_sections": ["4.2", "5.7", "5.12", "5.15", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "NEW - Assets/Resources/UI/Screens/Levels.prefab",
+    "script": "NEW - Assets/Scripts/UI/Screens/LevelsScreen.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Levels"
+  },
+
+  "depends_on": ["shell-chrome"],
+  "opens_from": ["bottom nav (LEVELS)"],
+  "opens": [],
+
+  "anatomy": [
+    { "zone": "Ground",   "spec": "bg_menu_emboss." },
+    { "zone": "Nameplate","spec": "LEVELS." },
+    { "zone": "Current",  "spec": "Current level and XP progress toward the next, as a hero-ish header with a progress bar (bible 5.12)." },
+    { "zone": "Ladder",   "spec": "A scrolling list of level rows (bible 5.7): level number, unlock icon(s), reached ones ticked, current one lit and auto-scrolled into view on open." }
+  ],
+
+  "components": ["5.4 NX Card", "5.7 Row", "5.12 Progress bar", "5.15 Badges"],
+
+  "copy": { "title": "LEVELS", "current_format": "LEVEL {N}", "xp_format": "{CUR} / {NEXT} XP" },
+
+  "states": ["Populated, auto-scrolled to current level", "Loading - skeleton rows"],
+
+  "motion": ["Auto-scroll to the current level on open, eased.", "XP bar animates on open."],
+
+  "data": ["The formalized level/unlock table shared with level-up.json - build that table once, both screens read it."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not maintain a separate level table from the one level-up.json reads - one table."],
+
+  "acceptance": ["Auto-scrolls to the current level.", "Every unlock shown here matches what level-up actually grants.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight - confirm decision D5 (LEVELS tab content) with the owner if still open.", "2. Formalize the level/unlock table if it does not exist yet, shared with level-up.json.", "3. Build the hub with the current-level header and the scrolling ladder.", "4. Wire auto-scroll to the current level.", "5. Capture populated and loading. Postflight."],
+
+  "prompt": "Build the Ludo NX Levels track hub.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 5.7 and 5.12, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nCheck decision D5 in AI_HANDOFF.md first - it decides what the bottom nav's LEVELS destination shows; the recommended answer is 'the player level track', which is this screen. This does not exist yet.\n\nBuild: bg_menu_emboss ground, a LEVELS nameplate, a header showing the current level and XP progress toward the next, and a scrolling ladder of level rows with their unlocks, ticked for reached levels, auto-scrolled to the current level on open.\n\nFormalize a single level/unlock data table if one does not exist yet - both this screen and level-up.json must read the same table, never two that can disagree.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

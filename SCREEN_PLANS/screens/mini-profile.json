@@ -1,0 +1,50 @@
+{
+  "id": "mini-profile",
+  "title": "Mini profile",
+  "type": "popup",
+  "status": "missing",
+  "priority": "P2",
+  "assignee": "any",
+  "one_line": "Tap anyone anywhere: avatar, level, win rate, ADD FRIEND.",
+
+  "bible_sections": ["5.4", "5.8", "5.14", "4.3", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "NEW - Assets/Resources/UI/Modals/MiniProfile.prefab",
+    "script": "NEW - Assets/Scripts/UI/Modals/MiniProfileModal.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Mini Profile"
+  },
+
+  "depends_on": ["rankings"],
+  "opens_from": ["rankings (tap a row)", "friends (tap a row)", "match-hud (tap a player card, if enabled)"],
+  "opens": ["confirm-dialog (remove friend, if already friends)"],
+
+  "anatomy": [
+    { "zone": "Card",   "spec": "Small standard NX Card." },
+    { "zone": "Avatar", "spec": "84 pt straddling the top edge, ring by frame tier." },
+    { "zone": "Identity","spec": "Name, level, win rate as three compact stats." },
+    { "zone": "Action", "spec": "ADD FRIEND (info blue) if not friends; REMOVE FRIEND (neutral, through confirm-dialog) if already friends; nothing if it is the player's own row." }
+  ],
+
+  "components": ["5.4 NX Card (small)", "5.8 Buttons", "5.14 Avatar"],
+
+  "copy": { "add_friend": "ADD FRIEND", "remove_friend": "REMOVE FRIEND", "request_sent": "Request sent", "win_rate_format": "{P}% win rate" },
+
+  "states": ["Not friends", "Already friends", "Request pending", "Own row - no action button"],
+
+  "motion": ["Standard popup open/close, fast (160 ms) - this is a quick glance, not a destination."],
+
+  "data": ["StatsService for the numbers, friend status from the friends backend once T-C1 ships."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not show a full profile's worth of detail here - three stats maximum, this is a glance not a destination.", "Do not let ADD FRIEND fire twice - show 'Request sent' immediately."],
+
+  "acceptance": ["Opens from a rank row and a friend row.", "All four states in 'states' are reachable.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight.", "2. Build the small-card chassis with the avatar straddling the top.", "3. Wire the three states of the action button.", "4. Wire entry points from rankings and friends.", "5. Capture each state. Postflight."],
+
+  "prompt": "Build the Ludo NX Mini Profile popup.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 5.4 and 5.14, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nThis does not exist yet. It is what tapping anyone (a rank row, a friend row) opens: a small NX Card with the avatar straddling the top edge, name, level and win rate as three compact stats, and ADD FRIEND / REMOVE FRIEND / nothing depending on relationship - never both a full stats page and this popup; this stays a glance.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

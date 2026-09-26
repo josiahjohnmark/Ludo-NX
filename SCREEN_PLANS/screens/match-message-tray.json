@@ -1,0 +1,105 @@
+{
+  "id": "match-message-tray",
+  "title": "In-match quick messages",
+  "type": "overlay",
+  "status": "missing",
+  "priority": "P0",
+  "assignee": "any",
+  "one_line": "Canned phrases fired from the right button of the match action bar. Deliberately not free-text chat - the reason is below.",
+
+  "bible_sections": ["5.7", "5.8", "5.15", "5.20", "2.9", "11"],
+  "specs": ["SCREEN_PLANS/specs/MATCH_HUD_V2.md", "SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Modals/MatchMessageTray.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXEmoteBuilder.cs",
+    "script": "Assets/Scripts/UI/Match/MatchMessageTray.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Match Message Tray"
+  },
+
+  "depends_on": ["match-hud"],
+  "opens_from": ["match-hud (action bar, right button)"],
+  "opens": [],
+
+  "design_decision": {
+    "what": "Quick messages (a fixed list of phrases), not a free-text chat box.",
+    "why": "Free text between strangers needs moderation, reporting, blocking and an age gate before it can ship. Google Play's Families policy and Apple's 1.2 rule both treat unmoderated user-to-user text as a rejection risk, and a casual Ludo game gets abuse in the first week. A fixed phrase list is shippable today, translates for free (the strings are ours), and is what Ludo King and Parchisi actually do.",
+    "later": "Free text can be added for accepted friends only, once Phase C ships, with a report and block flow. Do not build it before then.",
+    "owner_can_override": "If the owner wants free text now, say this cost once and build it - but it must come with report, block and a profanity filter in the same task."
+  },
+
+  "anatomy": [
+    { "zone": "Scrim", "spec": "None. Tray, not popup. The board stays visible and the match keeps running." },
+    { "zone": "Tray",  "spec": "Small NX Card (rim 6, rivets), 356 wide, slides up from the action bar's right button. Bottom edge tucks behind the bar." },
+    { "zone": "Tabs",  "spec": "Segmented control (bible 5.10), two segments: FRIENDLY / REACTIONS. Three at most - do not add a third without the owner." },
+    { "zone": "List",  "spec": "Phrase rows (bible 5.7), cream plates, radius 14, 48 tall, 8 pt gap. Text Lilita 17 Title Case ink.default, left aligned with 16 pt inset. Tapping a row fires it and closes the tray." },
+    { "zone": "Received", "spec": "An incoming message renders as a bubble over the sender's player card for 2.2 s - the same slot the emotes use, so the two never overlap. Queue them if they collide." },
+    { "zone": "Close", "spec": "Second tap on the button, or a tap on the board. No close X." }
+  ],
+
+  "components": ["5.4 NX Card (small card variant)", "5.7 Row", "5.10 Segmented control", "5.15 Badges (notification dot)", "5.20 Toast"],
+
+  "copy": {
+    "tab_friendly": "FRIENDLY",
+    "tab_reactions": "REACTIONS",
+    "friendly": ["Good luck!", "Nice move.", "Well played.", "Good game.", "Your turn.", "One more round?"],
+    "reactions": ["So close!", "Oh no.", "Lucky roll.", "I needed a six.", "Wow.", "Ha!"],
+    "cooldown": "Wait {N}s",
+    "muted_toast": "{NAME} is muted"
+  },
+
+  "states": [
+    "Closed - default.",
+    "Open - tray up, both tabs reachable.",
+    "Cooling down - rows go to the disabled kind, header shows 'Wait 5s'.",
+    "Unread - notification dot on the action bar's message button; opening the tray clears it.",
+    "Muted sender - nothing renders. No bubble, no dot, no sound.",
+    "Pass and Play - the message button is hidden entirely. Everyone is holding the same phone."
+  ],
+
+  "motion": [
+    "Open: slide up 200 ms ease-out-back. Close: 140 ms ease-in.",
+    "Fire: row press 80/140 ms, tray closes, bubble rises over the sender's card, holds 2.2 s, fades 200 ms.",
+    "Cooldown: 5 s, longer than emotes because text lands harder. Radial wipe on the tray header."
+  ],
+
+  "data": [
+    "Phrase list: a ScriptableObject or a const table in MatchMessageTray.cs. Live strings, never baked art, so other languages can be added later.",
+    "Mute list: shared with match-emoji-tray - one mute covers both.",
+    "Delivery: local today. Moves to the server with the match state at T-D2."
+  ],
+
+  "assets_needed": [],
+
+  "deviations": [],
+
+  "do_not": [
+    "Do not build a free-text input. See design_decision above.",
+    "Do not dim the board or add a close X.",
+    "Do not let a message bubble and an emote bubble occupy the same card slot at once - queue them.",
+    "Do not show the message button in Pass and Play.",
+    "Do not put anything in the phrase list that can be used as an insult with a straight face. 'Too slow' and 'Give up' do not ship. Every phrase must be readable as good-natured by the person receiving it."
+  ],
+
+  "acceptance": [
+    "Tray opens and closes from the action bar's right button and never covers the board centre.",
+    "Both tabs work; every phrase fires and shows over the sender's card for 2.2 s.",
+    "The 5 s cooldown visibly locks the list.",
+    "Muting a player stops both their messages and their emotes.",
+    "Unread dot appears on the button and clears when the tray opens.",
+    "The message button is absent in Pass and Play.",
+    "Bible section 11 in full."
+  ],
+
+  "steps": [
+    "1. Preflight per SHARED_RULES.md section 2. If the owner has asked for free text, restate the moderation cost once, then follow their decision.",
+    "2. Put the phrase list in one place as live strings. Two tabs, six phrases each.",
+    "3. Build the tray prefab: small-card chassis, segmented control, phrase rows.",
+    "4. Wire it to the action bar's right button, sharing the bubble slot and the mute list with the emoji tray.",
+    "5. Implement the 5 s cooldown and the unread dot.",
+    "6. Hide the button in Pass and Play.",
+    "7. Capture open, cooling-down and received states. Postflight."
+  ],
+
+  "prompt": "Build the in-match quick-message tray for Ludo NX.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, SCREEN_PLANS/specs/MATCH_HUD_V2.md section 3.4, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nIMPORTANT, read the 'design_decision' field before you start: this is a fixed list of canned phrases, NOT a free-text chat box. Free text between strangers needs moderation, reporting and blocking before it can pass store review, and a casual Ludo game attracts abuse immediately. A phrase list ships today, translates for free, and is what the competition actually does. Free text can come later, for accepted friends only, once Phase C is live.\n\nIt is a TRAY like the emoji tray: no scrim, no close X, the board stays visible. Small NX Card chassis sliding up from the action bar's right button, a two-segment control (FRIENDLY / REACTIONS), and six phrase rows per tab. Tapping a row fires it and closes the tray; the message appears as a bubble over the sender's player card for 2.2 seconds, sharing the bubble slot with emotes so the two never overlap.\n\nCooldown is 5 seconds - longer than emotes, because text lands harder. The mute list is shared with the emoji tray: one mute covers both. Hide the button entirely in Pass and Play.\n\nEvery phrase in the list must read as good-natured to the person receiving it. Nothing that works as an insult.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

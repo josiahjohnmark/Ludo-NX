@@ -1,0 +1,109 @@
+{
+  "id": "rules-how-to-play",
+  "title": "Rules / How to play",
+  "type": "popup",
+  "status": "missing",
+  "priority": "P0",
+  "assignee": "any",
+  "one_line": "What the RULES button opens: how Ludo NX is played, in three short tabs, readable mid-match without losing the turn.",
+
+  "bible_sections": ["4.3", "5.3", "5.4", "5.9", "5.10", "5.7", "2.3", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Modals/Rules.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXMatchModalsBuilder.cs",
+    "script": "Assets/Scripts/UI/Modals/RulesModal.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Rules"
+  },
+
+  "depends_on": [],
+  "opens_from": ["match-hud (action bar, RULES)", "pause", "settings", "side-drawer (SUPPORT)"],
+  "opens": [],
+
+  "anatomy": [
+    { "zone": "Scrim",     "spec": "ground.scrim #0B0D12 at 72 percent. The board stays visible behind it." },
+    { "zone": "Card",      "spec": "Standard NX Card, 380 wide, cream rim 10, Lucky Six corners. Max height = screen - top inset - 120; the CONTENT scrolls, never the card (bible 4.3)." },
+    { "zone": "Nameplate", "spec": "HOW TO PLAY, straddling the top edge (bible 5.3). One nameplate only." },
+    { "zone": "Tabs",      "spec": "Folder tabs on the top edge under the nameplate (bible 5.10), three: BASICS / MOVES / SCORING. Selected tab is option amber and 6 pt taller." },
+    { "zone": "Content",   "spec": "Numbered rule rows (bible 5.7): a 44 pt icon well on the left holding a board diagram or item icon, rule title in Lilita 17 Title Case, one line of Nunito 14 under it. Six rows per tab at most - if a tab needs more, the rules are being written badly." },
+    { "zone": "Action",    "spec": "GOT IT, go green, button L, straddling the bottom edge in a 6 pt cream collar." },
+    { "zone": "Close",     "spec": "44 cream disc with the brown700 X, 24 pt below the card, centred (bible 5.9)." }
+  ],
+
+  "components": ["5.3 Nameplate", "5.4 NX Card (standard)", "5.6 Well", "5.7 Row", "5.8 Buttons (go L, collar)", "5.9 Close X", "5.10 Folder tabs"],
+
+  "copy": {
+    "title": "HOW TO PLAY",
+    "tab_basics": "BASICS",
+    "tab_moves": "MOVES",
+    "tab_scoring": "SCORING",
+    "action": "GOT IT",
+    "basics": [
+      { "t": "Get all four home", "b": "First player to bring all four tokens into the centre wins the match." },
+      { "t": "Roll a six to start", "b": "A token only leaves its yard on a six." },
+      { "t": "Take turns clockwise", "b": "Red, green, yellow, then blue." },
+      { "t": "Watch the timer", "b": "If your turn runs out, it passes automatically." }
+    ],
+    "moves": [
+      { "t": "A six rolls again", "b": "But three sixes in a row loses the turn." },
+      { "t": "Land on an opponent", "b": "Their token goes back to its yard. Yours stays." },
+      { "t": "Safe squares", "b": "The starred squares cannot be captured. Two tokens can share one." },
+      { "t": "Exact count home", "b": "You need the exact roll to enter the centre. Anything over and the move is not allowed." }
+    ],
+    "scoring": [
+      { "t": "NX Points", "b": "Earned for finishing, capturing and getting tokens home. NX Points are your score - they are never spent." },
+      { "t": "Multipliers", "b": "The multiplier you picked before the match multiplies what you win and what you lose." },
+      { "t": "Coins", "b": "Coins are separate. Spend them in the shop." }
+    ]
+  },
+
+  "states": [
+    "Opened mid-match - the turn timer PAUSES while the rules are open, and resumes on close. Say so on the card: a caption line 'Your turn is paused.' Otherwise reading the rules costs you the game.",
+    "Opened from Settings or the drawer - no pause line, no match behind, scrim over the hub.",
+    "First-ever match - auto-opens once on the BASICS tab, then never again unless asked for. Store the flag locally."
+  ],
+
+  "motion": [
+    "Open: scrim fades 180 ms, card scales 0.86 to 1.04 to 1.00 over 260 ms ease-out-back (tokens.json motion.popupOpen).",
+    "Close: scale 1.00 to 0.92 and fade over 160 ms.",
+    "Tab change: content cross-fades 120 ms. Rows stagger in at 30 ms each."
+  ],
+
+  "data": ["All strings live in the modal script or a ScriptableObject. Never baked into art - other languages come later."],
+
+  "assets_needed": [
+    { "name": "Rule diagrams", "path": "Assets/Art/UI/Icons/Emblem/rule_*@3x.png", "size": "256 x 256 each", "who": "owner", "prompt": "Bible section 8 style lock, then: a small top-down Ludo board diagram in the emblem icon style - cobalt blue and gold, thick navy outline, soft glossy bevel, fills 85 percent of the square. Subject: [four tokens reaching the centre | a six on a die next to a token leaving its yard | one token knocking another off a square | a starred safe square with two tokens on it | a token entering the home column with an exact count]. 256 x 256, transparent, no text." }
+  ],
+
+  "deviations": [],
+
+  "do_not": [
+    "Do not write more than six rows per tab. If it needs more, the wording is wrong.",
+    "Do not let the card itself scroll - the content scrolls inside it (bible 4.3).",
+    "Do not open this without pausing the turn timer when a match is running.",
+    "Do not bake the rule text into images.",
+    "Do not use paragraphs. One title line and one sentence per rule."
+  ],
+
+  "acceptance": [
+    "Opens from the match action bar, from Pause, and from Settings.",
+    "The turn timer visibly pauses while it is open mid-match and resumes on close.",
+    "Three tabs, six rows maximum each, every line at least 12 pt.",
+    "The card never scrolls; its content does.",
+    "Auto-opens exactly once, on a player's first match.",
+    "Bible section 11 in full."
+  ],
+
+  "steps": [
+    "1. Preflight per SHARED_RULES.md section 2.",
+    "2. Put every rule string in one place as live text.",
+    "3. Build the popup: standard NX Card, nameplate, three folder tabs, scrolling content, GOT IT in a collar, close X below.",
+    "4. Wire the turn-timer pause and the 'Your turn is paused.' caption for the in-match case.",
+    "5. Wire the first-match auto-open with a local flag.",
+    "6. Wire the entry points: match action bar, pause, settings, drawer.",
+    "7. Capture all three tabs and the in-match state. Postflight."
+  ],
+
+  "prompt": "Build the Rules / How to play popup for Ludo NX.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 4.3 and 5.10, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nThis is what the new RULES button in the match action bar opens. Standard NX Card, 380 wide, nameplate HOW TO PLAY, three folder tabs (BASICS / MOVES / SCORING), rule rows with an icon well and one sentence each, GOT IT in a collar on the bottom edge, close X 24 pt below.\n\nThe detail that matters most: when this opens mid-match, PAUSE THE TURN TIMER and say so on the card ('Your turn is paused.'). Otherwise reading the rules costs the player the game, and nobody opens it twice.\n\nEvery string is in this file's 'copy' field. Six rows per tab at most. Live text only - never baked. The content scrolls, the card does not.\n\nIt should also auto-open once, on a player's first ever match, on the BASICS tab.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

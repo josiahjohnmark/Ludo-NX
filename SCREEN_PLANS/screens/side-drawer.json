@@ -1,0 +1,55 @@
+{
+  "id": "side-drawer",
+  "title": "Side drawer (menu)",
+  "type": "drawer",
+  "status": "missing",
+  "priority": "P2",
+  "assignee": "any",
+  "one_line": "What the top-bar burger opens: mascot hero and every destination as a row.",
+
+  "bible_sections": ["5.24", "5.7", "4.1", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "NEW - Assets/Resources/UI/Modals/SideDrawer.prefab",
+    "builder": "NEW - Assets/Scripts/Editor/LudoNXSideDrawerBuilder.cs",
+    "script": "NEW - Assets/Scripts/UI/Modals/SideDrawerModal.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Side Drawer"
+  },
+
+  "depends_on": ["shell-chrome"],
+  "opens_from": ["shell-chrome (top-bar burger)"],
+  "opens": ["shop", "profile", "friends", "missions", "rankings", "album", "settings", "inbox", "settings-subpages (support, legal)"],
+
+  "anatomy": [
+    { "zone": "Scrim", "spec": "ground.scrim over the rest of the screen." },
+    { "zone": "Drawer","spec": "Drawer NX Card variant (bible 5.4, 5.24): full height, flush to the right edge, mascot hero image at the top." },
+    { "zone": "Identity", "spec": "Player name under the mascot." },
+    { "zone": "Rows", "spec": "Emblem icon + label rows: SHOP, PROFILE, FRIENDS, MISSIONS, RANKINGS, INBOX, SETTINGS, SUPPORT, LEGAL." },
+    { "zone": "Close", "spec": "Close X at the bottom centre." }
+  ],
+
+  "components": ["5.4 NX Card (drawer variant)", "5.7 Row", "5.9 Close X", "5.24 Side drawer"],
+
+  "copy": { "rows": ["SHOP", "PROFILE", "FRIENDS", "MISSIONS", "RANKINGS", "INBOX", "SETTINGS", "SUPPORT", "LEGAL"] },
+
+  "states": ["Default", "Notification dots on Inbox/Missions when something is unclaimed"],
+
+  "motion": ["Slide in from the right, 220 ms ease-out. Slide out 160 ms ease-in."],
+
+  "data": ["Row destinations are static; badge counts come from the relevant service (DailyMissionsData, inbox unread count)."],
+
+  "assets_needed": [
+    { "name": "Drawer mascot hero", "path": "Assets/Art/UI/Mascot/mascot_drawer_hero@3x.png", "size": "full resolution", "who": "owner", "prompt": "IMPLEMENTATION_PLAN.md section 6, P0-4: the source file of the existing drawer mascot hero (Group 115/91 top image) at full resolution." }
+  ],
+
+  "deviations": [],
+
+  "do_not": ["Do not put more rows than the destinations listed - do not invent new destinations without the owner.", "Do not skip the close X - a drawer still needs an explicit close."],
+
+  "acceptance": ["Opens from the burger on every hub.", "Every row navigates correctly.", "Notification dots reflect real unclaimed state.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight - chase the P0-4 mascot asset from the owner.", "2. Build the drawer chassis with the mascot hero and identity block.", "3. Build the nine rows with emblem icons and wire navigation.", "4. Add notification dots where relevant.", "5. Capture open and closed transitions. Postflight."],
+
+  "prompt": "Build the Ludo NX side drawer (the burger menu).\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md section 5.24, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nThis does not exist yet. Build it as the drawer NX Card variant: full height, flush to the right edge, the mascot hero image at the top (chase the P0-4 asset from the owner - it is the existing drawer image at full resolution), the player's name, then rows for SHOP, PROFILE, FRIENDS, MISSIONS, RANKINGS, INBOX, SETTINGS, SUPPORT, LEGAL, each with an emblem icon. Scrim behind, close X at the bottom centre.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

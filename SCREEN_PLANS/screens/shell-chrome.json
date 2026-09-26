@@ -1,0 +1,106 @@
+{
+  "id": "shell-chrome",
+  "title": "Top bar + bottom nav",
+  "type": "component",
+  "status": "polish",
+  "priority": "P1",
+  "assignee": "any",
+  "one_line": "The two pieces every hub shares. Fix these once and five screens improve at the same time - do this before Home, Shop, Friends, Rankings or Album.",
+
+  "bible_sections": ["4.2", "5.1", "5.2", "5.13", "5.14", "5.15", "2.1", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Components/UniversalNavBar.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXUIKit.cs",
+    "script": "Assets/Scripts/UI/Components/HomeNavBar.cs",
+    "also": ["Assets/Scripts/UI/UIFactory.cs", "Assets/Scripts/UI/Components/UIResponsiveScaler.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Home (the bar renders on every hub)"
+  },
+
+  "depends_on": [],
+  "opens_from": ["every hub"],
+  "opens": ["profile", "currency-popups", "side-drawer", "home", "friends", "shop", "album", "levels"],
+
+  "gaps": [
+    "Top-bar pills have no backgrounds on Shop - the numbers float on the ground.",
+    "Coin icon is 25 px, energy icon 17 px, nav icons 44-74 px. All stretched on a phone.",
+    "Energy pill shows '1822/5' with the FULL label overlapping the number.",
+    "The bar is rebuilt slightly differently per screen instead of coming from one prefab."
+  ],
+
+  "top_bar": {
+    "height": 56,
+    "rule": "Never scrolls. Sits at the device safe inset, minimum 45 pt. Items keep their size and SPREAD with the width - avatar pinned left, burger pinned right, pills between (bible 2.1).",
+    "slots": [
+      "Avatar 52, circular, ringed by the player's frame tier (Starter to Champion). Tapping it opens Profile. A notification dot when something needs attention.",
+      "Coins pill (bible 5.13): dark pill #0E1117 at 84 percent, inner shadow, faint rim, the coin item icon at 40 overlapping the left end, number Lilita 19 white, a small go-green + on the right end that opens the shop's matching tab.",
+      "Energy pill: same chassis, bolt icon, shown as 18/20. When full it shows FULL INSTEAD OF the fraction, never both - that overlap is the current bug. When regenerating it shows the countdown to the next point in two units at most (bible 2.3).",
+      "Burger (menu) button pinned right, 44, opens the side drawer."
+    ],
+    "numbers": "Separators at 12,480. Above 99,999 shorten to 125K or 1.2M in a pill; detail views show the full number."
+  },
+
+  "bottom_nav": {
+    "height": 116,
+    "plate": "tan300, sitting on the bottom inset.",
+    "slots": ["album", "friends", "HOME (centre, raised)", "shop", "levels"],
+    "icons": "Emblem family (bible 2.7) at 28-44 pt, from 256 px sources. Never glyphs - glyphs are for inside buttons.",
+    "selected": "The active destination is lit and its label is at full strength; the others are dimmed. Labels are live text, never baked.",
+    "badges": "Notification dot on any destination with something claimable."
+  },
+
+  "components": ["5.2 Top bar", "5.13 Currency pill", "5.14 Avatar", "5.15 Badges"],
+
+  "copy": { "nav": ["ALBUM", "FRIENDS", "HOME", "SHOP", "LEVELS"], "energy_full": "FULL" },
+
+  "states": [
+    "Loading player data - skeleton the pills and the avatar (bible 5.23). Never a blank top bar.",
+    "Energy full - FULL, no fraction, no timer.",
+    "Energy regenerating - 18/20 with the countdown to the next point.",
+    "Offline - the pills keep the last known values and a small cloud-off glyph appears. Never show 0.",
+    "Notification - dot on the avatar, a nav destination, or both."
+  ],
+
+  "motion": ["Nav select: 80/140 ms press, the icon pops to 1.12 and settles.", "A pill's value change counts up over 600 ms (tokens.json motion.countUp)."],
+
+  "data": ["Coins, energy, level, avatar, frame tier: the wallet and StatsService. Server-owned at T-A3 - remove SeedDemoProgress and the local energy demo value then."],
+
+  "assets_needed": [
+    { "name": "Nav emblem icons", "path": "Assets/Art/UI/Icons/Emblem/", "size": "256 x 256 each", "who": "owner", "prompt": "IMPLEMENTATION_PLAN.md section 6, P1-1: album, friends, home, shop, levels in the same style as the existing image 44-57 set. Attach two of those as the style reference. Cobalt blue and gold, thick navy outline, soft glossy bevel, fills 85 percent of the square, 256 x 256, transparent, no text." },
+    { "name": "Currency icons at 3x", "path": "Assets/Art/UI/Items/Currency/", "size": "from the existing 1024 sources", "who": "exists", "prompt": "coin_icon_gold and energy_icon at 1024 already exist in Art/UI/HomeScreen. Re-export at 3x." }
+  ],
+
+  "deviations": [],
+
+  "do_not": [
+    "Do not rebuild this per screen. One prefab, loaded by every hub.",
+    "Do not upscale the 25 px and 17 px icons. Use the 1024 px sources.",
+    "Do not show FULL and a fraction at the same time.",
+    "Do not stretch the bar's items on one axis - they keep their size and spread.",
+    "Do not put a bottom nav on a takeover or a popup.",
+    "Do not bake the nav labels into the icon art."
+  ],
+
+  "acceptance": [
+    "One prefab renders identically on Home, Shop, Friends, Album and Rankings.",
+    "Coin and energy icons are crisp at 1080 x 2400.",
+    "The energy pill is correct when full, when regenerating and when offline. The 1822/5 bug is gone.",
+    "Pills have their backgrounds on every hub, including Shop.",
+    "The bar survives 402 x 874, 440 x 956, a 20:9 Android and an iPad with nothing stretched.",
+    "Bible section 11 in full."
+  ],
+
+  "steps": [
+    "1. Preflight per SHARED_RULES.md section 2.",
+    "2. Make UniversalNavBar the single source: one prefab holding both the top bar and the bottom nav, instantiated by every hub. Delete the per-screen rebuilds.",
+    "3. Re-export the currency icons at 3x from the 1024 px sources and replace them everywhere.",
+    "4. Rebuild the currency pill to bible 5.13, including the + button, and fix the FULL / fraction overlap.",
+    "5. Rebuild the bottom nav plate with emblem icons at 3x and live labels.",
+    "6. Add the loading skeleton, the offline state and the notification dots.",
+    "7. Verify the spread behaviour at all four device sizes - items keep their size, gaps grow.",
+    "8. Capture the bar on three different hubs and confirm they are identical. Postflight."
+  ],
+
+  "prompt": "Fix the Ludo NX shell chrome: the top bar and the bottom nav.\n\nDo this BEFORE Home, Shop, Friends, Rankings or Album. It is one prefab that five screens share, so fixing it once improves all of them - and rebuilding it per screen is why they currently disagree.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 4.2, 5.2 and 5.13, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nFour things to fix:\n\n1. Make UniversalNavBar the single source. One prefab holding both bars, instantiated by every hub. Remove the per-screen rebuilds.\n2. The coin icon is 25 px and the energy icon 17 px - both stretched on a phone. The 1024 px sources already exist in Art/UI/HomeScreen; re-export at 3x.\n3. The Shop's top bar has no pill backgrounds, so the numbers float on the ground. Rebuild the currency pill properly to bible 5.13: dark pill at 84 percent, inner shadow, faint rim, the item icon overlapping the left end, and a small green + on the right that opens the matching shop tab.\n4. The energy pill shows '1822/5' with FULL overlapping the number. When energy is full show FULL and no fraction; when regenerating show the fraction and a countdown to the next point, in two units at most.\n\nThe layout rule that matters: bar items keep their size and SPREAD with the screen width - avatar pinned left, burger pinned right. Never stretch them on one axis.\n\nAlso add the states nobody builds: a skeleton while player data loads (never a blank top bar), an offline state that keeps the last known values instead of showing 0, and notification dots.\n\nFollow the 'steps' array. Finish with bible section 11, the 'acceptance' list, and captures of the bar on three different hubs proving they are identical."
+}

@@ -1,0 +1,54 @@
+{
+  "id": "avatar-picker",
+  "title": "Avatar picker",
+  "type": "popup",
+  "status": "missing",
+  "priority": "P2",
+  "assignee": "any",
+  "one_line": "Arch-top NX Card, grid of avatars, locked ones showing how to unlock.",
+
+  "bible_sections": ["5.4", "5.15", "4.3", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "NEW - Assets/Resources/UI/Modals/AvatarPicker.prefab",
+    "script": "NEW - Assets/Scripts/UI/Modals/AvatarPickerModal.cs",
+    "also": ["Assets/Scripts/UI/Services/AvatarService.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Avatar Picker"
+  },
+
+  "depends_on": ["edit-profile"],
+  "opens_from": ["edit-profile (tap avatar)"],
+  "opens": [],
+
+  "anatomy": [
+    { "zone": "Card",  "spec": "NX Card, arch variant (bible 5.4) for the rounded top." },
+    { "zone": "Nameplate", "spec": "SELECT AVATAR." },
+    { "zone": "Grid",  "spec": "Grid of circular avatars, 4 per row, selected one with a cream ring, locked ones faded with a lock badge (bible 5.15)." },
+    { "zone": "Action","spec": "SELECT, go green, collar. Disabled if nothing changed." }
+  ],
+
+  "components": ["5.3 Nameplate", "5.4 NX Card (arch)", "5.8 Buttons", "5.15 Badges (lock)"],
+
+  "copy": { "title": "SELECT AVATAR", "select": "SELECT", "locked_hint": "Reach level {N}" },
+
+  "states": ["Owned/unlocked - selectable", "Locked - faded, lock badge, tapping shows the unlock hint instead of selecting", "Nothing changed - SELECT disabled"],
+
+  "motion": ["Standard popup open/close.", "Grid items stagger in, 30 ms."],
+
+  "data": ["AvatarService for the owned/locked set."],
+
+  "assets_needed": [
+    { "name": "Avatar set", "path": "Assets/Art/UI/Avatars/", "size": "512 square", "who": "owner", "prompt": "IMPLEMENTATION_PLAN.md section 6, P2-1: 12-16 portraits, mascot variants in outfits and house colours, 512 px square." }
+  ],
+
+  "deviations": [],
+
+  "do_not": ["Do not let a locked avatar be selected - tapping it only shows the hint.", "Do not use eleven copies of one avatar - the old zip's Ellipse 12-22 duplication is exactly what this replaces."],
+
+  "acceptance": ["Grid shows owned and locked correctly.", "SELECT only enables on a real change to an unlocked avatar.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight.", "2. Build the arch-top card with the grid.", "3. Wire owned/locked state to AvatarService.", "4. Wire SELECT with change detection.", "5. Capture owned, locked and selected. Postflight."],
+
+  "prompt": "Build the Ludo NX Avatar Picker popup.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 5.4 (arch variant) and 5.15, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nThis does not exist yet. Build it on the arch-top NX Card: nameplate SELECT AVATAR, a 4-per-row grid of circular avatars, the current selection with a cream ring, locked ones faded with a lock badge and an unlock hint on tap (never selectable), and SELECT in a collar, disabled until the selection actually changes.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

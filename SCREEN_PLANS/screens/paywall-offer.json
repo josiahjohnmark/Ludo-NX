@@ -1,0 +1,62 @@
+{
+  "id": "paywall-offer",
+  "title": "Offer / paywall",
+  "type": "popup",
+  "status": "missing",
+  "priority": "P3",
+  "assignee": "claude",
+  "one_line": "STARTER PACK and NX CLUB. Must show price, billing period, renewal terms and the legal links - store-review requirements, not decoration.",
+
+  "bible_sections": ["6.14", "5.8", "2.8", "4.3", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+  "also_read": "UI_BIBLE/IMPLEMENTATION_PLAN.md section 7.4.",
+
+  "files": {
+    "prefab": "NEW - Assets/Resources/UI/Modals/PaywallOffer.prefab",
+    "script": "NEW - Assets/Scripts/UI/Modals/PaywallOfferModal.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Paywall Offer"
+  },
+
+  "depends_on": ["shop"],
+  "opens_from": ["shop (featured banner)", "currency-popups"],
+  "opens": [],
+
+  "anatomy": [
+    { "zone": "Card",    "spec": "Standard NX Card popup." },
+    { "zone": "Header",  "spec": "Logotype (STARTER PACK or NX CLUB, bible 2.8)." },
+    { "zone": "Contents","spec": "Item icons with numbers, laid out as a well grid." },
+    { "zone": "Value line","spec": "'5x value' or similar, in ink.win." },
+    { "zone": "Price button","spec": "go green, the store's localised price - never hard-coded." },
+    { "zone": "Legal","spec": "For a subscription (NX Club): billing period, auto-renewal terms, and links to Terms and Privacy, all live text, all legible at 12 pt or more." },
+    { "zone": "Restore","spec": "Restore purchases link, caption, underlined." }
+  ],
+
+  "components": ["5.4 NX Card", "5.8 Buttons (go, collar)", "5.9 Close X", "5.13 Currency pill (contents)"],
+
+  "copy": { "starter_title": "STARTER PACK", "club_title": "NX CLUB", "restore": "Restore purchases", "renews_format": "Renews at {PRICE}/{PERIOD} until cancelled.", "terms": "Terms", "privacy": "Privacy" },
+
+  "states": ["One-time offer, not yet purchased", "One-time offer, already purchased - banner and popup both disappear from the shop", "Subscription, not subscribed", "Subscription, active - shows manage/cancel instead of buy", "Purchasing", "Purchase failed"],
+
+  "motion": ["Standard popup open/close.", "Contents stagger in."],
+
+  "data": ["RevenueCat offering for price, period and entitlement state. Never a hard-coded price or period."],
+
+  "assets_needed": [
+    { "name": "logo_starterpack", "path": "Assets/Art/UI/Logos/logo_starterpack@3x.png", "size": "2048 x 1024", "who": "owner", "prompt": "IMPLEMENTATION_PLAN.md section 6, P1-3: STARTER PACK logotype, same style as VICTORY!." },
+    { "name": "logo_nxclub", "path": "Assets/Art/UI/Logos/logo_nxclub@3x.png", "size": "2048 x 1024", "who": "owner", "prompt": "IMPLEMENTATION_PLAN.md section 6, P1-3: NX CLUB logotype, same style as VICTORY!." }
+  ],
+
+  "deviations": [],
+
+  "do_not": [
+    "Do not hard-code a price, period or renewal term.",
+    "Do not omit the auto-renewal terms or the Terms/Privacy links on a subscription - Apple and Google both require this and will reject the build without it.",
+    "Do not keep showing a one-time offer's banner after it has been purchased."
+  ],
+
+  "acceptance": ["Price, period and renewal terms all come from RevenueCat.", "Terms and Privacy links work.", "A purchased one-time offer disappears from the shop.", "An active subscription shows manage/cancel, not buy.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight - depends on T-B2/T-B3 (RevenueCat webhook and offerings) being wired; can be built against a mock offering first.", "2. Build the card with logotype, contents, value line.", "3. Wire the price button, legal terms and restore link to RevenueCat.", "4. Handle purchased/active/failed states.", "5. Capture one-time and subscription, each state. Postflight."],
+
+  "prompt": "Build the Ludo NX Offer / paywall popup (STARTER PACK and NX CLUB).\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md section 6.14, UI_BIBLE/IMPLEMENTATION_PLAN.md section 7.4, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nThis does not exist yet. Standard NX Card popup: a logotype header (STARTER PACK or NX CLUB), item contents as icons with numbers, a value line, and a go-green price button showing the RevenueCat offering's localised price - never hard-coded.\n\nThe part that gets an app rejected if skipped: for the NX Club subscription, the popup MUST show the billing period, the auto-renewal terms, and working links to Terms and Privacy, all live text and legible. Also add Restore purchases as a caption link, and handle the purchased/active-subscription states so a bought one-time offer's banner disappears from the shop and an active subscription shows manage/cancel instead of buy.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

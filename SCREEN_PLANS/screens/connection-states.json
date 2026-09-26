@@ -1,0 +1,51 @@
+{
+  "id": "connection-states",
+  "title": "Connection and error states",
+  "type": "system",
+  "status": "missing",
+  "priority": "P3",
+  "assignee": "claude",
+  "one_line": "Reconnecting, opponent left, no network, maintenance. The screens nobody designs and every player eventually sees - handle them once, everywhere.",
+
+  "bible_sections": ["5.20", "5.22", "5.23", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md", "SCREEN_PLANS/specs/MATCH_HUD_V2.md"],
+
+  "files": {
+    "prefab": "NEW - Assets/Resources/UI/Modals/ConnectionOverlay.prefab",
+    "script": "NEW - Assets/Scripts/UI/Modals/ConnectionOverlayModal.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Connection States"
+  },
+
+  "depends_on": ["match-hud"],
+  "opens_from": ["any online-dependent screen"],
+  "opens": [],
+
+  "anatomy": [
+    { "zone": "No network",   "spec": "A small persistent banner/toast (bible 5.20), not a full takeover, that appears when connectivity drops and clears when it returns." },
+    { "zone": "Reconnecting","spec": "In a match: a semi-transparent overlay over the board with a spinner and 'Reconnecting...'. The board and cards stay visible dimmed underneath - never hide the game state." },
+    { "zone": "Opponent left","spec": "A toast: '{NAME} left the match.' If it breaks the match below the minimum player count, offer to continue with a bot filling the seat (labelled BOT) or end the match honestly with a partial result." },
+    { "zone": "Maintenance",  "spec": "A full takeover, mascot, one line explaining what is down and roughly when it will be back, no dead ends - always a way to at least reach Settings/Support." },
+    { "zone": "Version too old", "spec": "A full takeover blocking play, UPDATE button to the store listing." }
+  ],
+
+  "components": ["5.20 Toast", "5.22 Empty state", "5.23 Loading (spinner)"],
+
+  "copy": { "no_network": "No connection", "reconnecting": "Reconnecting...", "opponent_left_format": "{NAME} left the match.", "maintenance_title": "Back soon", "update_required": "Update required" },
+
+  "states": ["No network (brief toast)", "No network (extended - match cannot continue, offer to leave without penalty)", "Reconnecting mid-match", "Opponent left mid-match", "Server maintenance", "Client version too old"],
+
+  "motion": ["Toast slides down under the top bar, 2.2 s hold (bible 5.20), or persists while the condition holds.", "Reconnecting spinner: the tumbling six-pip die (bible 5.23)."],
+
+  "data": ["Network reachability, session/match connection state from the eventual online layer (T-D2/T-D3). Client version check against a remote config minimum version."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not let a dropped connection silently forfeit a match - an extended outage must offer to leave without losing the stake, since it was not the player's fault.", "Do not hide the board during a brief reconnect - dim it, do not hide it.", "Do not design this only for the online path and forget local/bot matches can still hit device-level issues (backgrounding, low memory)."],
+
+  "acceptance": ["Every state in 'states' has a built screen or overlay.", "A dropped connection through no fault of the player's does not forfeit the stake.", "Version-too-old blocks play cleanly with a working UPDATE button.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight - this is genuinely cross-cutting; coordinate with match-hud.json and the eventual T-D2/T-D3 online work rather than building in isolation.", "2. Build the toast for brief no-network.", "3. Build the reconnecting overlay for mid-match drops, dimming not hiding the board.", "4. Build the opponent-left toast and the bot-fill-or-end-honestly branch.", "5. Build the maintenance and version-too-old full takeovers.", "6. Wire the no-penalty-leave path for extended outages.", "7. Capture every state. Postflight."],
+
+  "prompt": "Build the Ludo NX connection and error states - the screens nobody designs and every player eventually sees.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, SCREEN_PLANS/specs/MATCH_HUD_V2.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 5.20, 5.22 and 5.23, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nThis does not exist yet, as a single cross-cutting system: a brief toast for a dropped connection that clears when it returns; a reconnecting overlay mid-match that DIMS the board rather than hiding it, so the player can see the position they are returning to; a toast plus a bot-fill-or-honest-partial-result branch when an opponent leaves mid-match; a full-takeover maintenance screen with a mascot and an honest timeframe; and a full-takeover version-too-old block with a working UPDATE button to the store listing.\n\nThe rule that protects the player: an extended outage that is not their fault must let them leave WITHOUT losing their stake - never let a connection drop silently forfeit a match.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list, with a capture of every state listed."
+}

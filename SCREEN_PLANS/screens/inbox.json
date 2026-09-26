@@ -1,0 +1,50 @@
+{
+  "id": "inbox",
+  "title": "Inbox",
+  "type": "popup",
+  "status": "missing",
+  "priority": "P3",
+  "assignee": "any",
+  "one_line": "Messages and gifts from the team, with a CLAIM on attachments.",
+
+  "bible_sections": ["5.4", "5.7", "5.8", "5.15", "4.3", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "NEW - Assets/Resources/UI/Modals/Inbox.prefab",
+    "script": "NEW - Assets/Scripts/UI/Modals/InboxModal.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Inbox"
+  },
+
+  "depends_on": ["side-drawer"],
+  "opens_from": ["side-drawer (INBOX)"],
+  "opens": [],
+
+  "anatomy": [
+    { "zone": "Card",  "spec": "Standard NX Card popup." },
+    { "zone": "Nameplate", "spec": "INBOX." },
+    { "zone": "Rows",  "spec": "Message rows (bible 5.7): sender/system icon, subject, date, and if there is a gift attachment a CLAIM button on the row." },
+    { "zone": "Empty", "spec": "Bible 5.22 empty state when there is nothing." }
+  ],
+
+  "components": ["5.3 Nameplate", "5.4 NX Card", "5.7 Row", "5.8 Buttons", "5.15 Badges (notification dot)", "5.22 Empty state"],
+
+  "copy": { "title": "INBOX", "claim": "CLAIM", "empty": "Nothing here yet." },
+
+  "states": ["Populated with unclaimed gifts", "Populated, all claimed", "Empty", "Loading - skeleton rows"],
+
+  "motion": ["Claim: count-up on the reward.", "Rows stagger in."],
+
+  "data": ["Server-driven messages, likely tied to Firebase Cloud Messaging / Firestore once the backend exists (T-A1 onward)."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not let a message with an attachment be dismissible without claiming or clearly stating the gift expired."],
+
+  "acceptance": ["Empty state renders correctly.", "Claiming a gift updates the wallet and removes the CLAIM button.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight - this depends on backend messages existing (Phase A/B); build the UI now against mock data.", "2. Build the standard-card chassis with message rows and CLAIM.", "3. Add the empty state.", "4. Wire to real messages once the backend exists.", "5. Capture populated, empty and loading. Postflight."],
+
+  "prompt": "Build the Ludo NX Inbox popup.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 5.7 and 5.22, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nThis does not exist yet. Build a standard NX Card popup: nameplate INBOX, message rows (icon, subject, date, and a CLAIM button when there is a gift attached), and the empty state when there is nothing. This depends on backend messages that do not exist yet (Phase A/B in GO_LIVE_PLAN.md) - build the UI now against mock data and wire it to real data once that backend ships.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

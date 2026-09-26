@@ -1,0 +1,119 @@
+{
+  "id": "shop",
+  "title": "Shop",
+  "type": "hub",
+  "status": "rebuild",
+  "priority": "P1",
+  "assignee": "claude",
+  "one_line": "Featured banner, four tabs, rarity-sorted product grid. Built to the approved v2 prototype.",
+
+  "bible_sections": ["6.3", "4.2", "5.2", "5.5", "5.8", "5.10", "5.15", "5.16", "5.17", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+  "also_read": "UI_BIBLE/IMPLEMENTATION_PLAN.md section 7 (layout, rarity ladder, catalogue) and the v2 prototype: live page https://claude.ai/artifact/RX1J4Pwn7D8F6CTUhL7Yvf, source UI_BIBLE/prototypes/shop_v2/index.html. Every layout, rarity effect and animation timing is in that file - read it, do not re-invent them.",
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Screens/Shop.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXStoreBuilder.cs",
+    "script": "Assets/Scripts/UI/Screens/ShopScreen.cs",
+    "also": ["Assets/Scripts/UI/Screens/StoreItemCard.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Shop"
+  },
+
+  "depends_on": ["shell-chrome"],
+  "opens_from": ["bottom nav", "top-bar pill + buttons", "prematch-cards (YOUR SET wells)", "side-drawer"],
+  "opens": ["shop-item-detail", "paywall-offer", "currency-popups"],
+
+  "gaps": [
+    "Ground is slate #252D37. Must be bg_menu_emboss.",
+    "The top bar has no pill backgrounds - the numbers float on the ground.",
+    "Every product ribbon is red. Ribbons take the rarity colour (bible 5.16).",
+    "Two greens in use: the #00C38A price pill and the #2DA830 SAVE. One green only: #2DA830.",
+    "No featured banner, no rarity sections, no restore-purchases link."
+  ],
+
+  "anatomy": [
+    { "zone": "Ground",   "spec": "bg_menu_emboss, cover-scaled." },
+    { "zone": "Top bar",  "spec": "Per shell-chrome. The missing pill backgrounds are fixed there, once, for every hub." },
+    { "zone": "Featured", "spec": "Swipeable banner carousel, 408 x 150, with dots under it: DAILY DEAL (-40 percent sale tag), STARTER PACK (5x value), NX CLUB. Each opens paywall-offer. The Starter Pack banner disappears once bought." },
+    { "zone": "Nameplate","spec": "SHOP, straddling the panel's top edge." },
+    { "zone": "Tabs",     "spec": "Folder tabs, four, maximum allowed (bible 5.10): DICE / TOKENS / EMOJIS / ENERGY." },
+    { "zone": "Sections", "spec": "Section labels split each tab by rarity, LOWEST FIRST so value climbs as you scroll: COMMON, RARE, EPIC, LEGENDARY. In the shop the hairlines are replaced by the category's item icon on each side (bible 5.5) - a die on both sides of DICE." },
+    { "zone": "Grid",     "spec": "Product cards 112 x 158, 3 per row, 10 pt gaps - exactly the 356 pt panel content width (bible 5.17). Small-card chassis, rim 6, rivets. Item render in the top 60 percent, rarity glow behind it (rays for legendary), rarity ribbon at 61 percent, price button straddling the bottom edge." },
+    { "zone": "Restore",  "spec": "'Restore purchases' as an underlined caption at the bottom of EVERY tab. Apple requires it reachable for non-consumables, and it must also be in Settings." },
+    { "zone": "Bottom nav","spec": "Per shell-chrome." }
+  ],
+
+  "components": ["5.2 Top bar", "5.5 Section label (item-flanked variant)", "5.8 Buttons (price button, go)", "5.10 Folder tabs", "5.15 Badges (NEW, sale, lock, OWNED, EQUIPPED)", "5.16 Ribbon", "5.17 Shop product card"],
+
+  "copy": {
+    "title": "SHOP",
+    "tabs": ["DICE", "TOKENS", "EMOJIS", "ENERGY"],
+    "rarities": ["COMMON", "RARE", "EPIC", "LEGENDARY"],
+    "restore": "Restore purchases",
+    "owned": "OWNED",
+    "equipped": "EQUIPPED",
+    "equip": "EQUIP",
+    "locked_format": "Reach level {N}"
+  },
+
+  "states": [
+    "For sale - price button. Coin prices show [coin] 1,200. Real-money prices show the store's localised string from the RevenueCat package - NEVER a hard-coded dollar amount.",
+    "Owned - green tick disc, EQUIP button.",
+    "Equipped - option amber outline on the card, no button.",
+    "Locked - disabled price with the unlock rule visible.",
+    "Loading - 3 to 5 skeleton cards that shimmer (bible 5.23). Never a blank panel.",
+    "Offerings failed to load - an error state with a RETRY, not an empty grid.",
+    "Purchase in flight - the price button goes to its loading state, spinner replacing the label, width unchanged."
+  ],
+
+  "motion": ["Featured: auto-advance every 5 s, pause on touch.", "Tab change: content cross-fades 120 ms, cards stagger in at 30 ms.", "Purchase and equip effects: exactly as timed in the v2 prototype source."],
+
+  "data": [
+    "Catalogue and prices: RevenueCat offerings (T-B3). Localised strings from the package, always.",
+    "Ownership and equipped state: server-owned after T-A3. No local grants.",
+    "Rarity ladder: IMPLEMENTATION_PLAN.md section 7.2. Decision D6 says the starter catalogue."
+  ],
+
+  "assets_needed": [
+    { "name": "Dice renders at 1024", "path": "Assets/Art/UI/Items/Dice/", "size": "1024 each", "who": "owner", "prompt": "IMPLEMENTATION_PLAN.md section 6, P1-4. The 10 existing colours re-rendered at 1024, plus Marble, Mahogany, Pearl, Frosted Glass, Crystal, Galaxy, Lava, Golden NX, Cowrie. Full prompt is in that section." },
+    { "name": "Token skins", "path": "Assets/Art/UI/Items/Tokens/", "size": "1024 each", "who": "owner", "prompt": "IMPLEMENTATION_PLAN.md section 6, P1-5, and SCREEN_PLANS/specs/TOKENS_2_5D.md section 4 - same 65 degree angle and same light as the board pawns, so a shop card and the board agree." },
+    { "name": "Energy and coin tiers", "path": "Assets/Art/UI/Items/Currency/", "size": "1024 each", "who": "owner", "prompt": "IMPLEMENTATION_PLAN.md section 6, P1-6." }
+  ],
+
+  "deviations": [],
+
+  "do_not": [
+    "Do not hard-code a price. Real-money prices come from the RevenueCat package as the store's localised string.",
+    "Do not make every ribbon red - the ribbon takes the item's rarity colour.",
+    "Do not use a second green. #2DA830 only.",
+    "Do not exceed four folder tabs.",
+    "Do not build a separate inventory screen - the YOUR SET wells on the pre-match cards open the matching shop tab, and that is the locker.",
+    "Do not re-invent the layout or the animation timings. They are in UI_BIBLE/prototypes/shop_v2/index.html."
+  ],
+
+  "acceptance": [
+    "Three cards fit a row exactly at the 356 pt content width with no horizontal scroll.",
+    "Each rarity's cards are visibly different by rim, glow and ribbon colour.",
+    "Restore purchases is reachable from every tab and from Settings.",
+    "A real-money price renders from the RevenueCat offering, localised.",
+    "Loading shows skeleton cards; a failed offering shows a RETRY, not a blank grid.",
+    "The top-bar pills have backgrounds.",
+    "Ground matches Home side by side.",
+    "Bible section 11 in full."
+  ],
+
+  "steps": [
+    "1. Preflight. Read UI_BIBLE/prototypes/shop_v2/index.html fully before writing any layout code.",
+    "2. Swap the ground and pick up the fixed shell-chrome top bar.",
+    "3. Build the featured banner carousel with dots and auto-advance.",
+    "4. Build the four folder tabs and the rarity section labels with item-flanked hairlines.",
+    "5. Build the product card to bible 5.17 with the four states and rarity treatments.",
+    "6. Wire the grid to the RevenueCat offerings; localised prices only.",
+    "7. Add the restore-purchases link to every tab.",
+    "8. Add the loading, error and purchase-in-flight states.",
+    "9. Port the purchase and equip effects at the prototype's exact timings.",
+    "10. Capture each tab, plus loading and error. Postflight."
+  ],
+
+  "prompt": "Rebuild the Ludo NX Shop as a hub, following the approved v2 prototype.\n\nRead, in order: SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 6.3, 5.17 and 5.16, UI_BIBLE/IMPLEMENTATION_PLAN.md section 7, and UI_BIBLE/prototypes/shop_v2/index.html. That prototype file carries every layout decision, rarity effect and animation timing - read it before writing layout code, and do not re-invent any of it. Then read this whole file. Use only values from UI_BIBLE/tokens.json.\n\nStructure: bg_menu_emboss ground, top bar, a swipeable featured banner (DAILY DEAL / STARTER PACK / NX CLUB) with dots, a SHOP nameplate, four folder tabs (DICE / TOKENS / EMOJIS / ENERGY), and inside each tab a grid split by rarity lowest-first, so value climbs as you scroll. Cards are 112 x 158, three per row, which is exactly the 356 pt panel content width. 'Restore purchases' sits at the bottom of every tab.\n\nFive things are wrong today: the ground is slate instead of bg_menu_emboss; the top-bar pills have no backgrounds so the numbers float; every ribbon is red instead of the item's rarity colour; two different greens are in use (#00C38A and #2DA830 - keep only #2DA830); and there is no featured banner, no rarity sections and no restore link.\n\nThe rule that will get the app rejected if you break it: real-money prices come from the RevenueCat package as the store's LOCALISED string. Never hard-code a dollar amount.\n\nAlso build the states nobody remembers: skeleton cards while loading, a RETRY when offerings fail, and a spinner in the price button during a purchase.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

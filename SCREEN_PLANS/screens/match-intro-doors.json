@@ -1,0 +1,49 @@
+{
+  "id": "match-intro-doors",
+  "title": "Match entry (doors)",
+  "type": "transition",
+  "status": "polish",
+  "priority": "P1",
+  "assignee": "any",
+  "one_line": "Doors close, board loads, doors open. Used here and nowhere else - that restraint is what makes it special.",
+
+  "bible_sections": ["8.2 (IMPLEMENTATION_PLAN.md)", "2.9", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Screens/MatchIntro.prefab",
+    "script": "Assets/Scripts/UI/Screens/MatchIntroScreen.cs",
+    "assets_existing": ["left_door.png", "right_door.png (already high-res, keep as is)"],
+    "test_menu": "Ludo NX/UI/Screen Test/Match Intro"
+  },
+
+  "depends_on": ["match-found"],
+  "opens_from": ["match-found (after countdown)"],
+  "opens": ["match-hud"],
+
+  "anatomy": [
+    { "zone": "Close", "spec": "The two brown NX doors slide together from the sides, 350 ms ease-in (tokens.json motion.doors)." },
+    { "zone": "Load",  "spec": "Board and match state load fully behind the closed doors. Never open the doors on a half-loaded board." },
+    { "zone": "Open",  "spec": "Doors slide apart, 450 ms ease-out, revealing the loaded match-hud underneath." }
+  ],
+
+  "components": [],
+  "copy": {},
+
+  "states": ["Fast load - a minimum hold time behind closed doors (about 500 ms) so the transition never feels like a flicker.", "Slow load - the doors stay closed with no spinner needed; if loading exceeds ~4s, show a subtle loading die inside the door seam."],
+
+  "motion": ["Close 350 ms ease-in.", "Open 450 ms ease-out.", "These timings belong ONLY to match entry - never reuse the doors elsewhere (bible 8.2)."],
+
+  "data": ["Match state fully constructed before the open animation starts."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not reuse the doors transition for any other screen.", "Do not open the doors before the board is ready.", "Do not skip the minimum hold time on a fast load."],
+
+  "acceptance": ["Doors never open on an incomplete board.", "Timings match tokens.json motion.doors exactly.", "A slow load shows a subtle loading cue, not a frozen closed door.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight.", "2. Verify close/open timings against tokens.json.", "3. Add the minimum hold and the slow-load cue.", "4. Confirm the board is fully loaded before the open animation fires.", "5. Capture close, held and open. Postflight."],
+
+  "prompt": "Polish the Ludo NX match-entry doors transition.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/IMPLEMENTATION_PLAN.md section 8.2, and this whole file. Use only values from UI_BIBLE/tokens.json (motion.doors: close 350 ms, open 450 ms).\n\nThe art already exists and is high-res. Confirm: the doors never open before the match state is fully loaded behind them; there is a minimum hold time (~500 ms) so a fast load never flickers; and a slow load (over ~4s) shows a subtle loading cue in the door seam rather than a frozen closed door. This transition is used only for match entry - never reuse it elsewhere.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

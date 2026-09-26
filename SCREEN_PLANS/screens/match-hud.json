@@ -1,0 +1,152 @@
+{
+  "id": "match-hud",
+  "title": "Match HUD (gameplay)",
+  "type": "takeover",
+  "status": "rebuild",
+  "priority": "P0",
+  "assignee": "any",
+  "one_line": "The screen the game is actually played on: board, four player cards, dice, ROLL, and the new emoji / RULES+timer / message action bar.",
+
+  "bible_sections": ["6.10", "4.4", "5.2", "5.13", "5.14", "5.15", "2.6", "2.9", "9", "11"],
+  "specs": ["SCREEN_PLANS/specs/MATCH_HUD_V2.md", "SCREEN_PLANS/specs/TOKENS_2_5D.md", "SCREEN_PLANS/specs/SHARED_RULES.md"],
+  "reference_image": "Owner's iPhone 16/17 gameplay capture, 26 Sep 2026. Ask the owner for the file if it is not in the repo.",
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Components/MatchHud.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXMatchHudBuilder.cs",
+    "script": "Assets/Scripts/UI/Match/MatchHudView.cs",
+    "also": ["Assets/Scripts/MatchHudLayout.cs", "Assets/Scripts/UI/Match/MatchPlayerCard.cs", "Assets/Scripts/UI/MatchAmbience.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Match HUD"
+  },
+
+  "depends_on": ["tokens-2-5d"],
+  "opens_from": ["match-intro-doors"],
+  "opens": ["pause", "match-emoji-tray", "match-message-tray", "rules-how-to-play", "result"],
+
+  "gaps": [
+    "Ground is flat navy. The owner has moved to the embossed wood wallpaper.",
+    "No house-colour turn tint at all - nothing on the background says whose turn it is.",
+    "All four avatar rings are blue. Bible 5.14 requires the player's house colour inside a match.",
+    "The plaque at the top-centre is empty. The stake pill belongs there.",
+    "No action bar. No RULES button, no emoji button, no message button.",
+    "Player-card stat labels (NX POINTS, WIN PERCENT) are under the 12 pt minimum.",
+    "Tokens read flat. See the 2.5D spec."
+  ],
+
+  "anatomy": [
+    { "zone": "0 Letterbox",     "spec": "ground.base #1E2229 flat fill behind everything." },
+    { "zone": "1 Wallpaper",     "spec": "bg_match_emboss, cover-scaled via BackgroundCoverFitter, cropped top and bottom, never stretched on one axis." },
+    { "zone": "2 House tint",    "spec": "Full-bleed Image in the active player's house colour. Perceived alpha: red 0.26, green 0.24, blue 0.28, yellow 0.20. Linear-corrected raw values in MATCH_HUD_V2.md section 2. Cross-fade 320 ms on turn change; alpha 0 when nobody is on turn." },
+    { "zone": "3 Vignette",      "spec": "Radial fade to ground.deep #14171C, 0 at centre to 38 percent at the corners." },
+    { "zone": "4 Top row",       "spec": "y = safe inset + 8. Left: round 44 neutral, door glyph, opens Pause. Centre: stake plaque holding the stake pill '+20 [NX] x X5' (bible 5.13), hidden entirely when there is no stake. Right: round 44 neutral, speaker glyph, quick mute toggle, no popup." },
+    { "zone": "5 Top seats",     "spec": "Two player cards, pinned to the left and right screen margins (16), sitting above the board. See the player-card spec below." },
+    { "zone": "6 Board",         "spec": "408 pt wide, square, centred on both axes, in its own dark navy frame. The house tint never covers it - the board's four colours stay pure." },
+    { "zone": "7 Tokens",        "spec": "Per TOKENS_2_5D.md. Sorting by board row, contact shadow on a layer under every pawn." },
+    { "zone": "8 Bottom seats",  "spec": "Two player cards, same treatment, with the dice tray between them." },
+    { "zone": "9 Dice tray",     "spec": "Recessed well (E0), tan300, radius 12, holding 1-2 dice at 44 pt each, centred between the bottom two cards." },
+    { "zone": "10 ROLL",         "spec": "The only play red on the screen. XL slab, height 66, radius 16, lip 7. Label 'ROLL' Lilita 34 CAPS white. Sub-label 'TAP TO ROLL' Nunito 12." },
+    { "zone": "11 Action bar",   "spec": "92 pt tall, on the bottom safe inset, on the ground (NOT a hub bottom nav). Left: emoji, 56 rounded-square neutral clay button, smiley item icon. Centre: RULES, button M height 46, option amber, book glyph + label Lilita 18 CAPS. Centre under it, 8 pt gap: turn timer, recessed pill (E0) 34 tall, Lilita 18 ink.default, format M:SS. Right: message, 56 rounded-square neutral clay button, speech-bubble item icon." }
+  ],
+
+  "player_card": {
+    "anatomy": "Avatar 52 in a ring of that player's house colour. Country flag 16 pt then name in Lilita 17 CAPS ink.default. LEVEL plaque under the name: brown700 plate, Lilita 12 CAPS, ink.plaque. Two stat cells side by side: label Lilita 12 CAPS ink.muted, value Lilita 18. Die badge at the avatar's bottom-left doubling as the 4 home pips, filling as tokens get home.",
+    "active": "Card lit to cream50, soft house-colour outer glow, scale 1.03. Only ever one active.",
+    "inactive": "82 percent brightness, no glow.",
+    "bot": "A BOT tag on the card, always visible. Project law - never imply a real player.",
+    "fix": "Rings are all blue today. They must be house.red / house.green / house.blue / house.yellow, matching the seat."
+  },
+
+  "components": ["5.2 top bar (adapted, no hub pills)", "5.6 Well", "5.8 Buttons (play XL, option M, neutral round 44, neutral clay 56)", "5.13 Currency pill (stake)", "5.14 Avatar", "5.15 Badges (notification dot, BOT tag)", "5.20 Toast", "5.23 Loading (die spinner)"],
+
+  "copy": {
+    "roll": "ROLL",
+    "roll_sub": "TAP TO ROLL",
+    "roll_sub_waiting": "{NAME}'S TURN",
+    "rules": "RULES",
+    "stake_format": "+{N} [NX] x X{M}",
+    "timer_format": "M:SS",
+    "bot_tag": "BOT",
+    "toast_captured": "{NAME} sent your token home!",
+    "toast_six": "Six! Roll again."
+  },
+
+  "states": [
+    "Your turn, roll available - ROLL enabled and breathing, timer full brightness.",
+    "Your turn, token choice - ROLL disabled, movable tokens breathing with a house-colour rim glow.",
+    "Opponent's turn - ROLL disabled, sub-label shows whose turn, timer at 70 percent brightness, tint and glow on their house.",
+    "Rolling - die spinner replaces the ROLL label, button width unchanged.",
+    "Under 10 s - timer digits go ink.lose #B7271F, pill pulses 1.00 to 1.04 once per second.",
+    "Timeout - turn auto-passes at 0.",
+    "Nobody on turn (start, end, disconnect) - tint fades to alpha 0, plain wallpaper.",
+    "Reconnecting - see connection-states.",
+    "2-player and 3-player matches - unused seats are hidden, not shown empty; the board keeps all four houses."
+  ],
+
+  "motion": [
+    "Turn passes: tint cross-fade 320 ms ease-in-out; old card dims and new card lights over 220 ms; timer resets with a 120 ms scale pop.",
+    "Roll: press 80 ms down / 140 ms release (tokens.json motion.buttonPress); dice tumble 600 ms; settle with a 90 ms squash.",
+    "Token hop: TOKENS_2_5D.md section 5.",
+    "Capture: 6 px screen shake over 180 ms, vibration (captures only), captured pawn arcs home over 420 ms.",
+    "Emoji fired: bubble rises from the sender's card, holds 1.4 s, fades. 3 s cooldown.",
+    "Entering: doors open 450 ms ease-out (tokens.json motion.doors)."
+  ],
+
+  "data": [
+    "Turn order, active seat, dice values, token positions: GameManager / LudoNXSession today. Moves to the server at T-D2 - the server decides dice and moves, never the phone.",
+    "Player name, level, NX points, win percent, flag, avatar: StatsService / AvatarService.",
+    "Stake and multiplier: MultiplierService.",
+    "Bot seats: BotRoster. Must always render the BOT tag."
+  ],
+
+  "assets_needed": [
+    { "name": "bg_match_emboss", "path": "Assets/Art/UI/Backgrounds/bg_match_emboss@3x.png", "size": "1320 x 2868", "who": "owner", "prompt": "The embossed wood/leather panel already in the owner's gameplay capture. Ask the owner for the source file at full resolution." },
+    { "name": "fx_token_shadow", "path": "Assets/Art/UI/Kit/fx_token_shadow@3x.png", "size": "256 x 128", "who": "generated", "prompt": "Soft black ellipse, blur 6 pt, 45 percent alpha at centre falling to 0 at the edge, transparent background." },
+    { "name": "item_emote_smiley", "path": "Assets/Art/UI/Items/Emoji/item_emote_smiley@3x.png", "size": "1024", "who": "owner", "prompt": "Bible section 8 style lock, then: a glossy 3D smiley face emote token, warm yellow, three-quarter view, soft contact shadow. 1024 x 1024, transparent." },
+    { "name": "item_message", "path": "Assets/Art/UI/Items/Emoji/item_message@3x.png", "size": "1024", "who": "owner", "prompt": "Bible section 8 style lock, then: a glossy 3D rounded speech bubble with three dots, cream and gold, three-quarter view. 1024 x 1024, transparent." },
+    { "name": "glyph_book", "path": "Assets/Art/UI/Icons/Glyph/glyph_book@3x.png", "size": "@3x from SVG", "who": "generated", "prompt": "Material Symbols Rounded, filled, weight 700, 'menu_book'. Export white and ink." }
+  ],
+
+  "deviations": [
+    "Bible 6.10 puts the timer pill in the top row. The owner moved it under the RULES button in the bottom action bar, 26 Sep 2026 (see the owner's reference capture). The owner's layout wins here. Per AI_HANDOFF.md protocol, do not edit the bible directly - add or confirm a PROPOSALS entry in AI_HANDOFF.md so bible 6.10 is updated deliberately, not silently 'fixed' back by a future agent.",
+    "Bible decision D8 recommended flat navy #162B3C for the match ground. The owner's reference capture shows the embossed wood wallpaper in use instead, 26 Sep 2026. Log this as the answer to D8 in AI_HANDOFF.md's DECISIONS (answered) rather than editing tokens.json or the bible directly."
+  ],
+
+  "do_not": [
+    "Do not tint the board, the cards or the ROLL button - the background only.",
+    "Do not put a second red button on this screen.",
+    "Do not show a hub bottom nav. This is a takeover.",
+    "Do not let the tint go below 0.16 or above 0.34 perceived.",
+    "Do not add free-text chat. See match-message-tray.json.",
+    "Do not label anything 'online' or claim a real opponent while online play is unbuilt.",
+    "Do not use a hard outline for the movable-token hint - it flattens the 2.5D read."
+  ],
+
+  "acceptance": [
+    "Four captures, one per house on turn: the colour is unmistakable in each and the wood grain still legible in all four.",
+    "One capture shows four different house-coloured avatar rings.",
+    "Every label on a player card is 12 pt or larger.",
+    "Timer goes red and pulses under 10 s, and auto-passes at 0.",
+    "Emoji and message trays open and close and never cover the board's centre cross.",
+    "ROLL is the only red button and the only idling element.",
+    "Bot seats show the BOT tag in every capture.",
+    "Board stays square at 402 x 874, 440 x 956, a 20:9 Android and an iPad.",
+    "Bible section 11 in full."
+  ],
+
+  "steps": [
+    "1. Read specs/SHARED_RULES.md, specs/MATCH_HUD_V2.md and specs/TOKENS_2_5D.md. Post the preflight list and wait if an asset is missing.",
+    "2. Get bg_match_emboss from the owner at full resolution. Do not proceed to step 3 without it - everything else is layered on top.",
+    "3. In LudoNXMatchHudBuilder.cs, build the layer stack (zones 0-3): letterbox, wallpaper with BackgroundCoverFitter, house tint Image, vignette. Expose the tint Image on MatchHudView.",
+    "4. Add SetActiveHouse(house) to MatchHudView: cross-fades the tint over 320 ms and drives the card glow. Wire it to the turn-change event in GameManager / LudoNXSession.",
+    "5. Fix the player cards in MatchPlayerCard.cs: house-colour ring, 12 pt minimum labels, LEVEL plaque, home pips on the die badge, BOT tag, active/inactive treatment.",
+    "6. Put the stake pill in the top-centre plaque; hide the plaque when there is no stake.",
+    "7. Build the action bar: emoji (left, neutral 56), RULES (centre, option M 46), timer pill (under RULES, E0 34), message (right, neutral 56). Wire RULES to rules-how-to-play; leave the emoji and message buttons opening empty trays for now.",
+    "8. Move the turn timer out of the top row into the action bar. Add the under-10 s red pulse and the auto-pass at 0.",
+    "9. Apply TOKENS_2_5D.md to the board tokens: pivot, sorting by row, shadow layer, hint glow.",
+    "10. Capture at 1080 x 2400, once per house on turn. Sample the wallpaper away from the board and tune the tint alphas inside plus or minus 0.04. Write the final numbers back into MATCH_HUD_V2.md section 2.",
+    "11. Play-mode check on the four devices in bible section 9.",
+    "12. Postflight per SHARED_RULES.md section 7."
+  ],
+
+  "prompt": "Rebuild the Ludo NX Match HUD (the gameplay screen).\n\nRead these first, in order: SCREEN_PLANS/specs/SHARED_RULES.md, SCREEN_PLANS/specs/MATCH_HUD_V2.md, SCREEN_PLANS/specs/TOKENS_2_5D.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md section 6.10, and this whole file (SCREEN_PLANS/screens/match-hud.json). Use only values from UI_BIBLE/tokens.json.\n\nThree things change, and they are the point of the job:\n\n1. THE BACKGROUND CARRIES THE TURN. The match ground becomes the owner's embossed wood wallpaper. Over it sits a full-bleed flat layer in the house colour of whoever is on turn, at a low alpha so the wood stays visible and the colour is still obvious: red 0.26, green 0.24, blue 0.28, yellow 0.20 perceived. This project renders in Linear, so set the corrected raw alphas from MATCH_HUD_V2.md section 2 and then verify with a capture. Cross-fade 320 ms when the turn passes. The tint goes behind the board and the cards, never over them.\n\n2. THE ACTION BAR. Bottom of the screen: emoji button on the left, RULES button in the centre with the turn timer directly under it, message button on the right. Emoji and message are neutral tan clay 56 buttons; RULES is option amber, button M. The timer is a recessed pill, and under 10 seconds it turns ink.lose red and pulses.\n\n3. THE TOKENS STAND UP. Apply SCREEN_PLANS/specs/TOKENS_2_5D.md - the board is flat top-down but the pawns are drawn at a high three-quarter angle with a separate flat contact shadow, sorted by board row.\n\nAlso fix: the four avatar rings must be the four house colours (they are all blue today, against bible 5.14); the empty plaque at the top-centre takes the stake pill; every player-card label must be at least 12 pt.\n\nBefore you build, post the component list, the tokens you will read and any asset that does not exist. Follow the 'steps' array in this file in order. Finish with the bible section 11 checklist and the 'acceptance' list in this file, plus four captures - one per house on turn."
+}

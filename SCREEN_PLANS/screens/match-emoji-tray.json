@@ -1,0 +1,96 @@
+{
+  "id": "match-emoji-tray",
+  "title": "In-match emoji tray",
+  "type": "overlay",
+  "status": "missing",
+  "priority": "P0",
+  "assignee": "any",
+  "one_line": "The 8-slot emote loadout, opened from the left button of the match action bar.",
+
+  "bible_sections": ["5.6", "5.8", "5.15", "2.9", "11"],
+  "specs": ["SCREEN_PLANS/specs/MATCH_HUD_V2.md", "SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Modals/MatchEmoteTray.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXEmoteBuilder.cs",
+    "script": "Assets/Scripts/UI/Match/MatchEmoteTray.cs",
+    "also": ["Assets/Scripts/UI/Components/EmoteFlipbook.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Match Emoji Tray"
+  },
+
+  "depends_on": ["match-hud"],
+  "opens_from": ["match-hud (action bar, left button)"],
+  "opens": ["shop (EMOJIS tab, from the + slot)"],
+
+  "anatomy": [
+    { "zone": "Scrim",  "spec": "None. This is a tray, not a popup - the board must stay visible and playable underneath. Dim nothing." },
+    { "zone": "Tray",   "spec": "Small NX Card (rim 6, rivets - bible 5.4 small card variant), 356 wide, slides up from the action bar. Bottom edge tucks behind the action bar so it reads as drawn out of it." },
+    { "zone": "Grid",   "spec": "4 x 2 wells (bible 5.6), 72 pt square, 10 pt gap. Each holds one emote at 56 pt. The 8 slots are the player's loadout, set on the pre-match card." },
+    { "zone": "Ninth slot", "spec": "A + well in the option amber kind at the end of the grid. Opens the shop's EMOJIS tab. Only shown when the player has fewer than 8 equipped or owns unequipped emotes." },
+    { "zone": "Close",  "spec": "Tapping the emoji button again, tapping the board, or firing an emote closes the tray. No close X - a tray is not a popup (bible 5.9)." }
+  ],
+
+  "components": ["5.4 NX Card (small card variant)", "5.6 Well", "5.8 Buttons", "5.15 Badges"],
+
+  "copy": {
+    "get_more": "GET MORE",
+    "cooldown": "Wait {N}s",
+    "muted_toast": "{NAME} is muted"
+  },
+
+  "states": [
+    "Closed - default.",
+    "Open - tray up, grid interactive.",
+    "Cooling down - every slot goes to the disabled kind and the tray shows 'Wait 3s'. Do not just lower the alpha (bible 5.8).",
+    "Fewer than 8 owned - empty slots render as plain wells with a faded + and open the shop.",
+    "Emotes off in Settings - the emoji button in the action bar is hidden entirely, not disabled."
+  ],
+
+  "motion": [
+    "Open: slide up 120 pt over 200 ms, ease-out-back with a small overshoot.",
+    "Close: slide down 140 ms, ease-in.",
+    "Fire: the chosen slot punches to 1.15 over 90 ms, the tray closes, and the emote bubble rises from the sender's player card, holds 1.4 s, fades over 200 ms.",
+    "Cooldown: 3 s. A sweeping radial wipe over each well shows the time left."
+  ],
+
+  "data": [
+    "Loadout of 8: the player's equipped emotes, set on the pre-match card. Local today; server-owned once the shop is real.",
+    "Mute list: per-match, local, cleared when the match ends. A muted player's emotes never render at all."
+  ],
+
+  "assets_needed": [
+    { "name": "Emote set", "path": "Assets/Art/UI/Emotes/", "size": "existing flipbooks", "who": "exists", "prompt": "BLOCKER: the emotes already in Assets/Art/UI/Emotes and Assets/Art/UI/MatchSetup/Emoji have no recorded source. Before any emote is sold or shipped, confirm the licence (IMPLEMENTATION_PLAN.md section 7.5). Noto and Twemoji are CC BY 4.0, Fluent is MIT, Apple's is not licensable. If the source cannot be confirmed, replace them with the NX Mascot pack." }
+  ],
+
+  "deviations": [],
+
+  "do_not": [
+    "Do not dim the board. The match keeps running while the tray is open.",
+    "Do not give the tray a close X or a scrim - it is a tray, not a popup.",
+    "Do not let the tray cover the board's centre cross or the dice tray.",
+    "Do not skip the 3 s cooldown. Emote spam is the fastest way to make a Ludo game unpleasant.",
+    "Do not render a muted player's emote at all - not faded, not silent. Nothing."
+  ],
+
+  "acceptance": [
+    "Tray opens and closes from the action bar's left button and never covers the board centre or the dice.",
+    "Firing an emote shows a bubble over the sender's player card for 1.4 s.",
+    "The 3 s cooldown visibly locks every slot and counts down.",
+    "Muting a player stops their emotes appearing for the rest of the match.",
+    "With emotes turned off in Settings, the action bar's emoji button is gone.",
+    "Bible section 11 in full."
+  ],
+
+  "steps": [
+    "1. Preflight per SHARED_RULES.md section 2. Raise the emote licence question as a BLOCKER in AI_HANDOFF.md if it is still unanswered - the tray can be built, but nothing ships until it is settled.",
+    "2. Build the tray prefab from the small-card chassis with a 4 x 2 well grid.",
+    "3. Wire it to the action bar's left button: open, close on second tap, close on board tap.",
+    "4. Implement fire: slot punch, tray close, bubble over the sender's card, 1.4 s hold.",
+    "5. Implement the 3 s cooldown with the radial wipe and the disabled kind.",
+    "6. Implement mute: a per-match list, reachable from the long-press on a player card, cleared at match end.",
+    "7. Hide the action bar's emoji button when emotes are off in Settings.",
+    "8. Capture open, cooling-down and fired states at 1080 x 2400. Postflight."
+  ],
+
+  "prompt": "Build the in-match emoji tray for Ludo NX.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, SCREEN_PLANS/specs/MATCH_HUD_V2.md section 3.4, and this file. Use only values from UI_BIBLE/tokens.json.\n\nIt is a TRAY, not a popup: no scrim, no close X, the board stays visible and the match keeps running underneath. It slides up out of the action bar's left button, on a small NX Card chassis (rim 6, rivets), holding the player's 8 equipped emotes in a 4 x 2 grid of wells, plus a + slot that opens the shop's EMOJIS tab.\n\nThe two things that make or break it: a 3 second cooldown between emotes (shown as a radial wipe, with slots in the disabled kind, not just faded), and a mute that makes a player's emotes not render at all. Emote spam is the fastest way to ruin a casual Ludo match.\n\nBefore building, post your component list and flag the emote licence question - the art in Assets/Art/UI/Emotes has no recorded source and nothing can ship until that is settled (IMPLEMENTATION_PLAN.md section 7.5).\n\nFollow the 'steps' array in this file. Finish with bible section 11 and the 'acceptance' list."
+}

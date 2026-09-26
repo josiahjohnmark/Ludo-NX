@@ -1,0 +1,50 @@
+{
+  "id": "confirm-dialog",
+  "title": "Confirm dialog",
+  "type": "popup",
+  "status": "polish",
+  "priority": "P2",
+  "assignee": "any",
+  "one_line": "One question, two buttons. Used by leave match, remove friend, delete account - the danger colour lives only here.",
+
+  "bible_sections": ["5.21", "2.2", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Modals/Confirm.prefab",
+    "script": "Assets/Scripts/UI/Modals/ConfirmModal.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Confirm"
+  },
+
+  "depends_on": [],
+  "opens_from": ["pause (leave match)", "friends (remove friend)", "settings (delete account)", "any destructive action"],
+  "opens": [],
+
+  "anatomy": [
+    { "zone": "Card", "spec": "Small standard NX Card, 380 wide." },
+    { "zone": "Nameplate", "spec": "The question, CAPS, e.g. 'REMOVE FRIEND?'." },
+    { "zone": "Body", "spec": "One line of body text, specific about the consequence." },
+    { "zone": "Buttons", "spec": "Two, side by side: safe choice on the LEFT in neutral, action on the RIGHT in go (confirm) or danger (destructive only)." }
+  ],
+
+  "components": ["5.3 Nameplate", "5.4 NX Card (small)", "5.8 Buttons (neutral, go/danger)", "5.21 Confirm dialog"],
+
+  "copy": { "generic_body": "This cannot be undone." },
+
+  "states": ["Confirm (go)", "Destructive (danger)"],
+
+  "motion": ["Standard popup open/close, faster - 140 ms - since it is a quick decision."],
+
+  "data": ["Generic, reusable component - takes a title, body and two callbacks."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not add a close X - the neutral button is the way out (bible 5.21).", "Do not use danger for anything that is not destructive.", "Do not make this component screen-specific - it is shared."],
+
+  "acceptance": ["Reused by at least three call sites (leave match, remove friend, delete account) with no duplicated code.", "No close X.", "Danger only appears for destructive actions.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight.", "2. Confirm the component is generic and reusable, not duplicated per call site.", "3. Verify no close X and correct button colours per use.", "4. Capture a confirm and a destructive use. Postflight."],
+
+  "prompt": "Polish the Ludo NX generic Confirm dialog.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 5.21 and 2.2, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nThis is the one component every destructive or consequential action shares: small NX Card, a question as the nameplate, one line of body text, and two buttons side by side - the safe choice on the left in neutral, the action on the right in go for a confirm or danger for something destructive (danger is ONLY allowed inside this dialog, nowhere else in the app). No close X - the neutral button is the way out.\n\nMake sure it is genuinely one reusable component wired to leave-match, remove-friend and delete-account, not three separate implementations.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

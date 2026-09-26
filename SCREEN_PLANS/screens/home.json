@@ -1,0 +1,112 @@
+{
+  "id": "home",
+  "title": "Home",
+  "type": "hub",
+  "status": "rebuild",
+  "priority": "P1",
+  "assignee": "any",
+  "one_line": "The front door: logo, mode carousel, NX MISSIONS and NX CUP badges, and the one red PLAY.",
+
+  "bible_sections": ["6.1", "4.2", "5.1", "5.2", "5.8", "5.19", "2.1", "2.9", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Screens/Home.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXMainMenuBuilder.cs",
+    "script": "Assets/Scripts/UI/Screens/HomeScreen.cs",
+    "also": ["Assets/Scripts/UI/Components/GameModeCarousel.cs", "Assets/Scripts/Editor/LudoHomeUIBuilder.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Home"
+  },
+
+  "depends_on": ["shell-chrome"],
+  "opens_from": ["splash", "bottom nav", "result (HOME)"],
+  "opens": ["prematch-cards", "missions", "rankings", "shop", "friends", "profile", "side-drawer"],
+
+  "gaps": [
+    "Ground is teal #163434. It must be bg_menu_emboss like every other menu (bible 5.1).",
+    "Carousel cards are 130 x 230 low-resolution art, stretched on phones. Re-export at 3x.",
+    "Top-bar coin icon is 25 px and the energy icon 17 px. Both need the 1024 px sources.",
+    "The energy pill reads '1822/5' with the FULL label overlapping.",
+    "An ONLINE card is still in the carousel. Online play is not built - project law says never label a mode online.",
+    "The home frame was built at 402 pt, not the bible's 440. Keep the 1080/402 factor until this rebuild, then move to 440."
+  ],
+
+  "anatomy": [
+    { "zone": "Ground",   "spec": "bg_menu_emboss, cover-scaled, cropped top and bottom, never stretched. Letterbox in ground.base. Optional vignette to ground.deep." },
+    { "zone": "Top bar",  "spec": "Per shell-chrome: avatar 52 with its frame-tier ring pinned left, coins pill, energy pill (with the regen timer when not full), burger pinned right. 56 tall, never scrolls." },
+    { "zone": "Badges",   "spec": "NX MISSIONS on the left, NX CUP on the right, as logotype badges (bible 2.8). NX CUP opens Rankings (decision D5). NX MISSIONS opens Missions. Each takes a notification dot when something is claimable." },
+    { "zone": "Logo",     "spec": "LUDO NX logotype, centred, in the upper third." },
+    { "zone": "Carousel", "spec": "Mode cards, swipeable, one centred and raised. Cards at 3x. Modes: QUICK MATCH, VS COMPUTER, PASS & PLAY. NO card may say ONLINE." },
+    { "zone": "Play",     "spec": "The one play red on the screen. XL slab, height 66, radius 16, breathing 1.00 to 1.03 (the only idle). Multiplier coin (bible 5.19) on its top-right corner. Opens the pre-match card for the centred mode." },
+    { "zone": "Bottom nav","spec": "Per shell-chrome: album, friends, HOME, shop, levels. 116 tall, tan300 plate, on the bottom inset." }
+  ],
+
+  "components": ["5.1 Ground", "5.2 Top bar", "5.8 Buttons (play XL)", "5.13 Currency pill", "5.15 Badges", "5.19 Multiplier coin"],
+
+  "copy": {
+    "play": "PLAY",
+    "modes": ["QUICK MATCH", "VS COMPUTER", "PASS & PLAY"],
+    "mode_subs": ["Play a full match", "Play against the computer", "Everyone on one phone"],
+    "energy_full": "FULL",
+    "forbidden": "The word ONLINE does not appear anywhere on this screen until real online play ships."
+  },
+
+  "states": [
+    "Default - all three modes available.",
+    "Out of energy - the PLAY button goes to the disabled kind and the energy pill's + pulses once. Tapping PLAY opens the energy popup, it does not fail silently.",
+    "Claimable mission or reward - notification dot on the matching badge.",
+    "First session - the welcome mascot and a single pointer at PLAY. Once only.",
+    "Loading player data - skeleton the pills and the avatar (bible 5.23). Never a blank top bar."
+  ],
+
+  "motion": [
+    "PLAY breathes 1.00 to 1.03 every 1.6 s. It is the ONLY idling element on the screen (bible 2.9).",
+    "Carousel: snap to card, 220 ms ease-out. The centred card scales to 1.06.",
+    "Badges: a claimable badge does a single 1.0 to 1.08 pop when the screen opens, then stops."
+  ],
+
+  "data": [
+    "Coins, energy, level, avatar: the wallet and StatsService. Server-owned at T-A3 - turn off SeedDemoProgress and remove the local energy demo value.",
+    "Multiplier: MultiplierService.",
+    "Claimable flags: DailyMissionsData."
+  ],
+
+  "assets_needed": [
+    { "name": "Carousel card art at 3x", "path": "Assets/Art/UI/HomeScreen/", "size": "390 x 690 at 3x", "who": "generated", "prompt": "Rebuild the mode cards from the kit rather than re-drawing: small-card chassis, item render, live text label. No baked text." },
+    { "name": "Top-bar icons at 3x", "path": "Assets/Art/UI/Items/Currency/", "size": "1024 sources", "who": "exists", "prompt": "The 1024 px coin_icon_gold and energy_icon already exist in Art/UI/HomeScreen. Re-export at 3x and replace the 25 px and 17 px versions." }
+  ],
+
+  "deviations": [],
+
+  "do_not": [
+    "Do not put a second red button on this screen.",
+    "Do not use the word ONLINE, and do not claim a real player will be found.",
+    "Do not add a second idling element - PLAY breathes alone.",
+    "Do not give Home its own background colour. One ground for all menus.",
+    "Do not upscale the existing 1x icons. Use the 1024 px sources."
+  ],
+
+  "acceptance": [
+    "Ground is bg_menu_emboss and matches Friends, Shop, Missions, Profile side by side.",
+    "Coin and energy icons are crisp at 1080 x 2400 - no soft edges.",
+    "The energy pill reads correctly when full and when regenerating. The 1822/5 bug is gone.",
+    "No screen element says ONLINE.",
+    "PLAY is the only red and the only breathing thing.",
+    "Out of energy opens the energy popup rather than failing silently.",
+    "Bible section 11 in full."
+  ],
+
+  "steps": [
+    "1. Preflight per SHARED_RULES.md section 2.",
+    "2. Swap the ground to bg_menu_emboss with BackgroundCoverFitter.",
+    "3. Replace the top-bar icons with 3x exports from the 1024 px sources; fix the energy pill layout and the FULL overlap.",
+    "4. Rename the ONLINE mode to QUICK MATCH everywhere - carousel, copy, and any analytics label.",
+    "5. Rebuild the carousel cards from the kit chassis with live text.",
+    "6. Put the multiplier coin on PLAY's top-right; make PLAY the only breathing element.",
+    "7. Wire NX CUP to Rankings and NX MISSIONS to Missions, with notification dots.",
+    "8. Handle out-of-energy, first-session and loading states.",
+    "9. Capture at 1080 x 2400 next to a Shop capture and confirm the grounds match. Postflight."
+  ],
+
+  "prompt": "Rebuild the Ludo NX Home screen to the bible.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 6.1, 4.2 and 5.1, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nSix things are wrong today and this task fixes all of them:\n\n1. The ground is teal #163434. Every menu screen sits on bg_menu_emboss - that one change is what makes the game feel like one product.\n2. The top-bar coin icon is 25 px and the energy icon is 17 px. The 1024 px sources already exist in Art/UI/HomeScreen - re-export at 3x.\n3. The energy pill shows '1822/5' with the FULL label overlapping.\n4. There is still an ONLINE card in the carousel. Online play is not built, and project law says never label a mode online and never claim a real player was found. Rename it QUICK MATCH everywhere.\n5. The carousel cards are 130 x 230 stretched art. Rebuild them from the kit chassis with live text.\n6. PLAY needs the multiplier coin on its top-right corner and must be the only breathing element on the screen.\n\nWire the NX CUP badge to Rankings and NX MISSIONS to Missions, each with a notification dot when something is claimable. Out of energy must open the energy popup, not fail silently.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list - and include a capture of Home next to a capture of Shop, to prove the grounds match."
+}

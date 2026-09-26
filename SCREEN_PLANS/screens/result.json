@@ -1,0 +1,123 @@
+{
+  "id": "result",
+  "title": "Result (victory + defeat)",
+  "type": "takeover",
+  "status": "rebuild",
+  "priority": "P1",
+  "assignee": "claude",
+  "one_line": "The celebration. Two states off one builder: VICTORY! with rays and confetti, NICE TRY! with honesty and a reason to go again.",
+
+  "bible_sections": ["4.4", "6.11", "5.4", "5.8", "5.12", "5.14", "5.18", "2.8", "2.9", "3", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+  "also_read": "UI_BIBLE/IMPLEMENTATION_PLAN.md section 8.3 and 8.4 - the second-by-second timeline is there and is the spec.",
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Screens/Result.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXResultBuilder.cs",
+    "script": "Assets/Scripts/UI/Screens/ResultScreen.cs",
+    "also": ["Assets/Scripts/UI/Screens/ResultRow.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Result - won | Result - lost"
+  },
+
+  "depends_on": ["match-hud"],
+  "opens_from": ["match-hud (match ends)"],
+  "opens": ["prematch-cards (PLAY AGAIN)", "home (HOME)", "missions (CLAIM shortcut)"],
+
+  "gaps": [
+    "A win and a loss look the same flat list. Nothing celebrates.",
+    "PLAY AGAIN and HOME are the same tan - no hierarchy (bible 2.2).",
+    "The reward strip's '+0 NX' is cut off at the right edge.",
+    "Title is text floating on the ground instead of a logotype or a nameplate."
+  ],
+
+  "anatomy": [
+    { "zone": "Ground",  "spec": "The match ground, dimmed. Rays behind everything on a win only, rotating 12 deg/s (tokens.json motion.victory)." },
+    { "zone": "Logotype","spec": "VICTORY! or NICE TRY! as a logotype image (bible 2.8 - logotypes are the only images allowed to contain words). Until the art exists, use a nameplate with live text: '1ST PLACE' / '3RD PLACE'." },
+    { "zone": "Mascot",  "spec": "Victory pose or determined pose, rising from behind the hero panel's top edge. At most one mascot per screen." },
+    { "zone": "Hero panel","spec": "Hero NX Card - Lucky Six corners in the HOUSE COLOURS, placed like the board: top-left red, top-right green, bottom-left blue, bottom-right yellow (bible 3)." },
+    { "zone": "Place rows","spec": "One row per player, in finishing order. Rank flag (gold/silver/bronze/tan), avatar 36 ringed in that player's house colour, name Lilita 17 CAPS, NX delta on the right in ink.win or ink.lose. The player's own row uses the self blue gradient. Bot rows carry the BOT tag." },
+    { "zone": "Reward strip","spec": "Base NX counts up, then the multiplier coin SLAMS onto the number and it counts to the final. Coins below. Then three stat wells: tokens home, captures, turns. Full width, right-aligned numbers with 16 pt of clearance - the +0 NX clipping bug is here." },
+    { "zone": "Mission chips","spec": "Progress chips that tick after the count-up: 'Win 2 in a row 2/2'. A completed one gets a CLAIM shortcut straight to missions." },
+    { "zone": "Actions","spec": "PLAY AGAIN - play red slab, XL, breathing, the main action on BOTH win and loss. HOME - neutral, button L. SHARE - round info 44. Three different kinds; never three equal buttons (bible 10)." }
+  ],
+
+  "components": ["5.4 NX Card (hero variant)", "5.8 Buttons (play XL, neutral L, info round)", "5.12 Progress bar", "5.14 Avatar", "5.15 Badges (BOT tag)", "5.18 Rank row"],
+
+  "copy": {
+    "win_title": "VICTORY!",
+    "lose_title": "NICE TRY!",
+    "play_again": "PLAY AGAIN",
+    "home": "HOME",
+    "nudge_lose": "A win at X{M} pays +{N} NX.",
+    "tone": "Warm and short. 'So close - one more round?' Never 'You lost.'"
+  },
+
+  "states": [
+    "Victory - rays, confetti in the four house colours for 1.5 s, victory mascot, gains in ink.win.",
+    "Defeat (2nd, 3rd, 4th) - no rays, no confetti, determined mascot, the loss shown honestly in ink.lose, and the nudge line right next to it.",
+    "Pass and Play - no NX, no coins, no multiplier. Just places and a rematch.",
+    "Opponent left - the win still counts, and the row for the player who left says LEFT instead of a place.",
+    "Zero reward - show '+0 NX' correctly inside the strip, never clipped. This is the known bug."
+  ],
+
+  "motion": [
+    "0.0 s ground dims, rays start, logotype drops in scale 1.3 to 1.0 with a bounce.",
+    "0.3 s mascot rises behind the panel's top edge.",
+    "0.5 s place rows arrive one at a time, 30 ms stagger (tokens.json motion.listStagger).",
+    "1.0 s base NX counts up 0.6-1.2 s ease-out with a tick per step, then the multiplier coin slams on and it counts to the final.",
+    "1.5 s mission chips tick.",
+    "1.8 s buttons appear. PLAY AGAIN starts breathing - the only idle on the screen.",
+    "Confetti 1.5 s, house colours, win only."
+  ],
+
+  "data": [
+    "Places, deltas, stats: WinCalculator / PointsManager today. Server-owned at T-D4 - the server decides rewards, never the phone.",
+    "Mission progress: DailyMissionsData.",
+    "Multiplier: MultiplierService."
+  ],
+
+  "assets_needed": [
+    { "name": "logo_victory", "path": "Assets/Art/UI/Logos/logo_victory@3x.png", "size": "2048 x 1024", "who": "owner", "prompt": "Game title logotype that reads exactly 'VICTORY!' (check the spelling), chunky rounded display letters in glossy gold with a thick navy #1E2229 outline and a soft 3D bevel, small sparkles, slight upward arc, centred, transparent background, 2048 x 1024, no other text, no characters." },
+    { "name": "logo_nicetry", "path": "Assets/Art/UI/Logos/logo_nicetry@3x.png", "size": "2048 x 1024", "who": "owner", "prompt": "Same as logo_victory but reading exactly 'NICE TRY!', in cream letters with a brown outline, no sparkles." },
+    { "name": "mascot_victory", "path": "Assets/Art/UI/Mascot/mascot_victory@3x.png", "size": "2048", "who": "owner", "prompt": "Attach the mascot reference. Use the attached character exactly: an ivory ceramic Ludo pawn with a rounded cap, gold trim, NX embossed on the chest, determined eyebrows, glossy porcelain finish. Pose: jumping with both arms up in celebration, gold confetti around. Full body, 2048 x 2048, transparent background." },
+    { "name": "mascot_determined", "path": "Assets/Art/UI/Mascot/mascot_determined@3x.png", "size": "2048", "who": "owner", "prompt": "Same character. Pose: arms crossed, determined half-smile, one eyebrow raised. Full body, 2048 x 2048, transparent background." },
+    { "name": "fx_rays", "path": "Assets/Art/UI/Kit/fx_rays@3x.png", "size": "2048", "who": "generated", "prompt": "Radial gold ray burst, 24 tapered rays, warm gold falling to transparent at the edge, on transparent." }
+  ],
+
+  "deviations": [],
+
+  "do_not": [
+    "Do not show a win and a loss with the same flat list. This is the single biggest visual gap in the build.",
+    "Do not make PLAY AGAIN and HOME the same colour. One play red, one neutral tan.",
+    "Do not clip the reward number at the right edge - 16 pt of clearance, always.",
+    "Do not celebrate a loss with rays and confetti. Honesty first, then the nudge.",
+    "Do not use standard brown corner dice on the hero panel - the match flow gets house-colour corners (bible 3).",
+    "Do not run two attention-grabbing animations at once (bible 2.9)."
+  ],
+
+  "acceptance": [
+    "Victory and defeat are unmistakably different at a glance, in a still capture.",
+    "The timeline in IMPLEMENTATION_PLAN.md 8.3 plays in order with nothing overlapping.",
+    "The multiplier coin slam lands on the number and the count-up continues to the right final value.",
+    "'+0 NX' renders fully inside the strip at 1080 x 2400.",
+    "PLAY AGAIN is the only red and the only breathing element.",
+    "Hero panel corners are red / green / blue / yellow, board-ordered.",
+    "Bot rows carry the BOT tag.",
+    "Bible section 11 in full."
+  ],
+
+  "steps": [
+    "1. Preflight. The four owner assets (two logotypes, two mascot poses) are P0 in IMPLEMENTATION_PLAN.md section 6 - chase them before starting, and build with the nameplate fallback if they are not ready.",
+    "2. Rebuild the hero panel chassis with house-colour Lucky Six corners.",
+    "3. Build the place rows off ResultRow.cs: rank flag, house-ringed avatar, self blue row, BOT tag.",
+    "4. Rebuild the reward strip with proper right-edge clearance. Fix the +0 NX clipping.",
+    "5. Implement the count-up, then the multiplier coin slam, then the continued count.",
+    "6. Add mission chips with the CLAIM shortcut.",
+    "7. Build the two states: rays + confetti + victory mascot, versus no rays + determined mascot + nudge line.",
+    "8. Lay out the three actions in three different kinds.",
+    "9. Sequence the whole timeline to IMPLEMENTATION_PLAN.md 8.3.",
+    "10. Capture won, lost, pass-and-play and zero-reward at 1080 x 2400. Postflight."
+  ],
+
+  "prompt": "Rebuild the Ludo NX Result screen as a proper victory/defeat takeover.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 6.11, 4.4 and 3, UI_BIBLE/IMPLEMENTATION_PLAN.md sections 8.3 and 8.4 (the second-by-second timeline there IS the spec), and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nToday a win and a loss look like the same flat list. That is the biggest visual gap in the whole build. Fix it:\n\nVICTORY: gold rays turning at 12 deg/s, the VICTORY! logotype dropping in, the victory mascot rising behind the hero panel, place rows arriving one at a time, the NX counting up and then the multiplier coin SLAMMING onto the number and the count continuing, mission chips ticking, and confetti in the four house colours for 1.5 s.\n\nDEFEAT: no rays, no confetti. The determined mascot, the loss shown honestly in ink.lose, and immediately next to it the reason to go again - mission progress and 'A win at X5 pays +600 NX.' PLAY AGAIN stays the main action on both.\n\nThe hero panel gets Lucky Six corners in the HOUSE COLOURS, board-ordered (top-left red, top-right green, bottom-left blue, bottom-right yellow) - not the standard brown dice.\n\nAlso fix two known bugs: PLAY AGAIN and HOME are currently the same tan (make them play red and neutral tan), and '+0 NX' is clipped at the right edge of the reward strip.\n\nFour assets come from the owner (VICTORY! and NICE TRY! logotypes, victory and determined mascot poses) - the prompts are in this file's 'assets_needed'. If they are not ready, build with a live-text nameplate fallback and say so.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list, with captures of won, lost, pass-and-play and zero-reward."
+}

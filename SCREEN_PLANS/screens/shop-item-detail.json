@@ -1,0 +1,72 @@
+{
+  "id": "shop-item-detail",
+  "title": "Shop item detail",
+  "type": "popup",
+  "status": "rebuild",
+  "priority": "P1",
+  "assignee": "any",
+  "one_line": "Big rotating render on a plinth, rarity, what it changes, BUY or EQUIP.",
+
+  "bible_sections": ["4.3", "5.3", "5.4", "5.8", "5.9", "5.15", "5.16", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+  "also_read": "UI_BIBLE/IMPLEMENTATION_PLAN.md section 7.1.",
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Modals/ShopItemDetailModal.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXStoreBuilder.cs",
+    "script": "Assets/Scripts/UI/Modals/ShopItemDetailModal.cs",
+    "also": ["Assets/Scripts/UI/Screens/ShopItemDetailScreen.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Shop Item Detail"
+  },
+
+  "depends_on": ["shop"],
+  "opens_from": ["shop (tap a card)"],
+  "opens": ["paywall-offer (if it is part of a bundle)"],
+
+  "anatomy": [
+    { "zone": "Scrim",  "spec": "ground.scrim 72 percent." },
+    { "zone": "Card",   "spec": "Standard NX Card, 380 wide, rarity-coloured rim accent, Lucky Six corners." },
+    { "zone": "Plinth", "spec": "The item render, large, centred, slowly rotating (a die tumbles gently; a token turns) - rarity glow behind it, rays for legendary." },
+    { "zone": "Nameplate", "spec": "Item name, straddling the top edge." },
+    { "zone": "Rarity label", "spec": "Section label in the rarity colour: COMMON / RARE / EPIC / LEGENDARY." },
+    { "zone": "Description", "spec": "One line, Nunito 14: what it changes. 'Your dice in every match.'" },
+    { "zone": "Action", "spec": "BUY (go green, localised price) or EQUIP (option amber) or OWNED-EQUIPPED (no button, outline only), straddling the bottom edge in a collar." },
+    { "zone": "Close", "spec": "44 cream disc X, 24 pt below." }
+  ],
+
+  "components": ["5.3 Nameplate", "5.4 NX Card", "5.8 Buttons (go collar, option collar)", "5.9 Close X", "5.15 Badges", "5.16 Ribbon (rarity)"],
+
+  "copy": { "buy": "BUY", "equip": "EQUIP", "owned": "OWNED", "equipped": "EQUIPPED", "locked_format": "Reach level {N}" },
+
+  "states": ["For sale", "Owned, not equipped - EQUIP", "Equipped - outline only, no button", "Locked - disabled price, unlock rule shown", "Purchasing - spinner in the button, width unchanged", "Purchase failed - a toast with the store's error, button returns to BUY"],
+
+  "motion": ["Open: tokens.json motion.popupOpen.", "Plinth idle rotation: slow, continuous, the only idle on the card.", "Purchase success: a brief sparkle burst on the plinth, then the button becomes EQUIP."],
+
+  "data": ["RevenueCat package for price and purchase.", "Ownership from the server after T-A3."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": [
+    "Do not hard-code a price.",
+    "Do not skip the purchase-failed state.",
+    "Do not use a rarity colour anywhere but the rim accent, the label and the ribbon/glow - never as a button colour."
+  ],
+
+  "acceptance": [
+    "Every state in 'states' is reachable and captured.",
+    "Price is the RevenueCat localised string.",
+    "Purchasing shows a spinner in the button; failure shows a toast and reverts cleanly.",
+    "Bible section 11 in full."
+  ],
+
+  "steps": [
+    "1. Preflight per SHARED_RULES.md section 2.",
+    "2. Build the card with the rotating plinth and rarity glow.",
+    "3. Wire BUY to the RevenueCat package, with loading and failure states.",
+    "4. Wire EQUIP and the owned/equipped/locked states.",
+    "5. Capture every state. Postflight."
+  ],
+
+  "prompt": "Build the Ludo NX shop item detail popup.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 5.16 and 4.3, UI_BIBLE/IMPLEMENTATION_PLAN.md section 7.1, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nStandard NX Card popup: the item slowly rotating on a plinth with its rarity glow behind it, the item name as the nameplate, a rarity label, one line of what it changes, and BUY / EQUIP / OWNED-EQUIPPED / locked as the four states of the bottom-edge action button.\n\nThe price must come from the RevenueCat package as the store's localised string - never hard-coded. Build the purchasing state (spinner in the button) and the purchase-failed state (a toast, then revert to BUY) - both are usually skipped and both will happen to real players.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

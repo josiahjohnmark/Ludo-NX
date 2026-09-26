@@ -1,0 +1,49 @@
+{
+  "id": "splash",
+  "title": "Splash / first load",
+  "type": "takeover",
+  "status": "polish",
+  "priority": "P1",
+  "assignee": "any",
+  "one_line": "Logo, mascot, a progress bar that tells the truth about what is actually loading.",
+
+  "bible_sections": ["4.4", "5.12", "2.8", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Screens/Splash.prefab",
+    "script": "Assets/Scripts/UI/Screens/SplashScreen.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Splash"
+  },
+
+  "depends_on": [],
+  "opens_from": ["app launch"],
+  "opens": ["home"],
+
+  "anatomy": [
+    { "zone": "Ground", "spec": "bg_menu_emboss or a dedicated splash ground - decide with the owner; default to the same menu wallpaper for consistency." },
+    { "zone": "Logo",   "spec": "LUDO NX logotype, centred, upper half." },
+    { "zone": "Mascot", "spec": "One pose, waving or idle. At most one per screen." },
+    { "zone": "Progress", "spec": "Progress bar (bible 5.12), recessed track, amber gradient fill, tied to REAL loading progress (asset load, auth check, config fetch) - not a fake timed bar." }
+  ],
+
+  "components": ["5.12 Progress bar"],
+  "copy": { "loading": "Loading..." },
+
+  "states": ["Normal load", "Slow network - after ~6s show a short honest line, e.g. 'Still loading...'", "Load failed - a RETRY button, never an infinite spinner"],
+
+  "motion": ["Progress fill animates smoothly, no jumps.", "Logo settles with a soft scale-in on first frame."],
+
+  "data": ["Real asset/auth/config load progress drives the bar."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not fake the progress bar with a timer - tie it to real load steps.", "Do not let a failed load spin forever with no retry."],
+
+  "acceptance": ["Progress bar reflects real load steps.", "A load failure shows RETRY.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight.", "2. Wire the progress bar to real load milestones.", "3. Add the slow-network line and the failure/RETRY state.", "4. Capture normal, slow and failed. Postflight."],
+
+  "prompt": "Polish the Ludo NX splash screen.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 4.4 and 5.12, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nThe one rule that matters here: the progress bar must reflect REAL loading progress (assets, auth, config) - never a fake timed animation. Add an honest 'Still loading...' line if it runs past about 6 seconds, and a RETRY button if loading fails outright, instead of spinning forever.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

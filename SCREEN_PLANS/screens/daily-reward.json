@@ -1,0 +1,52 @@
+{
+  "id": "daily-reward",
+  "title": "Daily reward",
+  "type": "takeover",
+  "status": "missing",
+  "priority": "P3",
+  "assignee": "any",
+  "one_line": "Seven day cards, today lit and bouncing, day seven a chest.",
+
+  "bible_sections": ["6.12", "4.4", "2.8", "2.9", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "NEW - Assets/Resources/UI/Screens/DailyReward.prefab",
+    "script": "NEW - Assets/Scripts/UI/Screens/DailyRewardScreen.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Daily Reward"
+  },
+
+  "depends_on": [],
+  "opens_from": ["app launch (once per day, if eligible)"],
+  "opens": [],
+
+  "anatomy": [
+    { "zone": "Header", "spec": "DAILY REWARD logotype (bible 2.8)." },
+    { "zone": "Cards",  "spec": "7 small cards (bible 5.4 small card variant) in a row or two rows of 4/3, one per day: claimed = ticked, today = lit and bouncing (bible 2.9 idle rule - the only idle element here), future = dimmed, day 7 = a chest render instead of a coin/item icon." },
+    { "zone": "Action", "spec": "CLAIM, go green, XL, collar." }
+  ],
+
+  "components": ["5.4 NX Card (small)", "5.8 Buttons", "5.15 Badges (tick)"],
+
+  "copy": { "title": "DAILY REWARD", "claim": "CLAIM", "day_format": "DAY {N}" },
+
+  "states": ["Ready to claim (today lit)", "Already claimed today - screen does not show at all, or shows a 'come back tomorrow' variant if reached manually", "Streak broken - day 1 restarts, shown honestly, no guilt copy"],
+
+  "motion": ["Today's card bounces continuously - the only idle element (bible 2.9).", "Claim: count-up plus a small burst on the claimed card.", "tokens.json motion.countUp for the reward number."],
+
+  "data": ["A streak counter and last-claimed date, server-owned once T-A3 ships so it cannot be reset by reinstalling."],
+
+  "assets_needed": [
+    { "name": "logo_dailyreward", "path": "Assets/Art/UI/Logos/logo_dailyreward@3x.png", "size": "2048 x 1024", "who": "owner", "prompt": "IMPLEMENTATION_PLAN.md section 6, P1-3: DAILY REWARD logotype, same style as VICTORY!." }
+  ],
+
+  "deviations": [],
+
+  "do_not": ["Do not let more than one card breathe/bounce at once.", "Do not let the streak be resettable by reinstalling once the server owns it.", "Do not guilt-trip a broken streak in the copy."],
+
+  "acceptance": ["Only today's card is animated.", "Day 7 renders as a chest.", "Claiming updates the streak server-side once wired.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight.", "2. Build the 7-card layout with per-day states.", "3. Wire CLAIM with the count-up and burst.", "4. Wire the streak to a server-owned counter (or a clearly local placeholder until T-A3).", "5. Capture ready-to-claim and already-claimed. Postflight."],
+
+  "prompt": "Build the Ludo NX Daily Reward takeover.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md section 6.12, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nThis does not exist yet. Build: the DAILY REWARD logotype, seven small cards in a row (one per day - claimed ticked, today lit and gently bouncing, future days dimmed, day 7 shown as a chest render), and CLAIM in a collar on the bottom edge.\n\nOnly today's card animates - it is the one idle element allowed on the screen. The streak counter should be server-owned once T-A3 ships so it survives a reinstall; until then, mark it clearly as a local placeholder.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

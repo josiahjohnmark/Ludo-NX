@@ -1,0 +1,60 @@
+{
+  "id": "rankings",
+  "title": "Rankings",
+  "type": "hub",
+  "status": "missing",
+  "priority": "P2",
+  "assignee": "claude",
+  "one_line": "Podium, rank rows, pinned self row, reward bands. Ships honest, real players only once online play exists.",
+
+  "bible_sections": ["6.4", "5.18", "5.10", "4.2", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+  "also_read": "UI_BIBLE/IMPLEMENTATION_PLAN.md section 9.",
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Screens/Rankings.prefab",
+    "builder": "NEW - Assets/Scripts/Editor/LudoNXRankingsBuilder.cs",
+    "script": "NEW - Assets/Scripts/UI/Screens/RankingsScreen.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Rankings"
+  },
+
+  "depends_on": ["shell-chrome"],
+  "opens_from": ["home (NX CUP badge)"],
+  "opens": ["mini-profile"],
+
+  "anatomy": [
+    { "zone": "Ground",   "spec": "bg_menu_emboss." },
+    { "zone": "Nameplate","spec": "RANKINGS." },
+    { "zone": "Tabs",     "spec": "Folder tabs WEEKLY / ALL TIME." },
+    { "zone": "Segmented","spec": "GLOBAL / COUNTRY / FRIENDS, bible 5.10." },
+    { "zone": "Reset line","spec": "'Resets in 2d 14h' caption." },
+    { "zone": "Podium",   "spec": "Top 3, 1st centred and raised, 2nd left, 3rd right, each on a plinth with its crown (existing crown_gold/silver/bronze art)." },
+    { "zone": "Rows",     "spec": "Rank rows 4-50 (bible 5.18): flag, avatar 36, name, NX tag on the right." },
+    { "zone": "Self row", "spec": "Pinned to the bottom of the list, self blue gradient, 'Climb 3 places to reach Top 10'." },
+    { "zone": "Reward bands", "spec": "Thin divider rows between bands: 'TOP 10 - 50 energy + rare pack' with item icons." }
+  ],
+
+  "components": ["5.5 Section label", "5.10 Folder tabs, Segmented control", "5.18 Rank row and podium"],
+
+  "copy": { "title": "RANKINGS", "tabs": ["WEEKLY", "ALL TIME"], "segments": ["GLOBAL", "COUNTRY", "FRIENDS"], "reset_format": "Resets in {D}d {H}h", "climb_format": "Climb {N} places to reach Top {T}" },
+
+  "states": ["Populated", "Not ranked yet (new player) - self row shows 'Play a match to enter the rankings'", "Loading - skeleton rows", "Honesty gate - see deviations"],
+
+  "motion": ["Rows stagger in, 30 ms per row.", "Podium crowns bounce in on load."],
+
+  "data": ["Real player rankings, server-owned, ships with online play (T-D4)."],
+
+  "assets_needed": [],
+
+  "deviations": [
+    "HONESTY GATE, not a design deviation but a build gate: this screen must NEVER show invented players as if they were real. It cannot go live with fabricated leaderboard entries - that breaks the project's core honesty rule and is a store-review risk (IMPLEMENTATION_PLAN.md section 9). Build the UI now; wire it to real data only after T-D4. Until then it should either stay unreachable or show an honest 'Rankings open once online play launches' state."
+  ],
+
+  "do_not": ["Do not populate this with fake players.", "Do not show the energy column - energy is fuel, not a score.", "Do not exceed the folder-tab and segment maximums."],
+
+  "acceptance": ["UI is fully built and captures well with placeholder/self-only data.", "No fabricated players appear under any circumstance.", "Self row always pins to the bottom.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight.", "2. Build the hub chassis, tabs, segmented control, podium, rows.", "3. Build the self-row pin logic and the not-ranked-yet state.", "4. Gate the screen so it never shows fabricated players (see deviations).", "5. Capture populated (self-only/placeholder), not-ranked and loading. Postflight."],
+
+  "prompt": "Build the Ludo NX Rankings hub.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md section 6.4 and 5.18, UI_BIBLE/IMPLEMENTATION_PLAN.md section 9, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nBuild: nameplate RANKINGS, folder tabs WEEKLY / ALL TIME, segmented GLOBAL / COUNTRY / FRIENDS, a reset countdown, a podium for the top 3 using the existing crown art, rank rows 4-50, and the player's own row pinned to the bottom in the self blue gradient.\n\nCRITICAL HONESTY GATE: this screen must never show invented players as if they were real - that breaks project law and risks a store rejection. Build the full UI now, but it only shows real data once online play ships (T-D4). Until then, gate it behind an honest message or keep it showing only the player's own row.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

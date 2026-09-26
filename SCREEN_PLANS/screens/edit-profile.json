@@ -1,0 +1,50 @@
+{
+  "id": "edit-profile",
+  "title": "Edit profile",
+  "type": "popup",
+  "status": "polish",
+  "priority": "P2",
+  "assignee": "any",
+  "one_line": "Change name and avatar. Validation and error states matter more than the layout here.",
+
+  "bible_sections": ["5.4", "5.25", "5.8", "4.3", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Modals/EditProfile.prefab",
+    "script": "Assets/Scripts/UI/Modals/EditProfileModal.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Edit Profile"
+  },
+
+  "depends_on": ["profile"],
+  "opens_from": ["profile (EDIT PROFILE)"],
+  "opens": ["avatar-picker"],
+
+  "anatomy": [
+    { "zone": "Card",   "spec": "Standard NX Card popup." },
+    { "zone": "Avatar", "spec": "Tap-to-change avatar preview, straddling the top edge, opens avatar-picker." },
+    { "zone": "Name field", "spec": "Input field (bible 5.25), 3-16 character validation live as the player types." },
+    { "zone": "Action", "spec": "SAVE, go green, collar. Disabled until the name is valid and something changed." }
+  ],
+
+  "components": ["5.4 NX Card", "5.8 Buttons", "5.25 Input field"],
+
+  "copy": { "title": "EDIT PROFILE", "save": "SAVE", "error_short": "Minimum 3 characters", "error_long": "Maximum 16 characters", "error_taken": "That name is taken" },
+
+  "states": ["Valid, unchanged - SAVE disabled", "Valid, changed - SAVE enabled", "Too short/long - inline error, danger hairline (bible 5.25)", "Name taken (server check) - inline error", "Saving - spinner in SAVE"],
+
+  "motion": ["Standard popup open/close."],
+
+  "data": ["Writes to the player profile - server-owned once T-A2 ships (createProfile)."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not enable SAVE with an invalid or unchanged name.", "Do not allow profanity/empty names through without validation."],
+
+  "acceptance": ["All five states in 'states' are reachable and captured.", "SAVE is disabled exactly when it should be.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight.", "2. Build the card with the input field and live validation.", "3. Wire the avatar preview to avatar-picker.", "4. Wire SAVE with disabled/enabled/saving/error states.", "5. Capture each state. Postflight."],
+
+  "prompt": "Polish the Ludo NX Edit Profile popup.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md section 5.25, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nStandard NX Card popup: avatar preview straddling the top edge (tap opens the avatar picker), a name input field with live 3-16 character validation, and SAVE in a collar, disabled until the name is both valid and changed. Add the name-taken server-check error and a saving spinner state - both are usually skipped and both will happen.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

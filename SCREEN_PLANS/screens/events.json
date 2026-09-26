@@ -1,0 +1,48 @@
+{
+  "id": "events",
+  "title": "Events + event detail",
+  "type": "hub",
+  "status": "polish",
+  "priority": "P3",
+  "assignee": "any",
+  "one_line": "Limited-time events list and one event's rules and rewards.",
+
+  "bible_sections": ["4.2", "4.3", "5.7", "5.12", "5.22", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Screens/Events.prefab, EventDetail.prefab",
+    "script": "Assets/Scripts/UI/Screens/EventsScreen.cs, EventDetailScreen.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Events, Event Detail"
+  },
+
+  "depends_on": ["shell-chrome"],
+  "opens_from": ["home or side-drawer, if surfaced"],
+  "opens": ["event-detail"],
+
+  "anatomy": [
+    { "zone": "List",   "spec": "Events hub: bg_menu_emboss, nameplate EVENTS, rows (bible 5.7) of active/upcoming events with a countdown each." },
+    { "zone": "Detail", "spec": "Standard NX Card popup: event banner, rules, reward ladder as wells, a CTA (PLAY or CLAIM depending on state)." }
+  ],
+
+  "components": ["5.4 NX Card", "5.7 Row", "5.12 Progress bar (event progress)", "5.22 Empty state"],
+
+  "copy": { "title": "EVENTS", "ends_format": "Ends in {D}d {H}h", "empty": "No events right now. Check back soon." },
+
+  "states": ["Active event(s)", "No events - empty state, never a blank panel", "Event ended, rewards claimable", "Event ended, rewards missed - honest, no guilt copy"],
+
+  "motion": ["Rows stagger in.", "Countdown updates live."],
+
+  "data": ["Event definitions and progress - server-driven so events can be added without a build (remote config)."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not show a blank panel with no events - use the empty state.", "Do not hard-code event content client-side if remote config is available - events should be addable without a build."],
+
+  "acceptance": ["Empty state renders correctly when there are no events.", "Countdown is accurate and live.", "Ground matches Home.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight.", "2. Swap the ground and add the nameplate/corners to both list and detail.", "3. Ensure the empty state exists and looks intentional, not broken.", "4. Wire live countdowns.", "5. Capture active, empty and ended states. Postflight."],
+
+  "prompt": "Polish the Ludo NX Events hub and Event Detail popup.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 5.7 and 5.22, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nSwap the ground to bg_menu_emboss, add a proper EVENTS nameplate and Lucky Six corners, and make sure an empty state (bible 5.22) shows when there are no active events - never a blank panel. Event Detail is a standard NX Card popup with a banner, the rules, a reward ladder in wells, and a context-appropriate action (PLAY while active, CLAIM once ended).\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

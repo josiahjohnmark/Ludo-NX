@@ -1,0 +1,51 @@
+{
+  "id": "album",
+  "title": "Album / collection",
+  "type": "hub",
+  "status": "rebuild",
+  "priority": "P3",
+  "assignee": "any",
+  "one_line": "Everything you own and everything you do not, as a grid with completion - the bottom nav's own destination, not a duplicate of the shop's owned filter.",
+
+  "bible_sections": ["4.2", "5.15", "5.17", "5.22", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "NEW or existing under Assets/Resources/UI/Screens/Album.prefab",
+    "script": "NEW - Assets/Scripts/UI/Screens/AlbumScreen.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Album"
+  },
+
+  "depends_on": ["shop"],
+  "opens_from": ["bottom nav"],
+  "opens": ["shop-item-detail"],
+
+  "anatomy": [
+    { "zone": "Ground",   "spec": "bg_menu_emboss." },
+    { "zone": "Nameplate","spec": "ALBUM." },
+    { "zone": "Tabs",     "spec": "Same categories as the shop: DICE / TOKENS / EMOJIS." },
+    { "zone": "Completion","spec": "A progress bar per category: '6 / 14 owned'." },
+    { "zone": "Grid",     "spec": "Same card chassis as the shop (bible 5.17), owned full-colour, unowned silhouetted/locked, tapping either opens shop-item-detail." }
+  ],
+
+  "components": ["5.5 Section label", "5.10 Folder tabs", "5.12 Progress bar", "5.17 Shop product card", "5.22 Empty state"],
+
+  "copy": { "title": "ALBUM", "completion_format": "{OWNED} / {TOTAL} owned" },
+
+  "states": ["Populated", "Nothing owned yet in a category - empty state, not a wall of locked cards with no explanation"],
+
+  "motion": ["Completion bar animates in on tab open."],
+
+  "data": ["Ownership from the same source as the shop - never a second list that can drift out of sync."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not duplicate the shop's card data separately - one source of truth for ownership.", "Do not let this become a second shop with buy buttons - it is a collection view, tapping opens detail which can then offer to buy."],
+
+  "acceptance": ["Completion numbers match what the shop shows as owned.", "Ground matches Home.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight.", "2. Rebuild/build on the hub chassis with bg_menu_emboss.", "3. Reuse the shop's card component for consistency.", "4. Wire completion bars per category to the shared ownership source.", "5. Capture populated and empty-category. Postflight."],
+
+  "prompt": "Rebuild the Ludo NX Album / collection hub.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 5.17 and 5.12, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nSwap the ground to bg_menu_emboss and build it on the same card chassis as the Shop (screens/shop.json) so owned and unowned items look consistent between the two screens. Add a folder tab per category (DICE / TOKENS / EMOJIS) with a completion progress bar ('6 / 14 owned'), and reuse the shop's ownership data as the single source of truth - never a second list that can drift.\n\nTapping any card, owned or not, opens the item detail popup rather than turning this into a second shop with its own buy buttons.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

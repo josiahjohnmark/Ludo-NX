@@ -1,0 +1,59 @@
+{
+  "id": "match-found",
+  "title": "Match found",
+  "type": "takeover",
+  "status": "polish",
+  "priority": "P1",
+  "assignee": "any",
+  "one_line": "Diagonal house-colour split, both avatars, VS, countdown from 3. Honesty-critical screen.",
+
+  "bible_sections": ["6.9", "4.4", "5.14", "2.9", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Screens/MatchFound.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXMatchFoundBuilder.cs",
+    "script": "Assets/Scripts/UI/Screens/MatchFoundScreen.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Match Found (searching)"
+  },
+
+  "depends_on": [],
+  "opens_from": ["prematch-cards (PLAY)"],
+  "opens": ["match-intro-doors"],
+
+  "gaps": ["Mostly built; confirm the searching state never implies a real opponent is being sought when it is actually filling with a bot, and that the countdown timing matches tokens.json exactly."],
+
+  "anatomy": [
+    { "zone": "Searching", "spec": "Animated dots, 'Finding an opponent...'. After roughly 15 s (decision D9), fall back to a labelled BOT and proceed - never keep searching forever, and never fake a 'player found' when it is a bot." },
+    { "zone": "Found",     "spec": "Full-bleed diagonal split, each half in a player's house colour. Avatar with a house ring on each half, name above each, 'VS' centred where the diagonal crosses." },
+    { "zone": "Countdown", "spec": "Cream pill, centred, counting 3-2-1, each number scaling in with a punch." },
+    { "zone": "Bot label", "spec": "If the opponent is a bot, the name reads clearly as a bot name with a BOT tag next to the avatar - never a human-sounding fake name presented as a real player." }
+  ],
+
+  "components": ["5.14 Avatar", "5.15 Badges (BOT tag)"],
+
+  "copy": { "searching": "Finding an opponent...", "vs": "VS", "bot_tag": "BOT" },
+
+  "states": ["Searching", "Found (real match, once online play ships)", "Found (bot fallback after ~15s)", "Cancelled - player backs out before the countdown ends, returns to home cleanly"],
+
+  "motion": ["Countdown: each number scales in with a punch, 1 s apart.", "Diagonal wipe reveal on 'found': 300 ms."],
+
+  "data": ["Matchmaking result: local/bot today, server-owned at T-D2/T-D3."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not claim a real player was found while online play is unbuilt.", "Do not search forever with no fallback.", "Do not give a bot a name or avatar that could pass as a real player without the BOT tag."],
+
+  "acceptance": ["Bot fallback fires at ~15s and is clearly labelled.", "Countdown reads 3-2-1 and proceeds to the doors.", "Cancelling mid-search returns cleanly to Home.", "Bible section 11 in full."],
+
+  "steps": [
+    "1. Preflight per SHARED_RULES.md section 2.",
+    "2. Confirm the 15s bot-fallback timer and the BOT tag rendering.",
+    "3. Verify the diagonal split and countdown against tokens.json timings.",
+    "4. Add a clean cancel path.",
+    "5. Capture searching, bot-found and cancel. Postflight."
+  ],
+
+  "prompt": "Polish the Ludo NX Match Found screen.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md section 6.9, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nThis screen is mostly built. Confirm and fix: after about 15 seconds of searching (decision D9), it falls back to a clearly labelled BOT opponent rather than searching forever - and it must never imply a real player was found when it is a bot. Verify the diagonal house-colour split, the VS, and the 3-2-1 countdown match the timings in tokens.json, and add a clean cancel path back to Home.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

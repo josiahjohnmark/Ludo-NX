@@ -1,0 +1,52 @@
+{
+  "id": "missions",
+  "title": "Missions / Daily missions",
+  "type": "popup",
+  "status": "rebuild",
+  "priority": "P2",
+  "assignee": "any",
+  "one_line": "Mission rows with progress and CLAIM, a bonus chest well, CLAIM ALL on the bottom edge.",
+
+  "bible_sections": ["6.7", "5.7", "5.8", "5.12", "4.3", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Screens/DailyMissions.prefab, Modals/MissionsModal.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXMissionsBuilder.cs",
+    "script": "Assets/Scripts/UI/Screens/DailyMissionsScreen.cs, Modals/MissionsModal.cs",
+    "also": ["Assets/Scripts/UI/Missions/DailyMissionsData.cs", "Assets/Scripts/UI/Missions/MissionRowView.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Daily Missions"
+  },
+
+  "depends_on": [],
+  "opens_from": ["home (NX MISSIONS badge)"],
+  "opens": [],
+
+  "anatomy": [
+    { "zone": "Card",       "spec": "Standard NX Card, nameplate NX MISSIONS." },
+    { "zone": "Bonus chest","spec": "A well holding the bonus chest, unlocking as missions complete." },
+    { "zone": "Rows",       "spec": "Mission row (bible 5.7): icon well, title, progress bar (bible 5.12), reward, CLAIM button." },
+    { "zone": "Action",     "spec": "CLAIM ALL, go green, straddling the bottom edge in a collar - enabled only when at least one mission is claimable." }
+  ],
+
+  "components": ["5.3 Nameplate", "5.4 NX Card", "5.6 Well", "5.7 Row (mission variant)", "5.8 Buttons", "5.12 Progress bar"],
+
+  "copy": { "title": "NX MISSIONS", "claim": "CLAIM", "claim_all": "CLAIM ALL", "reset_line": "Resets in {H}h {M}m" },
+
+  "states": ["In progress", "Claimable (one or more done)", "All claimed - CLAIM ALL disabled, empty-ish state until reset", "Bonus chest locked vs unlocked"],
+
+  "motion": ["Claim: reward count-up, tokens.json motion.countUp.", "Row progress fill animates smoothly on open, not instantly."],
+
+  "data": ["DailyMissionsData. Owner brief on exact mission set is still pending per IMPLEMENTATION_PLAN.md section 11 - build the chassis and progress/claim mechanics now, swap the content when the brief arrives."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not let CLAIM ALL be tappable with nothing to claim.", "Do not hard-code the mission list if the owner's brief is still pending - keep it data-driven."],
+
+  "acceptance": ["Every mission shows correct live progress.", "CLAIM and CLAIM ALL work and count up rewards.", "Bonus chest state reflects real completion.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight - check AI_HANDOFF.md for the owner's missions brief; if absent, build to bible 5.7/6.7 with placeholder mission content clearly swappable.", "2. Rebuild the chassis with nameplate and bonus chest well.", "3. Build mission rows with live progress bars.", "4. Wire CLAIM per row and CLAIM ALL.", "5. Capture in-progress, claimable and all-claimed. Postflight."],
+
+  "prompt": "Rebuild the Ludo NX Missions popup.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 6.7 and 5.7, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nCheck AI_HANDOFF.md for the owner's missions brief first - IMPLEMENTATION_PLAN.md notes it was still pending as of the bible's writing. If it has not arrived, build the full chassis and mechanics with clearly placeholder mission content so the content can be swapped without touching layout code.\n\nBuild: nameplate NX MISSIONS, a bonus-chest well that unlocks as missions complete, mission rows with an icon well, title, progress bar and CLAIM button, and CLAIM ALL in a collar on the bottom edge, enabled only when something is claimable.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

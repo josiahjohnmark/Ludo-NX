@@ -1,0 +1,103 @@
+{
+  "id": "pause",
+  "title": "Pause",
+  "type": "popup",
+  "status": "polish",
+  "priority": "P0",
+  "assignee": "any",
+  "one_line": "Resume, sound, rules, leave. The only way out of a match, and the place a player calms down before rage-quitting.",
+
+  "bible_sections": ["4.3", "5.3", "5.4", "5.6", "5.8", "5.9", "5.11", "5.21", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Modals/Pause.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXMatchModalsBuilder.cs",
+    "script": "Assets/Scripts/UI/Modals/ConfirmModal.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Pause"
+  },
+
+  "depends_on": ["match-hud"],
+  "opens_from": ["match-hud (top-left button)"],
+  "opens": ["rules-how-to-play", "confirm-dialog (leave match)", "settings"],
+
+  "gaps": [
+    "Exists, but it is not on the NX Card chassis with Lucky Six corners.",
+    "No nameplate. No collar on the main action.",
+    "Leaving has no confirm step - one mis-tap forfeits the match and the stake."
+  ],
+
+  "anatomy": [
+    { "zone": "Scrim",     "spec": "ground.scrim at 72 percent. The board stays visible behind it - a paused player should see the position they are coming back to." },
+    { "zone": "Card",      "spec": "Standard NX Card, 380 wide, cream rim 10, Lucky Six corners." },
+    { "zone": "Nameplate", "spec": "PAUSED, straddling the top edge." },
+    { "zone": "Stake line","spec": "Body 14 under the nameplate: what is at stake if they leave. 'Leaving forfeits +120 NX.' Omit the line entirely in Pass and Play." },
+    { "zone": "Toggles",   "spec": "One cream well (bible 5.6) holding three setting rows with toggles: SOUND, MUSIC, VIBRATION. Bible 5.11 toggles - 56 x 30, go green with a tick when on." },
+    { "zone": "Options",   "spec": "Two option amber buttons, size M, full content width, 8 pt apart: HOW TO PLAY, SETTINGS." },
+    { "zone": "Leave",     "spec": "LEAVE MATCH, neutral kind, button M. NOT danger - danger is only allowed inside the confirm dialog (bible 2.2). It opens confirm-dialog." },
+    { "zone": "Action",    "spec": "RESUME, go green, button L, straddling the bottom edge in a 6 pt cream collar. The main action is coming back, not leaving." },
+    { "zone": "Close",     "spec": "44 cream disc, X, 24 pt below. Same as RESUME." }
+  ],
+
+  "components": ["5.3 Nameplate", "5.4 NX Card", "5.6 Well", "5.7 Row (setting variant)", "5.8 Buttons (go L collar, option M, neutral M)", "5.9 Close X", "5.11 Toggle", "5.21 Confirm dialog (for leaving)"],
+
+  "copy": {
+    "title": "PAUSED",
+    "stake_line": "Leaving forfeits {N} NX.",
+    "sound": "Sound",
+    "music": "Music",
+    "vibration": "Vibration",
+    "rules": "HOW TO PLAY",
+    "settings": "SETTINGS",
+    "leave": "LEAVE MATCH",
+    "resume": "RESUME",
+    "confirm_title": "LEAVE MATCH?",
+    "confirm_body": "You forfeit the match and {N} NX. Your opponents keep playing.",
+    "confirm_stay": "STAY",
+    "confirm_leave": "LEAVE"
+  },
+
+  "states": [
+    "Paused in a solo or bot match - the game clock stops completely.",
+    "Paused in an online match - the game does NOT stop. Say so plainly: replace the stake line with 'The match keeps going. Your turn will pass.' Never let a player believe they paused other people.",
+    "Pass and Play - no stake line, LEAVE MATCH says END MATCH, and the confirm says nothing about NX."
+  ],
+
+  "motion": ["Open and close: tokens.json motion.popupOpen / popupClose.", "The board behind does not animate while paused in a solo match."],
+
+  "data": ["Stake and multiplier: MultiplierService.", "Toggles: SettingsService - the same values Settings writes, not a second copy."],
+
+  "assets_needed": [],
+
+  "deviations": [],
+
+  "do_not": [
+    "Do not make LEAVE MATCH red or danger-coloured on this card. Danger lives inside the confirm dialog only (bible 2.2).",
+    "Do not let leaving happen in one tap. It forfeits a match and a stake.",
+    "Do not claim an online match is paused when it is not.",
+    "Do not duplicate the settings toggles' state - read and write SettingsService.",
+    "Do not hide the board behind an opaque card."
+  ],
+
+  "acceptance": [
+    "Opens from the match top-left button, on the NX Card chassis with Lucky Six corners and a PAUSED nameplate.",
+    "RESUME is the main action, in a collar on the bottom edge.",
+    "LEAVE MATCH always goes through a confirm dialog naming exactly what is lost.",
+    "In an online match the card says the match keeps going.",
+    "The three toggles write to SettingsService and survive a match restart.",
+    "Bible section 11 in full."
+  ],
+
+  "steps": [
+    "1. Preflight per SHARED_RULES.md section 2.",
+    "2. Rebuild the prefab on the standard NX Card chassis with the nameplate and Lucky Six corners.",
+    "3. Add the toggles well, reading and writing SettingsService.",
+    "4. Add HOW TO PLAY and SETTINGS as option buttons; wire HOW TO PLAY to rules-how-to-play.",
+    "5. Add LEAVE MATCH as neutral, opening confirm-dialog with the stake named in the body.",
+    "6. Add RESUME in a collar on the bottom edge and the close X below.",
+    "7. Handle the three states: solo, online, pass and play.",
+    "8. Capture all three states. Postflight."
+  ],
+
+  "prompt": "Rebuild the Pause popup for Ludo NX.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 4.3, 5.21 and 2.2, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nIt exists but it is not on the NX Card chassis, it has no nameplate, and leaving a match takes one tap - which forfeits the match and the stake.\n\nBuild it as a standard NX Card with a PAUSED nameplate, a line saying what leaving costs, a cream well holding SOUND / MUSIC / VIBRATION toggles, option buttons for HOW TO PLAY and SETTINGS, LEAVE MATCH in neutral, and RESUME as the main action in a collar on the bottom edge. RESUME is the main action - coming back, not leaving.\n\nTwo rules that are easy to get wrong: LEAVE MATCH is neutral tan on this card, not red - danger colour is only allowed inside the confirm dialog (bible 2.2). And in an online match, DO NOT say the game is paused, because it is not: say 'The match keeps going. Your turn will pass.' Never let a player believe they paused other people.\n\nThe toggles must read and write SettingsService, not keep their own copy.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

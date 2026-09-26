@@ -1,0 +1,49 @@
+{
+  "id": "player-stats",
+  "title": "Player stats",
+  "type": "popup",
+  "status": "polish",
+  "priority": "P2",
+  "assignee": "any",
+  "one_line": "The full career numbers, reachable behind the profile's STATS tab or as its own drill-down.",
+
+  "bible_sections": ["5.6", "4.3", "2.3", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Screens/PlayerStats.prefab",
+    "script": "Assets/Scripts/UI/Screens/PlayerStatsScreen.cs",
+    "also": ["Assets/Scripts/UI/Screens/PlayerProfileScreen.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Player Stats"
+  },
+
+  "depends_on": ["profile"],
+  "opens_from": ["profile (STATS tab, if it needs a drill-down beyond the 3x3)"],
+  "opens": [],
+
+  "anatomy": [
+    { "zone": "Card", "spec": "Standard NX Card." },
+    { "zone": "Grouped stats", "spec": "Wells grouped by category (Matches, Combat, Progression) rather than one flat grid - this is where the full detail lives that Profile's 3x3 summary does not have room for." }
+  ],
+
+  "components": ["5.4 NX Card", "5.5 Section label", "5.6 Well"],
+
+  "copy": { "title": "STATISTICS", "groups": ["MATCHES", "COMBAT", "PROGRESSION"] },
+
+  "states": ["Populated", "Loading - skeleton wells"],
+
+  "motion": ["Numbers count up on open."],
+
+  "data": ["StatsService, same source as Profile's summary - this is the detail view, not a second data source."],
+
+  "assets_needed": [],
+  "deviations": [],
+
+  "do_not": ["Do not duplicate the 3x3 summary - this is the expanded detail view, reached only if the owner wants a drill-down beyond Profile's nine stats."],
+
+  "acceptance": ["Every number matches the summary on Profile.", "Grouped, labelled, all text 12 pt or larger.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight - confirm with the owner whether this drill-down is still wanted now that Profile's STATS tab exists, or whether it should be folded into Profile entirely.", "2. Rebuild with grouped section labels and wells.", "3. Wire to StatsService.", "4. Capture populated and loading. Postflight."],
+
+  "prompt": "Polish the Ludo NX Player Stats screen.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 5.5 and 5.6, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nFirst confirm with the owner whether this stays a separate drill-down now that Profile has its own STATS tab (screens/profile.json), or whether it should be retired in favour of that tab alone. If it stays: group the stats into labelled sections (Matches, Combat, Progression) in wells, sourced from the same StatsService as Profile's summary - never a second data source that can disagree with it.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

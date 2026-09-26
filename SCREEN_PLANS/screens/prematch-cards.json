@@ -1,0 +1,133 @@
+{
+  "id": "prematch-cards",
+  "title": "Pre-match cards (3 modes)",
+  "type": "popup",
+  "status": "rebuild",
+  "priority": "P1",
+  "assignee": "any",
+  "one_line": "QUICK MATCH, VS COMPUTER and PASS & PLAY on one hero-popup chassis: what you are playing with, what it costs, what you win.",
+
+  "bible_sections": ["6.8", "4.3", "5.3", "5.4", "5.6", "5.8", "5.19", "3", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+  "also_read": "UI_BIBLE/IMPLEMENTATION_PLAN.md section 8.1 - the per-card content table is there.",
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Modals/MatchSetup.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXMatchModalsBuilder.cs",
+    "script": "Assets/Scripts/UI/Modals/MatchSetupModal.cs",
+    "also": ["Assets/Scripts/UI/Match/SeatRow.cs", "Assets/Scripts/UI/Match/MultiplierTile.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Match Setup - Quick Match | Vs Computer | Pass and Play"
+  },
+
+  "depends_on": ["home"],
+  "opens_from": ["home (PLAY)", "result (PLAY AGAIN)"],
+  "opens": ["match-found", "match-intro-doors", "shop (from a YOUR SET well)", "currency-popups (energy)"],
+
+  "gaps": [
+    "The Quick Match card is titled ONLINE. Project law: rename to QUICK MATCH.",
+    "VS COMPUTER captions ('TAP TO EDIT', 'Costs 1 energy') are about 7 pt. Minimum is 12.",
+    "Corners use the old isometric dice stamps. The match flow gets house-colour Lucky Six corners (bible 3).",
+    "No section labels between the groups, so the card reads as one undifferentiated block."
+  ],
+
+  "shared_chassis": {
+    "card": "Hero NX Card, 380 wide, cream rim 10, Lucky Six corners in the HOUSE COLOURS board-ordered (bible 3).",
+    "top": "The person's avatar (Quick Match) or the mascot (Vs Computer, Pass and Play) straddling the TOP EDGE, with the nameplate just inside (bible 4.3).",
+    "sections": "Section labels (bible 5.5) between every group - Lilita 14 CAPS ink.muted with a hairline each side.",
+    "action": "PLAY - play red slab, XL, straddling the bottom edge in a 6 pt cream collar, with the multiplier coin on its top-right (bible 5.19).",
+    "close": "44 cream disc X, 24 pt below the card. No back button - this is a popup (bible 5.9).",
+    "scroll": "Max height = screen - top inset - 120. The CONTENT scrolls, not the card."
+  },
+
+  "variants": [
+    {
+      "id": "quick-match",
+      "title": "QUICK MATCH",
+      "top": "The player's avatar straddling the top edge.",
+      "content": ["YOUR SET - two wells (dice, token), each opening the matching shop tab", "EMOJIS - 4 x 2 wells, tap to edit the loadout", "STAKE - multiplier chips (bible 5.19): unselected neutral, selected option, locked disabled with the unlock hint under it", "WIN / LOSE line - 'Win +120 NX / Lose -60 NX' in ink.win and ink.lose"],
+      "footer": "'1 energy - you have 18'",
+      "forbidden": "The word ONLINE. No claim that a real player will be found."
+    },
+    {
+      "id": "vs-computer",
+      "title": "VS COMPUTER",
+      "top": "Mascot straddling the top edge.",
+      "content": ["PLAYERS - segmented control 2 / 3 / 4 (bible 5.10)", "YOUR HOUSE - four house discs, the chosen one ringed", "OPPONENTS - one seat row per bot: name, and a difficulty chip Easy / Normal / Hard", "Every bot seat is labelled BOT"],
+      "footer": "'1 energy - you have 18'"
+    },
+    {
+      "id": "pass-play",
+      "title": "PASS & PLAY",
+      "top": "Mascot straddling the top edge.",
+      "content": ["PLAYERS - segmented control 2 / 3 / 4", "Seat rows - house disc plus an editable name field (bible 5.25)"],
+      "footer": "'Free - no energy'",
+      "omit": "No stake chips, no multiplier coin, no energy line, no NX."
+    }
+  ],
+
+  "components": ["5.3 Nameplate", "5.4 NX Card (hero)", "5.5 Section label", "5.6 Well", "5.8 Buttons (play XL collar)", "5.9 Close X", "5.10 Segmented control", "5.14 Avatar", "5.19 Multiplier chips and coin", "5.25 Input field"],
+
+  "copy": {
+    "quick": "QUICK MATCH",
+    "vs_cpu": "VS COMPUTER",
+    "pass": "PASS & PLAY",
+    "your_set": "YOUR SET",
+    "emojis": "EMOJIS",
+    "stake": "STAKE",
+    "players": "PLAYERS",
+    "your_house": "YOUR HOUSE",
+    "opponents": "OPPONENTS",
+    "play": "PLAY",
+    "win_lose": "Win +{W} NX / Lose -{L} NX",
+    "energy_line": "1 energy - you have {N}",
+    "free_line": "Free - no energy"
+  },
+
+  "states": [
+    "Default per variant.",
+    "Out of energy - PLAY goes disabled and the energy line becomes a tappable link to the energy popup.",
+    "Locked multiplier - disabled chip with the unlock rule under it ('Reach 800 max energy'). Never just faded.",
+    "Nothing equipped - YOUR SET wells show the default set, not empty holes.",
+    "Pass and Play with a blank name - the seat falls back to 'Player 2', it never blocks PLAY."
+  ],
+
+  "motion": ["Open and close: tokens.json motion.popupOpen / popupClose.", "Chip select: 80/140 ms press.", "PLAY breathes - the only idle on the card."],
+
+  "data": ["Equipped dice and token, emote loadout: local today, server-owned once the shop is real.", "Multiplier tiers and locks: MultiplierService.", "Energy: EnergyService."],
+
+  "assets_needed": [],
+
+  "deviations": [],
+
+  "do_not": [
+    "Do not use the word ONLINE.",
+    "Do not let any caption fall below 12 pt.",
+    "Do not use the isometric dice corner stamps - house-colour Lucky Six corners only.",
+    "Do not show a stake, a multiplier or an energy cost on Pass and Play.",
+    "Do not give the popup a back button, and do not let the card itself scroll.",
+    "Do not build three separate prefabs. One chassis, three variants, one builder."
+  ],
+
+  "acceptance": [
+    "All three variants come off one chassis with house-colour Lucky Six corners.",
+    "Every caption is 12 pt or larger - check the VS COMPUTER card specifically.",
+    "No screen element says ONLINE; every bot seat says BOT.",
+    "Pass and Play shows no stake, no multiplier and no energy.",
+    "Out of energy disables PLAY and the energy line opens the energy popup.",
+    "A locked multiplier chip is in the disabled kind with its unlock rule visible.",
+    "Bible section 11 in full, per variant."
+  ],
+
+  "steps": [
+    "1. Preflight per SHARED_RULES.md section 2.",
+    "2. Build the shared hero chassis: card, house-colour corners, top-edge avatar/mascot, nameplate, collar PLAY, close X.",
+    "3. Rename ONLINE to QUICK MATCH across the modal, the carousel and any analytics label.",
+    "4. Build the three variants' content as sections with section labels between them.",
+    "5. Fix every caption to at least 12 pt.",
+    "6. Wire YOUR SET wells to the shop tabs, the emoji grid to the loadout editor, the chips to MultiplierService.",
+    "7. Handle out-of-energy, locked chips, nothing-equipped and blank-name states.",
+    "8. Capture all three variants plus out-of-energy. Postflight."
+  ],
+
+  "prompt": "Rebuild the three Ludo NX pre-match cards on one hero-popup chassis.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 6.8, 4.3 and 3, UI_BIBLE/IMPLEMENTATION_PLAN.md section 8.1, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nThe bones are already right - avatar on the top edge, loadout, emoji grid, big PLAY with the multiplier coin. Four things change:\n\n1. The Quick Match card is titled ONLINE. Rename it QUICK MATCH everywhere. Project law: never label a mode online and never claim a real player was found, until online play actually ships.\n2. The VS COMPUTER captions are about 7 pt. Nothing a player must read goes below 12 pt.\n3. The corners use the old isometric dice stamps. The match flow gets Lucky Six notched corners in the HOUSE COLOURS, board-ordered: top-left red, top-right green, bottom-left blue, bottom-right yellow.\n4. Add section labels between the groups so the card reads as YOUR SET / EMOJIS / STAKE rather than one block.\n\nBuild ONE chassis with three variants (see the 'variants' array), not three prefabs. Pass & Play shows no stake, no multiplier and no energy - it is free and it must look free. Every bot seat on VS COMPUTER carries a BOT tag.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list, with a capture of each variant."
+}

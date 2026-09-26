@@ -1,0 +1,54 @@
+{
+  "id": "level-up",
+  "title": "Level up",
+  "type": "takeover",
+  "status": "missing",
+  "priority": "P3",
+  "assignee": "any",
+  "one_line": "Rays, the new level as a hero number, what it unlocked, CONTINUE.",
+
+  "bible_sections": ["6.13", "4.4", "2.8", "2.9", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "NEW - Assets/Resources/UI/Screens/LevelUp.prefab",
+    "script": "NEW - Assets/Scripts/UI/Screens/LevelUpScreen.cs",
+    "test_menu": "Ludo NX/UI/Screen Test/Level Up"
+  },
+
+  "depends_on": [],
+  "opens_from": ["result (if the match crossed a level threshold)"],
+  "opens": [],
+
+  "anatomy": [
+    { "zone": "Ground", "spec": "Dimmed, gold rays turning (same fx_rays as Result)." },
+    { "zone": "Header", "spec": "LEVEL UP! logotype." },
+    { "zone": "Number", "spec": "The new level as a hero number, 44 pt, white with the ink outline." },
+    { "zone": "Unlocks", "spec": "Item icons listed for what the new level unlocked (avatar frame tier, multiplier cap increase, etc.)." },
+    { "zone": "Action",  "spec": "CONTINUE, go green, XL." }
+  ],
+
+  "components": ["5.8 Buttons", "5.15 Badges"],
+
+  "copy": { "title": "LEVEL UP!", "continue": "CONTINUE", "unlocked_format": "Unlocked: {LIST}" },
+
+  "states": ["Single level-up", "Multi-level jump (rare, e.g. a big NX gain crosses two thresholds) - show the final level reached, list all unlocks combined, do not stack two takeovers"],
+
+  "motion": ["Rays turning, tokens.json motion.victory raysDegPerSec.", "Number counts up from the old level to the new one.", "Unlocks stagger in."],
+
+  "data": ["Level thresholds and unlocks: a level table, currently implicit - formalize as data so this screen and Profile agree."],
+
+  "assets_needed": [
+    { "name": "logo_levelup", "path": "Assets/Art/UI/Logos/logo_levelup@3x.png", "size": "2048 x 1024", "who": "owner", "prompt": "IMPLEMENTATION_PLAN.md section 6, P1-3: LEVEL UP! logotype, same style as VICTORY!." }
+  ],
+
+  "deviations": [],
+
+  "do_not": ["Do not stack two level-up takeovers for a multi-level jump - show one, combined.", "Do not show this at the same moment as the Result celebration - it queues after Result closes."],
+
+  "acceptance": ["Shows exactly once per threshold crossed, queued after Result.", "Multi-level jumps combine into one screen.", "Bible section 11 in full."],
+
+  "steps": ["1. Preflight - formalize the level/unlock table if it does not exist as data yet.", "2. Build the takeover with rays, hero number, unlocks list, CONTINUE.", "3. Wire the queue so it shows after Result closes, never simultaneously.", "4. Handle the multi-level-jump case.", "5. Capture single and multi-level. Postflight."],
+
+  "prompt": "Build the Ludo NX Level Up takeover.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md section 6.13, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nThis does not exist yet. Build: turning gold rays behind everything, the LEVEL UP! logotype, the new level as a 44pt hero number counting up from the old level, a list of what it unlocked as item icons, and CONTINUE.\n\nIt must queue AFTER the Result screen's celebration closes, never play at the same time as it. If one match's reward crosses two level thresholds at once, show a single combined screen with the final level and every unlock listed - never stack two level-up takeovers back to back.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}

@@ -1,0 +1,109 @@
+{
+  "id": "profile",
+  "title": "Profile",
+  "type": "popup",
+  "status": "rebuild",
+  "priority": "P1",
+  "assignee": "any",
+  "one_line": "Tall popup: avatar straddling the top edge, player ID with copy, STATS and BADGES tabs.",
+
+  "bible_sections": ["6.5", "4.3", "5.3", "5.4", "5.6", "5.8", "5.9", "5.10", "5.14", "5.15", "2.3", "11"],
+  "specs": ["SCREEN_PLANS/specs/SHARED_RULES.md"],
+
+  "files": {
+    "prefab": "Assets/Resources/UI/Screens/Profile.prefab",
+    "builder": "Assets/Scripts/Editor/LudoNXProfileBuilder.cs",
+    "script": "Assets/Scripts/UI/Screens/ProfileScreen.cs",
+    "also": ["Assets/Scripts/UI/Components/ProfileAvatarSlot.cs", "Assets/Scripts/UI/Services/StatsService.cs"],
+    "test_menu": "Ludo NX/UI/Screen Test/Profile"
+  },
+
+  "depends_on": ["shell-chrome"],
+  "opens_from": ["top bar avatar", "side-drawer", "mini-profile"],
+  "opens": ["edit-profile", "player-stats", "settings"],
+
+  "gaps": [
+    "Ground is periwinkle #6C7A9C. Menus sit on bg_menu_emboss - but see the deviation: this becomes a popup over the hub, so it gets a scrim, not a ground.",
+    "Stat labels are about 5-7 pt. Minimum is 12.",
+    "It is a full screen with no title treatment at all. Decision D4: it becomes a tall popup."
+  ],
+
+  "anatomy": [
+    { "zone": "Scrim",     "spec": "ground.scrim at 72 percent over the hub, which stays visible and dimmed (bible 4.3)." },
+    { "zone": "Card",      "spec": "Tall standard NX Card, 380 wide, cream rim 10, Lucky Six corners. Max height = screen - top inset - 120; content scrolls, card does not." },
+    { "zone": "Avatar",    "spec": "84 pt, straddling the TOP EDGE of the card, ringed by the frame tier, with the level badge at the bottom (bible 4.3, 5.14). The nameplate sits just inside, under it." },
+    { "zone": "Nameplate", "spec": "The player's name, CAPS, Lilita 22, ink.plaque." },
+    { "zone": "Identity",  "spec": "Player ID with a copy glyph to its right (tapping copies and toasts 'Copied'), and the joined date as a caption. The ID must be selectable and copyable - it is how friends add each other and how support identifies an account." },
+    { "zone": "Share",     "spec": "SHARE, info blue, button M." },
+    { "zone": "Tabs",      "spec": "Folder tabs on the top edge under the nameplate: STATS / BADGES." },
+    { "zone": "Stats tab", "spec": "3 x 3 grid of wells (bible 5.6). Each: a big number in Lilita, a caption under it. NINE STATS MAXIMUM - the current screen squeezes in far more and none of them read." },
+    { "zone": "Badges tab","spec": "Grid of wells holding badge art. Locked ones are faded with a lock glyph on a disabled disc, and tapping one says how to earn it." },
+    { "zone": "Action",    "spec": "EDIT PROFILE, option amber, button L, straddling the bottom edge in a 6 pt cream collar." },
+    { "zone": "Close",     "spec": "44 cream disc X, 24 pt below. No back button - it is a popup." }
+  ],
+
+  "components": ["5.3 Nameplate", "5.4 NX Card (tall)", "5.6 Well", "5.8 Buttons (option L collar, info M)", "5.9 Close X", "5.10 Folder tabs", "5.14 Avatar", "5.15 Badges", "5.22 Empty state"],
+
+  "copy": {
+    "share": "SHARE",
+    "edit": "EDIT PROFILE",
+    "tab_stats": "STATS",
+    "tab_badges": "BADGES",
+    "copied": "Player ID copied",
+    "joined": "Joined {MONTH} {YEAR}",
+    "stats": ["MATCHES", "WINS", "WIN RATE", "NX POINTS", "BEST STREAK", "TOKENS HOME", "CAPTURES", "SIXES ROLLED", "LEVEL"],
+    "badges_empty": "Play matches to earn your first badge."
+  },
+
+  "states": [
+    "Own profile - EDIT PROFILE and SHARE present.",
+    "Another player's profile - no EDIT; ADD FRIEND (info) replaces it, or REMOVE FRIEND (neutral, going through a confirm) if already friends.",
+    "No badges yet - empty state (bible 5.22): faded emblem at 40 percent, a title, one line telling the player what to do.",
+    "Loading - skeleton the wells (bible 5.23).",
+    "Guest account - a line offering Link Google, since a guest loses everything on reinstall. This is worth saying plainly."
+  ],
+
+  "motion": ["Open and close: tokens.json motion.popupOpen / popupClose.", "Stat numbers count up over 600 ms when the tab opens.", "Tab change cross-fades 120 ms."],
+
+  "data": ["StatsService for the numbers, AvatarService for the avatar and frame tier, AchievementService for badges.", "Player ID comes from the Firebase uid at T-A2. Until then, the local demo ID - but never present a demo ID as permanent."],
+
+  "assets_needed": [
+    { "name": "Badge art", "path": "Assets/Art/UI/Medals/", "size": "256 each", "who": "exists", "prompt": "Medals already exist in Assets/Art/UI/Medals. Re-export at 3x and add locked variants as a disabled disc plus a lock glyph." }
+  ],
+
+  "deviations": [
+    "Bible 6.5 and decision D4: Profile moves from a full screen to a tall popup, so it gets a scrim over the hub rather than its own ground. D4 recommended yes; confirm with the owner before building if it is still unanswered."
+  ],
+
+  "do_not": [
+    "Do not show more than nine stats. Squeezing thirty tiny numbers onto one screen is the current problem.",
+    "Do not let any stat label fall below 12 pt.",
+    "Do not give the popup a back button or its own background colour.",
+    "Do not make the player ID unselectable - it must be copyable.",
+    "Do not show badge slots with no explanation of how to earn them."
+  ],
+
+  "acceptance": [
+    "Nine stats maximum, every label 12 pt or larger, every number readable at arm's length.",
+    "Avatar straddles the top edge with the frame-tier ring and the level badge.",
+    "Player ID copies to the clipboard and toasts.",
+    "Both tabs work; the badges tab has an empty state.",
+    "Viewing another player shows ADD FRIEND instead of EDIT PROFILE.",
+    "The card never scrolls; its content does.",
+    "Bible section 11 in full."
+  ],
+
+  "steps": [
+    "1. Preflight. Confirm decision D4 with the owner if it is still open - popup or full screen changes the whole build.",
+    "2. Rebuild as a tall NX Card popup with a scrim, the avatar straddling the top edge and the nameplate inside.",
+    "3. Add the identity block: player ID with copy, joined date, SHARE.",
+    "4. Build the two folder tabs.",
+    "5. Cut the stats to nine, in a 3 x 3 of wells, every label at 12 pt or more.",
+    "6. Build the badges grid with locked variants and an empty state.",
+    "7. Add the other-player variant with ADD FRIEND / REMOVE FRIEND.",
+    "8. Add the guest-account line offering Link Google.",
+    "9. Capture own, other, empty-badges and loading. Postflight."
+  ],
+
+  "prompt": "Rebuild the Ludo NX Profile as a tall popup.\n\nRead SCREEN_PLANS/specs/SHARED_RULES.md, UI_BIBLE/LUDO_NX_UI_BIBLE.md sections 6.5 and 4.3, and this whole file. Use only values from UI_BIBLE/tokens.json.\n\nCheck decision D4 in AI_HANDOFF.md first: Profile moves from a full screen to a tall popup. If D4 is still unanswered, ask the owner before building - it changes the whole job.\n\nAs a popup: scrim over the hub, tall NX Card 380 wide, the avatar at 84 pt straddling the TOP EDGE with its frame-tier ring and level badge, the nameplate just inside under it, then the player ID with a copy glyph, the joined date, and SHARE in info blue. Folder tabs STATS / BADGES. EDIT PROFILE in a collar on the bottom edge. Close X 24 pt below.\n\nThe single most important fix: the current screen crams in far more than nine stats at about 5-7 pt each, and none of them can be read. NINE STATS MAXIMUM, in a 3 x 3 of wells, big number over a caption, nothing below 12 pt.\n\nThe player ID must be genuinely copyable - it is how friends add each other and how support identifies an account. Tapping the copy glyph copies it and toasts.\n\nBuild the other-player variant too (ADD FRIEND instead of EDIT PROFILE), the badges empty state, and - if the account is a guest - one plain line offering Link Google, because a guest loses everything on reinstall.\n\nFollow the 'steps' array. Finish with bible section 11 and the 'acceptance' list."
+}
