@@ -102,10 +102,12 @@ namespace LudoNX.Shop
         {
             if (error != null)
             {
+                LastError = error.Message;
                 Debug.LogWarning("[RevenueCat] Could not fetch offerings: " + error.Message);
                 return;
             }
 
+            LastError = null;
             Offerings = offerings;
 
             int count = offerings != null && offerings.All != null ? offerings.All.Count : 0;
@@ -141,47 +143,117 @@ namespace LudoNX.Shop
         /// <summary>Shorthand for the single "has paid for the premium bundle" question.</summary>
         public bool IsPremium { get { return HasEntitlement(premiumEntitlementId); } }
 
+        /// <summary>Last error message received from RevenueCat SDK, if any.</summary>
+        public string LastError { get; private set; }
+
         /// <summary>
-        /// True when the store answered and there is something to sell. False in the Editor,
-        /// and on device until the first offerings call returns — the shop uses this to say so
-        /// rather than presenting a buy button that cannot work.
+        /// Returns the active offering to use: Current if set, or "default", or the first available offering in All.
         /// </summary>
-        public bool StoreReady
+        public Purchases.Offering ActiveOffering
         {
-            get { return Offerings != null && Offerings.Current != null; }
+            get
+            {
+                if (Offerings == null) return null;
+                if (Offerings.Current != null) return Offerings.Current;
+                if (Offerings.All != null && Offerings.All.Count > 0)
+                {
+                    if (Offerings.All.ContainsKey("default")) return Offerings.All["default"];
+                    foreach (var kv in Offerings.All) return kv.Value;
+                }
+                return null;
+            }
         }
 
         /// <summary>
-        /// Buys a product by its store identifier.
-        ///
-        /// Reports success as a plain bool because that is all a shop row needs to know; a
-        /// cancellation and a failure both mean "do not grant anything", and only a real error
-        /// is worth logging. Entitlements are refreshed on success so anything gated on them
-        /// updates without the caller having to ask.
+        /// Finds a package matching the product ID within the active offering.
         /// </summary>
-        public void Buy(string productId, System.Action<bool> done)
+        public Purchases.Package FindPackage(string productId)
+        {
+            if (string.IsNullOrEmpty(productId)) return null;
+            var offering = ActiveOffering;
+            if (offering != null && offering.AvailablePackages != null)
+            {
+                foreach (var pkg in offering.AvailablePackages)
+                {
+                    if (pkg != null && pkg.StoreProduct != null && pkg.StoreProduct.Identifier == productId)
+                    {
+                        return pkg;
+                    }
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// True when the store answered and there is something to sell. False in the Editor,
+        /// and on device until the first offerings call returns.
+        /// </summary>
+        public bool StoreReady
+        {
+            get { return ActiveOffering != null; }
+        }
+
+        /// <summary>
+        /// Buys a product by its store identifier, automatically looking up its Package in the active offering,
+        /// or falling back to an in-app product purchase (type: "inapp").
+        /// </summary>
+        public void Buy(string productId, System.Action<bool, string> done)
         {
             if (_purchases == null || string.IsNullOrEmpty(productId))
             {
-                if (done != null) done(false);
+                done?.Invoke(false, "Store not initialized or empty product ID.");
                 return;
             }
 
-            _purchases.PurchaseProduct(productId, result =>
+            var pkg = FindPackage(productId);
+            if (pkg != null)
             {
-                if (result == null || result.Error != null)
+                _purchases.PurchasePackage(pkg, result => HandlePurchaseResult(result, done));
+            }
+            else
+            {
+                // Crucial: Must specify type: "inapp". The SDK default is "subs" (subscription),
+                // which causes Google Play to fail when buying one-time energy/coin packs.
+                _purchases.PurchaseProduct(productId, result => HandlePurchaseResult(result, done), type: "inapp");
+            }
+        }
+
+        /// <summary>Backward-compatible Buy overload taking System.Action&lt;bool&gt;.</summary>
+        public void Buy(string productId, System.Action<bool> done)
+        {
+            Buy(productId, (ok, err) => done?.Invoke(ok));
+        }
+
+        private void HandlePurchaseResult(Purchases.MakePurchaseResult result, System.Action<bool, string> done)
+        {
+            if (result == null)
+            {
+                done?.Invoke(false, "Purchase returned empty result.");
+                return;
+            }
+
+            if (result.Error != null)
+            {
+                if (result.UserCancelled)
                 {
-                    if (result != null && result.Error != null && !result.UserCancelled)
-                        Debug.LogWarning("[RevenueCat] Purchase failed: " + result.Error.Message);
-                    if (done != null) done(false);
+                    done?.Invoke(false, "UserCancelled");
                     return;
                 }
 
-                if (result.UserCancelled) { if (done != null) done(false); return; }
+                string msg = !string.IsNullOrEmpty(result.Error.Message) ? result.Error.Message : "Google Play purchase failed.";
+                Debug.LogWarning("[RevenueCat] Purchase failed: " + msg);
+                done?.Invoke(false, msg);
+                return;
+            }
 
-                ApplyCustomerInfo(result.CustomerInfo);
-                if (done != null) done(true);
-            });
+            if (result.UserCancelled)
+            {
+                done?.Invoke(false, "UserCancelled");
+                return;
+            }
+
+            ApplyCustomerInfo(result.CustomerInfo);
+            done?.Invoke(true, null);
         }
 
         /// <summary>

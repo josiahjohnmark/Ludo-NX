@@ -36,6 +36,8 @@ namespace LudoNX.UI
         private RectTransform _modalRoot;
         private UIScreen _active;
         private HomeNavBar _bottomNav;
+        private Coroutine _navFadeRoutine;
+        private bool _bottomNavTargetVisible = true;
         private bool _busy;
 
         public Canvas Canvas => _canvas;
@@ -45,6 +47,10 @@ namespace LudoNX.UI
         public UIScreen Active => _active;
         public HomeNavBar BottomNav => _bottomNav;
         public int Depth => _stack.Count;
+
+        /// <summary>True while a screen transition is animating. Lets input owners (the home
+        /// carousel, a modal) hold off on firing a second navigation mid-transition.</summary>
+        public bool IsBusy => _busy;
 
         private void Awake()
         {
@@ -146,9 +152,10 @@ namespace LudoNX.UI
                 case ScreenId.PlayerStats:
                 case ScreenId.Missions:
                 case ScreenId.DailyMissions:
+                case ScreenId.Levels:
                 case ScreenId.Events:
                 case ScreenId.EventDetail:
-                case ScreenId.Profile:
+                // Profile is deliberately not here: it has its own back arrow and no bottom nav.
                 case ScreenId.Settings:
                 case ScreenId.Wallet:
                 case ScreenId.Energy:
@@ -171,29 +178,48 @@ namespace LudoNX.UI
             }
         }
 
+        /// <summary>
+        /// Shows or hides the bottom nav.
+        ///
+        /// Cancels any fade already in flight before starting a new one, and the "finish hiding"
+        /// callback checks the LATEST requested state rather than the one it captured when it
+        /// started. Without both of those, a quick hide-then-show (tap a card, the setup screen
+        /// pushes and hides the bar, then something pops straight back to Home before the 0.22s
+        /// fade finishes) lets the stale hide callback deactivate the bar after the newer "show"
+        /// call already reactivated it - the bar goes dark and stays dark on a screen that still
+        /// claims it should be visible. That is the exact symptom reported: the nav vanishing on
+        /// Home itself with no screen change to explain it.
+        /// </summary>
         public void SetBottomNavVisible(bool visible, bool immediate = false)
         {
             if (_bottomNav == null) return;
             var cg = _bottomNav.GetComponent<CanvasGroup>();
             if (cg == null) cg = _bottomNav.gameObject.AddComponent<CanvasGroup>();
 
+            _bottomNavTargetVisible = visible;
             float targetAlpha = visible ? 1f : 0f;
             cg.blocksRaycasts = visible;
             cg.interactable = visible;
+
+            if (_navFadeRoutine != null)
+            {
+                UITween.Stop(_navFadeRoutine);
+                _navFadeRoutine = null;
+            }
 
             if (immediate)
             {
                 cg.alpha = targetAlpha;
                 _bottomNav.gameObject.SetActive(visible);
+                return;
             }
-            else
+
+            if (visible) _bottomNav.gameObject.SetActive(true);
+            _navFadeRoutine = UITween.Fade(cg, targetAlpha, 0.22f, () =>
             {
-                if (visible) _bottomNav.gameObject.SetActive(true);
-                UITween.Fade(cg, targetAlpha, 0.22f, () =>
-                {
-                    if (!visible && _bottomNav != null) _bottomNav.gameObject.SetActive(false);
-                });
-            }
+                _navFadeRoutine = null;
+                if (!_bottomNavTargetVisible && _bottomNav != null) _bottomNav.gameObject.SetActive(false);
+            });
         }
 
         private void Start()

@@ -6,7 +6,7 @@
     "author": "Claude (director)",
     "rule": "Pick the highest-priority screen that is not done and whose depends_on are all done. Read SCREEN_PLANS/specs/SHARED_RULES.md first, then screens/<id>.json. Only the owner sets status to done.",
     "statuses": ["missing", "rebuild", "polish", "review", "done"],
-    "counts": { "total": 36, "missing": 14, "rebuild": 10, "polish": 12, "review": 0, "done": 0 }
+    "counts": { "total": 36, "missing": 13, "rebuild": 9, "polish": 12, "review": 2, "done": 0 }
   },
 
   "specs": [
@@ -17,10 +17,10 @@
 
   "screens": [
 
-    { "id": "match-hud",           "title": "Match HUD (gameplay)",        "type": "takeover",  "status": "rebuild", "priority": "P0", "assignee": "any",    "depends_on": ["tokens-2-5d"], "one_line": "The board, four player cards, dice, ROLL, and the new action bar. The screen the game is played on." },
+    { "id": "match-hud",           "title": "Match HUD (gameplay)",        "type": "takeover",  "status": "review",  "priority": "P0", "assignee": "any",    "depends_on": ["tokens-2-5d"], "one_line": "The board, four player cards, dice, ROLL, and the new action bar. The screen the game is played on." },
     { "id": "match-emoji-tray",    "title": "In-match emoji tray",         "type": "overlay",   "status": "missing", "priority": "P0", "assignee": "any",    "depends_on": ["match-hud"],   "one_line": "The 8-slot emote loadout, opened from the left button of the action bar." },
     { "id": "match-message-tray",  "title": "In-match quick messages",     "type": "overlay",   "status": "missing", "priority": "P0", "assignee": "any",    "depends_on": ["match-hud"],   "one_line": "Canned phrases, opened from the right button of the action bar. Not free-text chat - see the file." },
-    { "id": "rules-how-to-play",   "title": "Rules / How to play",         "type": "popup",     "status": "missing", "priority": "P0", "assignee": "any",    "depends_on": [],              "one_line": "What the RULES button opens: how Ludo NX is played, in three short tabs." },
+    { "id": "rules-how-to-play",   "title": "Rules / How to play",         "type": "popup",     "status": "review",  "priority": "P0", "assignee": "any",    "depends_on": [],              "one_line": "What the RULES button opens: how Ludo NX is played, in three short tabs." },
     { "id": "pause",               "title": "Pause",                       "type": "popup",     "status": "polish",  "priority": "P0", "assignee": "any",    "depends_on": ["match-hud"],   "one_line": "Resume, sound, rules, leave. The only way out of a match." },
 
     { "id": "result",              "title": "Result (victory + defeat)",   "type": "takeover",  "status": "rebuild", "priority": "P1", "assignee": "claude", "depends_on": ["match-hud"],   "one_line": "The celebration. Two states off one builder: VICTORY! and NICE TRY!" },

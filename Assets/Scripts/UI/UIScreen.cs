@@ -30,7 +30,10 @@ namespace LudoNX.UI
         // every screen prefab by value, so reordering this enum would silently repoint them.
         DailyMissions,
         MatchSetup,
-        MatchFound
+        MatchFound,
+        Maintenance,
+        VersionTooOld,
+        Levels
     }
 
     /// <summary>

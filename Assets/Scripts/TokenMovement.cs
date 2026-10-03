@@ -159,7 +159,17 @@ public class TokenMovement : MonoBehaviour
     {
         Transform tile = GetCurrentTileTransform();
         Vector3 from = transform.position;
-        Vector3 to = tile != null ? tile.position + stackOffset : from;
+
+        // A token that is home has no tile - it must fall back to its assigned yard slot, the
+        // same way ApplyRestingTransform already does. Falling back to "from" instead was the
+        // actual bug: whatever stale position the token happened to be sitting at (its
+        // scene-authored editor position, or wherever it was before ResetToYard ran) became a
+        // no-op destination, so two tokens that started at different stale spots could animate
+        // toward each other's true slot and land on top of one another instead of spreading out.
+        Vector3 to;
+        if (tile != null) to = tile.position + stackOffset;
+        else if (isHome && homeBaseSlot != null) to = homeBaseSlot.position;
+        else to = from;
         Vector3 scaleFrom = transform.localScale;
         Vector3 scaleTo = RestingScale;
 
@@ -248,8 +258,27 @@ public class TokenMovement : MonoBehaviour
     /// glance, costs nothing, and stays calm — which is what makes it feel cinematic rather than
     /// like a tutorial arrow.
     /// </summary>
+    [Header("Turn Dashed Ring")]
+    [Tooltip("Shows animated rotating dashed circle around all active tokens when it is their turn.")]
+    public bool showTurnDashedRing = true;
+    public float ringRotateSpeed = -75f;
+    public float ringBaseScale = 1.48f;
+    private GameObject turnRingObject;
+    private Transform turnRingTransform;
+    private SpriteRenderer turnRingRenderer;
+    private static Sprite _cachedDashedRingSprite;
+    private bool _previewTurnRing = false;
+
+    public void SetPreviewTurnRing(bool active)
+    {
+        _previewTurnRing = active;
+        UpdateTurnDashedRing();
+    }
+
     private void Update()
     {
+        UpdateTurnDashedRing();
+
         bool want = ShouldHint();
 
         if (!want)
@@ -272,6 +301,80 @@ public class TokenMovement : MonoBehaviour
         transform.localScale = RestingScale * (1f + t * hintBreathScale);
         if (spriteRenderer != null)
             spriteRenderer.color = Color.Lerp(originalColor, Color.white, t * hintBrighten);
+    }
+
+    private void UpdateTurnDashedRing()
+    {
+        if (!showTurnDashedRing || isFinished)
+        {
+            if (turnRingObject != null && turnRingObject.activeSelf)
+                turnRingObject.SetActive(false);
+            return;
+        }
+
+        GameManager gm = GameManager.Instance;
+        bool isMyTurn = (gm != null && gm.currentTurnColor == tokenColor) || _previewTurnRing;
+
+        if (!isMyTurn)
+        {
+            if (turnRingObject != null && turnRingObject.activeSelf)
+                turnRingObject.SetActive(false);
+            return;
+        }
+
+        EnsureTurnRingCreated();
+        if (turnRingObject == null) return;
+
+        if (!turnRingObject.activeSelf)
+            turnRingObject.SetActive(true);
+
+        // Smooth rotation around token
+        turnRingTransform.Rotate(0f, 0f, ringRotateSpeed * Time.unscaledDeltaTime);
+
+        // Subtle breathing pulse
+        float pulse = ringBaseScale * (1f + 0.04f * Mathf.Sin(Time.unscaledTime * 4.2f));
+        turnRingTransform.localScale = Vector3.one * pulse;
+    }
+
+    private void EnsureTurnRingCreated()
+    {
+        if (turnRingObject != null) return;
+
+        var existing = transform.Find("TurnDashedRing");
+        if (existing != null)
+        {
+            turnRingObject = existing.gameObject;
+            turnRingTransform = existing;
+            turnRingRenderer = existing.GetComponent<SpriteRenderer>();
+            return;
+        }
+
+        turnRingObject = new GameObject("TurnDashedRing");
+        turnRingTransform = turnRingObject.transform;
+        turnRingTransform.SetParent(transform, false);
+        turnRingTransform.localPosition = new Vector3(0f, 0f, -0.05f);
+        turnRingTransform.localScale = Vector3.one * ringBaseScale;
+
+        turnRingRenderer = turnRingObject.AddComponent<SpriteRenderer>();
+        if (_cachedDashedRingSprite == null)
+        {
+            _cachedDashedRingSprite = Resources.Load<Sprite>("UI/Match/token_dashed_ring");
+            if (_cachedDashedRingSprite == null)
+            {
+#if UNITY_EDITOR
+                _cachedDashedRingSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/Match/token_dashed_ring.png");
+#endif
+            }
+        }
+        turnRingRenderer.sprite = _cachedDashedRingSprite;
+        if (spriteRenderer != null)
+        {
+            turnRingRenderer.sortingLayerName = spriteRenderer.sortingLayerName;
+            turnRingRenderer.sortingOrder = spriteRenderer.sortingOrder + 2;
+        }
+
+        // Dashed animated ring around active tokens rendered in solid crisp black per user design instruction
+        turnRingRenderer.color = new Color(0.08f, 0.08f, 0.08f, 0.95f);
     }
 
     private bool ShouldHint()
@@ -453,6 +556,7 @@ public class TokenMovement : MonoBehaviour
         isHome = false;
         currentTileIndex = 0;   // start tile, and only the start tile
         stepsTaken = 1;
+        LudoNX.UI.MissionService.OnTokenLeftBase(this);
 
         // currentTileIndex now points at the start tile, so this token counts as an occupant of it
         // from here on. IsMoving marks the transform as owned by this hop, which keeps the stack
@@ -517,6 +621,10 @@ public class TokenMovement : MonoBehaviour
 
         int startIndex = currentTileIndex;
 
+        // Missions count the move once it is certain to happen (lock held, rules passed).
+        int loopLength = pathLength - 6;
+        LudoNX.UI.MissionService.OnTokenMoved(this, steps, startIndex < loopLength && newIndex >= loopLength);
+
         // Collect every tile this move crosses, then animate them as one continuous sequence.
         List<Vector3> waypoints = new List<Vector3>();
         for (int i = 1; i <= steps; i++)
@@ -551,6 +659,7 @@ public class TokenMovement : MonoBehaviour
         // board is relaid. Doing it here — after currentTileIndex is committed but before captures
         // are resolved — means the arriving token is already counted in its new tile's stack.
         TokenStackLayout.Refresh();
+        LudoNX.VFX.LudoVFXManager.Ensure().PlayHopLanding(transform.position, originalColor);
 
         int mainLoopLength = pathLength - 6;
 
@@ -560,10 +669,12 @@ public class TokenMovement : MonoBehaviour
             // Reaching home is a token finishing, not the match being won — those deserve
             // different sounds. PlayVictory is reserved for the end of the game.
             if (AudioManager.Instance != null) AudioManager.Instance.PlayTokenHome();
+            LudoNX.VFX.LudoVFXManager.Ensure().PlayHomeArrival(transform.position, originalColor);
             if (PointsManager.Instance != null)
             {
                 PointsManager.Instance.OnTokenReachedHome(tokenColor);
             }
+            LudoNX.UI.MissionService.OnTokenFinished(tokenColor);
             if (FloatingTextFX.Instance != null)
             {
                 FloatingTextFX.Instance.SpawnFloatingText(transform.position, 5);
@@ -906,6 +1017,7 @@ public class TokenMovement : MonoBehaviour
                 {
                     PointsManager.Instance.OnTokenCaptured(tokenColor, other.tokenColor);
                 }
+                LudoNX.UI.MissionService.OnCapture(tokenColor, other.tokenColor);
 
                 // The victim still gets its small marker in place — that one is about which
                 // token was lost. The capturer's reward moves to the centre of the screen,
@@ -919,6 +1031,7 @@ public class TokenMovement : MonoBehaviour
                 LudoNX.UI.CaptureBanner.Instance.Show(tokenColor, reward);
 
                 if (AudioManager.Instance != null) AudioManager.Instance.PlayCapture();
+                LudoNX.VFX.LudoVFXManager.Ensure().PlayCapture(other.transform.position);
                 if (GameManager.Instance != null) GameManager.Instance.GrantCaptureBonusTurn();
 
                 StartCoroutine(CaptureCameraShake());

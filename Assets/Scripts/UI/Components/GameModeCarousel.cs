@@ -101,6 +101,10 @@ namespace LudoNX.UI
 
             if (index == activeIndex)
             {
+                // A screen transition is already animating - a second confirm here is what used
+                // to double-push the destination screen and, on a quick tap-tap, leave the
+                // bottom nav's fade racing itself into a stuck-hidden state.
+                if (ScreenManager.Instance != null && ScreenManager.Instance.IsBusy) return;
                 ActiveCardConfirmed?.Invoke(cards[index].mode);
                 return;
             }

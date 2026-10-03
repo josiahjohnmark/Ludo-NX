@@ -36,11 +36,7 @@ namespace LudoNX.UI
                 "Ludo NX is a modern take on the classic board game.\n\n" +
                 "Roll, capture, and race all four tokens home.\n\n" +
                 "Built with Unity."));
-            if (privacyRow != null) privacyRow.onClick.AddListener(() => OpenText("PRIVACY POLICY",
-                "Ludo NX stores your profile, preferences and match statistics only on this device.\n\n" +
-                "No personal data is collected or transmitted.\n\n" +
-                "Replace this text with your published policy before release — Google Play " +
-                "requires a reachable privacy policy."));
+            if (privacyRow != null) privacyRow.onClick.AddListener(() => OpenText("PRIVACY POLICY", SettingsService.PrivacyText));
             if (termsRow != null) termsRow.onClick.AddListener(() => OpenText("TERMS OF SERVICE",
                 "By playing Ludo NX you agree to use the game for personal, non-commercial " +
                 "entertainment.\n\nReplace this text with your published terms before release."));
@@ -62,14 +58,12 @@ namespace LudoNX.UI
             if (modal == null) return;
             var picker = modal.GetComponent<ListPickerModal>();
             if (picker == null) return;
-            picker.Configure("LANGUAGE",
-                             new[] { "English", "Español", "Français", "Deutsch", "Português", "हिन्दी" },
-                             SettingsService.Language,
-                             chosen =>
-                             {
-                                 SettingsService.Language = chosen;
-                                 if (languageValue != null) languageValue.text = chosen;
-                             });
+            picker.Configure("LANGUAGE", SettingsService.Languages, SettingsService.Language, chosen =>
+            {
+                SettingsService.Language = chosen;
+                if (languageValue != null) languageValue.text = chosen;
+                if (chosen != "English" && Toast.Instance != null) Toast.Instance.Show(SettingsService.LanguagePendingNote);
+            });
         }
 
         private void OpenText(string title, string body)

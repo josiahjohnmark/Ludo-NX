@@ -29,7 +29,15 @@ public class GameManager : MonoBehaviour
 
     public bool IsHumanControlled(PlayerColor color)
     {
-        return !aiPlaysOtherColors || color == humanColor;
+        if (!aiPlaysOtherColors) return true;
+        var s = LudoNXSession.Instance;
+        if (s != null && (s.pendingTeamPlay || (s.pendingMode == LudoNXSession.Mode.QuickMatch && s.pendingPlayerCount == 2)))
+        {
+            bool humanIsRedYellow = humanColor == PlayerColor.RED || humanColor == PlayerColor.YELLOW;
+            bool targetIsRedYellow = color == PlayerColor.RED || color == PlayerColor.YELLOW;
+            return humanIsRedYellow == targetIsRedYellow;
+        }
+        return color == humanColor;
     }
 
     [Header("Leaderboard & Match State")]
@@ -66,7 +74,8 @@ public class GameManager : MonoBehaviour
         Rolling,            // Dice animating, nothing accepted
         AwaitingSelection,  // Player picks a die, then a token
         Moving,             // A token is animating, nothing accepted
-        Resolving           // Post-move bookkeeping, nothing accepted
+        Resolving,          // Post-move bookkeeping, nothing accepted
+        GameOver            // Match concluded
     }
 
     [Header("Turn Phase")]
@@ -392,6 +401,8 @@ public class GameManager : MonoBehaviour
             {
                 if (PointsManager.Instance != null) PointsManager.Instance.OnSixRolled(currentTurnColor);
             }
+
+            LudoNX.UI.MissionService.OnRoll(currentTurnColor, dice1Value, dice2Value);
 
             // Three double-sixes in a row voids the whole roll, matching the official three-sixes
             // penalty. Nothing moves and the turn passes immediately.
@@ -866,25 +877,59 @@ public class GameManager : MonoBehaviour
             leaderBoard.Add(color);
             Debug.Log($"{color} has finished all tokens! Placed #{leaderBoard.Count}");
 
-            // Match end is a game fact, not a UI one — gate it on the board state alone so a scene
-            // without a UIManager still awards placement bonuses and still ends cleanly.
-            if (activePlayers.Count > 0 && leaderBoard.Count >= activePlayers.Count)
+            if (leaderBoard.Count == 1)
             {
+                LudoNX.VFX.LudoVFXManager.Ensure().PlayVictoryConfetti();
+                if (AudioManager.Instance != null) AudioManager.Instance.PlayVictory();
+            }
+
+            // Once the winner has finished (or all active players are ranked), conclude the match!
+            // Fill in the rest of active players sorted by performance (tokens home desc, then points desc)
+            if (activePlayers != null && activePlayers.Count > 0)
+            {
+                var remaining = new List<PlayerColor>();
+                foreach (var p in activePlayers)
+                {
+                    if (!leaderBoard.Contains(p)) remaining.Add(p);
+                }
+
+                // Sort remaining players by tokens finished then points
+                remaining.Sort((a, b) =>
+                {
+                    int aHome = 0, bHome = 0;
+                    foreach (var t in allTokens)
+                    {
+                        if (t.tokenColor == a && t.isFinished) aHome++;
+                        if (t.tokenColor == b && t.isFinished) bHome++;
+                    }
+                    if (bHome != aHome) return bHome.CompareTo(aHome);
+                    int aPts = PointsManager.Instance != null ? PointsManager.Instance.GetPoints(a) : 0;
+                    int bPts = PointsManager.Instance != null ? PointsManager.Instance.GetPoints(b) : 0;
+                    return bPts.CompareTo(aPts);
+                });
+
+                leaderBoard.AddRange(remaining);
+
                 if (PointsManager.Instance != null)
                 {
                     PointsManager.Instance.AwardPlacementBonuses(leaderBoard);
                 }
 
-                // When the menu is present it owns the post-match screen, because it also banks
-                // coins and NX. Two victory screens fighting over the same moment is worse than
-                // either one alone.
-                if (LudoMenuFlow.Instance != null)
+                currentPhase = TurnPhase.GameOver;
+                IsAnyTokenMoving = false;
+
+                // Stop turn timer in HUD
+                if (UIManager.Instance != null)
                 {
-                    LudoMenuFlow.NotifyMatchEnded(leaderBoard);
+                    UIManager.Instance.StopTurnTimer();
                 }
-                else if (UIManager.Instance != null)
+
+                // Conclude match and transition to after-match stats screen
+                LudoMenuFlow.NotifyMatchEnded(leaderBoard);
+
+                if (LudoNX.UI.MatchBridge.Instance == null && LudoNX.UI.ScreenManager.Instance != null)
                 {
-                    UIManager.Instance.ShowGameOverUI(leaderBoard);
+                    LudoNX.UI.ScreenManager.Instance.Replace(LudoNX.UI.ScreenId.Result, leaderBoard);
                 }
             }
         }

@@ -2,7 +2,7 @@
   "id": "connection-states",
   "title": "Connection and error states",
   "type": "system",
-  "status": "missing",
+  "status": "review",
   "priority": "P3",
   "assignee": "claude",
   "one_line": "Reconnecting, opponent left, no network, maintenance. The screens nobody designs and every player eventually sees - handle them once, everywhere.",
@@ -39,7 +39,9 @@
   "data": ["Network reachability, session/match connection state from the eventual online layer (T-D2/T-D3). Client version check against a remote config minimum version."],
 
   "assets_needed": [],
-  "deviations": [],
+  "deviations": [
+    "2026-09-27 · Claude · Built 3 of 6 states only: no-network toast, maintenance takeover, version-too-old takeover. The other 3 (reconnecting, opponent-left, extended-outage-mid-match-leave-without-penalty) genuinely need the online match layer (T-D2/T-D3) to mean anything — there is no opponent to leave and no match connection to drop yet. Revisit this file once that layer exists rather than building placeholders for it now."
+  ],
 
   "do_not": ["Do not let a dropped connection silently forfeit a match - an extended outage must offer to leave without losing the stake, since it was not the player's fault.", "Do not hide the board during a brief reconnect - dim it, do not hide it.", "Do not design this only for the online path and forget local/bot matches can still hit device-level issues (backgrounding, low memory)."],
 

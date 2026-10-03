@@ -23,7 +23,7 @@ namespace LudoNX.UI
         [Serializable]
         public class Config
         {
-            public int max = 5;
+            public int max = 50;
             public int costPerMatch = 1;
             public int refillMinutes = 15;
         }
@@ -41,7 +41,7 @@ namespace LudoNX.UI
         private static void Load()
         {
             if (_cached >= 0) return;
-            _cached = PlayerPrefs.GetInt(KeyCount, Rules.max);
+            _cached = PlayerPrefs.GetInt(KeyCount, 50);
 
             long ticks = 0;
             string raw = PlayerPrefs.GetString(KeyStamp, "");
@@ -104,6 +104,25 @@ namespace LudoNX.UI
             }
         }
 
+        /// <summary>
+        /// The count for a pill: "3/5" while the tank refills, just the total ("1,882") once
+        /// bought energy has pushed it past the cap — "/5" beside a four-digit number reads as a bug.
+        /// </summary>
+        public static string CountText
+        {
+            get
+            {
+                int cur = Current;
+                return cur > Rules.max ? cur.ToString("n0") : cur + "/" + Rules.max;
+            }
+        }
+
+        /// <summary>
+        /// The pill's timer: the countdown while refilling, empty when full. The pill has no room
+        /// for "FULL" beside a count, and the count already says it.
+        /// </summary>
+        public static string TimerText => IsFull ? "" : UntilNextText;
+
         /// <summary>Formatted for a HUD chip: M:SS under an hour, H:MM above.</summary>
         public static string UntilNextText
         {
@@ -127,6 +146,20 @@ namespace LudoNX.UI
             if (_cached >= Rules.max) _stamp = DateTime.UtcNow;
 
             _cached -= Rules.costPerMatch;
+            Save();
+            if (Changed != null) Changed();
+            return true;
+        }
+
+        /// <summary>Spends energy on a shop item (sticker packs). False — and nothing spent — if short.</summary>
+        public static bool TrySpend(int amount)
+        {
+            if (amount <= 0) return true;
+            if (Current < amount) return false;
+            // Same rule as a match: dropping below full starts the refill clock from now.
+            bool wasFull = _cached >= Rules.max;
+            _cached -= amount;
+            if (wasFull && _cached < Rules.max) _stamp = DateTime.UtcNow;
             Save();
             if (Changed != null) Changed();
             return true;

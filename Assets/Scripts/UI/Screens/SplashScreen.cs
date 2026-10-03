@@ -32,6 +32,7 @@ namespace LudoNX.UI
         public override void OnShow(object args)
         {
             SettingsService.ApplyToEngine();
+            NetworkBanner.EnsureRunning();
             if (statusLabel != null) statusLabel.text = "Loading...";
             StartCoroutine(Run());
         }
@@ -69,7 +70,14 @@ namespace LudoNX.UI
                 yield return null;
             }
 
-            ScreenManager.Instance.ResetTo(ScreenId.Home);
+            // Maintenance and version checks are local flags today (no remote config yet — see
+            // MaintenanceService), but the gate itself is real: either one blocks Home outright.
+            if (MaintenanceService.IsUnderMaintenance)
+                ScreenManager.Instance.ResetTo(ScreenId.Maintenance);
+            else if (!MaintenanceService.IsVersionSupported())
+                ScreenManager.Instance.ResetTo(ScreenId.VersionTooOld);
+            else
+                ScreenManager.Instance.ResetTo(ScreenId.Home);
         }
 
         /// <summary>Nothing to go back to during a splash.</summary>

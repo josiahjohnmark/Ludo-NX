@@ -76,10 +76,10 @@ public static class LudoNXScreenAuthor
         icons.loaderLine = LoadAsSprite("Assets/Art/UI/Loader/LoaderLine.png");
         icons.softGlow = LoadAsSprite("Assets/art_assets/generated/ui_glow.png");
         icons.backgroundIllustration = LoadAsSprite("Assets/Art/UI/Backgrounds/Tournament_banner.jpeg");
-        icons.bgHomeStadium = LoadAsSprite("Assets/Art/UI/Backgrounds/bg_home_stadium.jpg");
-        icons.bgShopVault = LoadAsSprite("Assets/Art/UI/Backgrounds/bg_shop_vault.jpg");
-        icons.bgBattleArena = LoadAsSprite("Assets/Art/UI/Backgrounds/bg_battle_arena.jpg");
-        icons.bgTournamentHall = LoadAsSprite("Assets/Art/UI/Backgrounds/bg_tournament_hall.jpg");
+        icons.bgHomeStadium = LoadAsSprite("Assets/Art/UI/Backgrounds/bg_match_emboss.jpg");
+        icons.bgShopVault = LoadAsSprite("Assets/Art/UI/Backgrounds/bg_match_emboss.jpg");
+        icons.bgBattleArena = LoadAsSprite("Assets/Art/UI/Backgrounds/bg_match_emboss.jpg");
+        icons.bgTournamentHall = LoadAsSprite("Assets/Art/UI/Backgrounds/bg_match_emboss.jpg");
         icons.mascot = LoadAsSprite("Assets/Art/UI/Icons/cool_ludo_mascot.png");
         icons.coin3D = LoadAsSprite("Assets/Art/UI/Icons/coin_3d.png");
         icons.gem3D = LoadAsSprite("Assets/Art/UI/Icons/gem_3d.png");
@@ -1309,75 +1309,7 @@ public static class LudoNXScreenAuthor
     [MenuItem("Ludo NX/UI/6. Build Match Intro", priority = 6)]
     public static void BuildMatchIntro()
     {
-        CreateSupportAssets();
-        var T = UITheme.Current;
-
-        GameObject root = NewScreenRoot("MatchIntro", ScreenId.MatchIntro);
-        var screen = root.AddComponent<MatchIntroScreen>();
-        Transform p = root.transform;
-
-        UIFactory.Page(p);
-
-        // Full-screen tap catcher, behind everything, so tapping anywhere skips the countdown.
-        var skip = UIFactory.Button("SkipArea", p, new Vector2(1080f, 1920f), Vector2.zero,
-                                    new Color(1f, 1f, 1f, 0f), null, shape: ClayGraphic.Shape.Panel);
-        skip.Clay.shadowAlpha = 0f; skip.Clay.innerHighlight = 0f;
-        skip.Clay.innerShadow = 0f; skip.Clay.gradientStrength = 0f;
-        skip.Clay.cornerRadius = 0f;
-        screen.skipArea = skip;
-
-        TextMeshProUGUI title;
-        screen.backButton = UIFactory.TopBar(p, "", out title);
-
-        UIFactory.Display("Ready", p, new Vector2(1000f, 140f), new Vector2(0f, 560f), "GET READY!", T.inkOnGround);
-
-        var ring = UIFactory.Clay("CountdownRing", p, new Vector2(200f, 200f), new Vector2(0f, 372f),
-                                  T.primary, ClayGraphic.Shape.Circle);
-        ring.glowAlpha = 0.18f; ring.glowSpread = 40f;
-        screen.countdownLabel = UIFactory.Display("Count", ring.transform, new Vector2(200f, 140f),
-                                                  Vector2.zero, "3", T.ink);
-
-        screen.modeChipLabel = UIFactory.Chip("ModeChip", p, new Vector2(300f, 66f), new Vector2(-160f, 216f),
-                                              "CLASSIC", T.panelHigh, T.ink);
-        screen.difficultyChipLabel = UIFactory.Chip("AIChip", p, new Vector2(300f, 66f), new Vector2(160f, 216f),
-                                                    "NORMAL", T.panelHigh, T.ink);
-
-        // You
-        var youCard = UIFactory.Clay("YouCard", p, new Vector2(880f, 230f), new Vector2(0f, 40f),
-                                     T.panel, ClayGraphic.Shape.Panel, T.radiusLg);
-        youCard.raycastTarget = false;
-        screen.youColourSwatch = UIFactory.Clay("YouSwatch", youCard.transform, new Vector2(120f, 120f),
-                                                new Vector2(-320f, 0f), T.playerRed, ClayGraphic.Shape.Circle);
-        screen.youColourSwatch.raycastTarget = false;
-        screen.youColourLabel = UIFactory.Label("YouLabel", youCard.transform, new Vector2(560f, 70f),
-                                                new Vector2(60f, 0f), "YOU â€” RED", UIFontSet.Current.display,
-                                                48f, T.ink, TextAlignmentOptions.Left);
-
-        UIFactory.Label("VS", p, new Vector2(200f, 70f), new Vector2(0f, -110f), "VS",
-                        UIFontSet.Current.display, 44f, T.inkOnGroundDim);
-
-        // Opponents
-        var swatches = new ClayGraphic[3];
-        var labels = new TextMeshProUGUI[3];
-        for (int i = 0; i < 3; i++)
-        {
-            float x = -290f + i * 290f;
-            var card = UIFactory.Clay("Bot" + i, p, new Vector2(270f, 270f), new Vector2(x, -320f),
-                                      T.panel, ClayGraphic.Shape.Panel, T.radiusLg);
-            card.raycastTarget = false;
-            swatches[i] = UIFactory.Clay("Swatch", card.transform, new Vector2(120f, 120f),
-                                         new Vector2(0f, 32f), T.playerGreen, ClayGraphic.Shape.Circle);
-            swatches[i].raycastTarget = false;
-            labels[i] = UIFactory.Body("Label", card.transform, new Vector2(240f, 50f),
-                                       new Vector2(0f, -78f), "BOT " + (i + 1), T.inkMuted, 28f);
-        }
-        screen.opponentSwatches = swatches;
-        screen.opponentLabels = labels;
-
-        UIFactory.Body("Hint", p, new Vector2(900f, 50f), new Vector2(0f, -640f),
-                       "TAP ANYWHERE TO SKIP", T.inkDim, 26f).characterSpacing = 6f;
-
-        SavePrefab(root, ScreenDir + "/MatchIntro.prefab");
+        LudoNXMatchIntroBuilder.Build();
     }
 
     // â”€â”€ Result â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1542,6 +1474,74 @@ public static class LudoNXScreenAuthor
         SavePrefab(root, ScreenDir + "/Splash.prefab");
     }
 
+    [MenuItem("Ludo NX/UI/8b. Build Maintenance + Update Required", priority = 8)]
+    public static void BuildSystemTakeovers()
+    {
+        BuildMaintenance();
+        BuildVersionTooOld();
+    }
+
+    /// <summary>Full takeover for MaintenanceService.IsUnderMaintenance — connection-states.json.
+    /// Same 1080x1920 frame and Page/Clay/Label conventions as Splash, since Splash is what
+    /// routes here.</summary>
+    public static void BuildMaintenance()
+    {
+        CreateSupportAssets();
+        var T = UITheme.Current;
+        var icons = UIIconSet.Current;
+
+        GameObject root = NewScreenRoot("Maintenance", ScreenId.Maintenance);
+        var screen = root.AddComponent<MaintenanceScreen>();
+        Transform p = root.transform;
+
+        UIFactory.Page(p);
+
+        if (icons != null && icons.mascot != null)
+            UIFactory.Icon("Mascot", p, new Vector2(520f, 520f), new Vector2(0f, 380f), icons.mascot, Color.white);
+
+        screen.titleLabel = UIFactory.Label("Title", p, new Vector2(900f, 110f), new Vector2(0f, 20f),
+                                            "Back soon", UIFontSet.Current.display, 76f, T.inkOnGround);
+
+        screen.messageLabel = UIFactory.Label("Message", p, new Vector2(820f, 220f), new Vector2(0f, -140f),
+                                              "", UIFontSet.Current.body, 38f, T.inkOnGroundDim);
+        screen.messageLabel.textWrappingMode = TextWrappingModes.Normal;
+
+        screen.supportButton = UIFactory.Button("SupportButton", p, new Vector2(480f, 110f), new Vector2(0f, -500f),
+                                                T.gold, "SUPPORT");
+
+        SavePrefab(root, ScreenDir + "/Maintenance.prefab");
+    }
+
+    /// <summary>Full takeover blocking play when the client is older than
+    /// MaintenanceService.MinimumVersion — connection-states.json's "version too old".</summary>
+    public static void BuildVersionTooOld()
+    {
+        CreateSupportAssets();
+        var T = UITheme.Current;
+        var icons = UIIconSet.Current;
+
+        GameObject root = NewScreenRoot("VersionTooOld", ScreenId.VersionTooOld);
+        var screen = root.AddComponent<VersionTooOldScreen>();
+        Transform p = root.transform;
+
+        UIFactory.Page(p);
+
+        if (icons != null && icons.diceLogo != null)
+            UIFactory.Icon("Mark", p, new Vector2(420f, 420f), new Vector2(0f, 380f), icons.diceLogo, Color.white);
+
+        screen.titleLabel = UIFactory.Label("Title", p, new Vector2(900f, 110f), new Vector2(0f, 20f),
+                                            "Update required", UIFontSet.Current.display, 68f, T.inkOnGround);
+
+        screen.messageLabel = UIFactory.Label("Message", p, new Vector2(820f, 220f), new Vector2(0f, -140f),
+                                              "", UIFontSet.Current.body, 38f, T.inkOnGroundDim);
+        screen.messageLabel.textWrappingMode = TextWrappingModes.Normal;
+
+        screen.updateButton = UIFactory.Button("UpdateButton", p, new Vector2(480f, 110f), new Vector2(0f, -500f),
+                                               T.primary, "UPDATE");
+
+        SavePrefab(root, ScreenDir + "/VersionTooOld.prefab");
+    }
+
     // â”€â”€ Modals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [MenuItem("Ludo NX/UI/9. Build Modals", priority = 9)]
@@ -1579,118 +1579,19 @@ public static class LudoNXScreenAuthor
             SavePrefabRaw(root, ModalDir + "/Confirm.prefab");
         }
 
-        // Pause
-        {
-            GameObject root = NewModalRoot("Pause");
-            var modal = root.AddComponent<ConfirmModal>();
-            var card = ModalCard(root.transform, new Vector2(880f, 780f), T, modal);
-            modal.dismissOnScrimTap = true;
+        // Pause — rebuilt on the modern card_shell chassis with Lucky Six dice
+        LudoNXMatchModalsBuilder.BuildPauseModal();
 
-            modal.titleLabel = UIFactory.Display("Title", card, new Vector2(760f, 100f),
-                                                 new Vector2(0f, 262f), "PAUSED", T.ink);
-            modal.titleLabel.fontSize = 56f;
-            modal.bodyLabel = UIFactory.Label("Body", card, new Vector2(720f, 90f), new Vector2(0f, 168f),
-                                              "The match is waiting for you.",
-                                              UIFontSet.Current.bodyLight, 30f, T.inkMuted);
-
-            var resume = UIFactory.Button("CancelButton", card, new Vector2(760f, 170f), new Vector2(0f, 22f),
-                                          T.success, "RESUME", 42f, ClayGraphic.Shape.Pill,
-                                          glow: 0.14f, hero: true);
-            resume.Clay.glowSpread = 36f;
-            modal.cancelButton = resume;
-            modal.cancelLabel = resume.content.GetComponentInChildren<TextMeshProUGUI>(true);
-
-            var quit = UIFactory.Button("ConfirmButton", card, new Vector2(760f, 150f), new Vector2(0f, -178f),
-                                        T.neutral, "QUIT MATCH", 36f);
-            modal.confirmButton = quit;
-            modal.confirmLabel = quit.content.GetComponentInChildren<TextMeshProUGUI>(true);
-
-            SavePrefabRaw(root, ModalDir + "/Pause.prefab");
-        }
-
-        // Language picker
-        {
-            GameObject root = NewModalRoot("LanguagePicker");
-            var modal = root.AddComponent<ListPickerModal>();
-            var card = ModalCard(root.transform, new Vector2(880f, 1020f), T, modal);
-
-            modal.titleLabel = UIFactory.Display("Title", card, new Vector2(760f, 90f),
-                                                 new Vector2(0f, 420f), "LANGUAGE", T.ink);
-            modal.titleLabel.fontSize = 50f;
-
-            var container = UIFactory.Rect("Rows", card, new Vector2(780f, 800f), new Vector2(0f, -40f));
-            modal.rowContainer = container;
-
-            var template = UIFactory.Button("RowTemplate", container, new Vector2(760f, 108f),
-                                            Vector2.zero, T.panelHigh, "Language", 32f,
-                                            ClayGraphic.Shape.Panel);
-            template.Clay.cornerRadius = T.radiusMd;
-            template.gameObject.SetActive(false);
-            modal.rowTemplate = template;
-
-            SavePrefabRaw(root, ModalDir + "/LanguagePicker.prefab");
-        }
+        // Language picker — now built on the Menu popup's PNG chassis, not the Clay system.
+        LudoNXMenuModalBuilder.BuildLanguagePicker();
 
         // Text page (About / Privacy / Terms)
-        {
-            GameObject root = NewModalRoot("TextPage");
-            var modal = root.AddComponent<TextPageModal>();
-            var card = ModalCard(root.transform, new Vector2(920f, 1180f), T, modal);
-
-            modal.titleLabel = UIFactory.Display("Title", card, new Vector2(800f, 90f),
-                                                 new Vector2(0f, 500f), "ABOUT", T.ink);
-            modal.titleLabel.fontSize = 48f;
-            modal.bodyLabel = UIFactory.Label("Body", card, new Vector2(800f, 840f), new Vector2(0f, 20f),
-                                              "â€¦", UIFontSet.Current.bodyLight, 28f, T.inkMuted,
-                                              TextAlignmentOptions.TopLeft);
-
-            var close = UIFactory.Button("CloseButton", card, new Vector2(760f, 150f), new Vector2(0f, -480f),
-                                         T.secondary, "CLOSE", 38f);
-            modal.closeButton = close;
-
-            SavePrefabRaw(root, ModalDir + "/TextPage.prefab");
-        }
+        // TextPage: now built on the Menu popup's PNG chassis, not the Clay system.
+        LudoNXMenuModalBuilder.BuildTextPage();
 
         // Edit profile
-        {
-            GameObject root = NewModalRoot("EditProfile");
-            var modal = root.AddComponent<EditProfileModal>();
-            var card = ModalCard(root.transform, new Vector2(880f, 1100f), T, modal);
-
-            UIFactory.Display("Title", card, new Vector2(760f, 90f), new Vector2(0f, 450f),
-                              "YOUR NAME", T.ink).fontSize = 50f;
-
-            var well = UIFactory.Recess("Field", card, new Vector2(760f, 120f), new Vector2(0f, 342f),
-                                        ClayGraphic.Shape.Panel);
-            well.cornerRadius = T.radiusMd;
-
-            var textArea = UIFactory.Rect("TextArea", well.transform, new Vector2(700f, 90f), Vector2.zero);
-            var input = well.gameObject.AddComponent<TMP_InputField>();
-            var visible = UIFactory.Label("Text", textArea, new Vector2(700f, 90f), Vector2.zero, "",
-                                          UIFontSet.Current.body, 36f, T.ink);
-            visible.raycastTarget = false;
-            input.textViewport = textArea;
-            input.textComponent = visible;
-            input.characterLimit = 16;
-            input.text = "Player";
-
-            UIFactory.Label("PickerCaption", card, new Vector2(760f, 50f), new Vector2(0f, 252f),
-                            "YOUR PICTURE", UIFontSet.Current.body, 28f, T.inkDim);
-
-            // Left empty on purpose â€” the modal fills it from the avatar set at runtime.
-            modal.pickerRoot = UIFactory.Rect("Picker", card, new Vector2(780f, 320f),
-                                              new Vector2(0f, 66f));
-
-            var save = UIFactory.Button("SaveButton", card, new Vector2(760f, 160f), new Vector2(0f, -220f),
-                                        T.success, "SAVE", 40f, ClayGraphic.Shape.Pill, glow: 0.14f);
-            modal.saveButton = save;
-            var cancel = UIFactory.Button("CancelButton", card, new Vector2(760f, 140f), new Vector2(0f, -400f),
-                                          T.neutral, "CANCEL", 34f);
-            modal.cancelButton = cancel;
-            modal.nameField = input;
-
-            SavePrefabRaw(root, ModalDir + "/EditProfile.prefab");
-        }
+        // EditProfile: now built on the Menu popup's PNG chassis, not the Clay system.
+        LudoNXMenuModalBuilder.BuildEditProfile();
 
         // Energy Modal
         {
@@ -2740,30 +2641,10 @@ public static class LudoNXScreenAuthor
 
     // ── Build everything ──────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Ludo NX/UI/Build ALL Screens", priority = 20)]
+    [MenuItem("Ludo NX/UI/Build ALL Screens (Legacy)", priority = 20)]
     public static void BuildAll()
     {
-        CreateSupportAssets();
-        BuildSplash();
-        BuildHome();
-        BuildPlayMenu();
-        BuildQuickPlaySetup();
-        BuildMatchIntro();
-        BuildResult();
-        BuildProfile();
-        BuildSettings();
-        BuildShop();
-        BuildMatchLobby();
-        BuildPawnCollection();
-        BuildWallet();
-        BuildEnergy();
-        BuildMissions();
-        BuildEvents();
-        BuildEventDetail();
-        BuildShopItemDetail();
-        BuildPlayerStats();
-        BuildModals();
-        Debug.Log("[LudoNX UI] ALL screens + modals rebuilt.");
+        LudoNX.Editor.LudoNXMasterRebuilder.RebuildAll();
     }
 
     // â”€â”€ Plumbing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

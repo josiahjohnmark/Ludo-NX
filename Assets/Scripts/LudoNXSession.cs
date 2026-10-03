@@ -93,7 +93,7 @@ public class LudoNXSession : MonoBehaviour
     {
         var list = new System.Collections.Generic.List<GameManager.PlayerColor>();
 
-        if (pendingPlayerCount >= 4)
+        if (pendingPlayerCount >= 4 || pendingTeamPlay || (pendingMode == Mode.QuickMatch && pendingPlayerCount == 2))
         {
             list.Add(GameManager.PlayerColor.RED);
             list.Add(GameManager.PlayerColor.GREEN);
@@ -145,6 +145,7 @@ public class LudoNXSession : MonoBehaviour
     public string PlayerName => playerName;
     public int Coins => coins;
     public int NXPoints => nxPoints;
+    public int PlayerLevel => Mathf.Max(1, 1 + nxPoints / 250);
     public int MatchesPlayed => matchesPlayed;
     public int MatchesWon => matchesWon;
 
@@ -177,40 +178,13 @@ public class LudoNXSession : MonoBehaviour
     // ── Level ──────────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// NX Level. Costs rise linearly (level N costs N × 100), so early levels arrive quickly and
-    /// later ones take real play — the shape that keeps a new player feeling progress on day one.
+    /// Player level. Driven by cumulative NX points across 10 prestige badges.
+    /// See <see cref="LudoNX.UI.NXLevelService"/>.
     /// </summary>
-    public int Level
-    {
-        get
-        {
-            int level = 1;
-            int spent = 0;
-            while (spent + level * 100 <= nxPoints && level < 999)
-            {
-                spent += level * 100;
-                level++;
-            }
-            return level;
-        }
-    }
+    public int Level => LudoNX.UI.NXLevelService.GetLevel(nxPoints);
 
-    /// <summary>How far through the current level, 0–1. Drives the profile progress bar.</summary>
-    public float LevelProgress01
-    {
-        get
-        {
-            int level = 1;
-            int spent = 0;
-            while (spent + level * 100 <= nxPoints && level < 999)
-            {
-                spent += level * 100;
-                level++;
-            }
-            int cost = level * 100;
-            return cost <= 0 ? 0f : Mathf.Clamp01((nxPoints - spent) / (float)cost);
-        }
-    }
+    /// <summary>How far through the current level, 0–1 (progress to next badge).</summary>
+    public float LevelProgress01 => LudoNX.UI.NXLevelService.GetProgressToNextLevel(nxPoints);
 
     public float WinRate => matchesPlayed == 0 ? 0f : matchesWon / (float)matchesPlayed;
 
@@ -256,15 +230,14 @@ public class LudoNXSession : MonoBehaviour
     public string JoinDate => "—";
 
     /// <summary>Current XP within this level (equals nxPoints for simplicity until levels are tuned).</summary>
-    public int Xp => nxPoints;
+    public int Xp => LudoNX.UI.MissionService.DoneCount;
 
     /// <summary>XP needed to reach next level.</summary>
     public int XpToNextLevel
     {
         get
         {
-            int lv = Level;
-            return lv * 100;
+            return 5;
         }
     }
 
@@ -278,15 +251,26 @@ public class LudoNXSession : MonoBehaviour
     /// PointsManager score, so captures and home arrivals both feed NX — a player who fought well
     /// but placed third still earns, which is what stops a loss from feeling like wasted time.
     /// </summary>
-    public void RecordMatchResult(bool won, int matchPoints, bool wasOffline)
+    /// <param name="multiplier">
+    /// The stake chosen at setup. A win pays the match's points multiplied by it; a loss gives
+    /// back half of what the same stake would have won, so the ladder rewards nerve without
+    /// making a bad night unrecoverable. NX Points never fall below zero — a leaderboard that can
+    /// punish a new player into negative numbers only teaches them to stop playing.
+    /// </param>
+    public void RecordMatchResult(bool won, int matchPoints, bool wasOffline, int multiplier = 1)
     {
         float scale = wasOffline ? offlineRewardScale : 1f;
+        multiplier = Mathf.Max(1, multiplier);
 
         int coinsEarned = Mathf.RoundToInt((won ? coinsPerWin : coinsPerLoss) * scale);
-        int nxEarned = Mathf.RoundToInt(Mathf.Max(0, matchPoints) * nxPerMatchPoint * scale);
+        int basePoints = Mathf.RoundToInt(Mathf.Max(0, matchPoints) * nxPerMatchPoint * scale);
+
+        int nxEarned = won
+            ? basePoints * multiplier
+            : -Mathf.RoundToInt(basePoints * multiplier * 0.5f);
 
         coins += coinsEarned;
-        nxPoints += nxEarned;
+        nxPoints = Mathf.Max(0, nxPoints + nxEarned);
         matchesPlayed++;
         if (won) matchesWon++;
 
@@ -331,10 +315,44 @@ public class LudoNXSession : MonoBehaviour
 
     // ── Persistence ────────────────────────────────────────────────────────────────────────
 
+    private const string KeyFreshStart = "ludonx_fresh_start_v6";
+
+    public static void ResetAllToFreshStart()
+    {
+        PlayerPrefs.SetInt(KeyFreshStart, 1);
+        PlayerPrefs.SetInt(KeyCoins, 0);
+        PlayerPrefs.SetInt(KeyNX, 0);
+        PlayerPrefs.SetInt(KeyPlayed, 0);
+        PlayerPrefs.SetInt(KeyWon, 0);
+        PlayerPrefs.DeleteKey("ludonx_career");
+        PlayerPrefs.DeleteKey("ludonx_joined");
+        PlayerPrefs.SetInt("ludonx_energy_count", 50);
+        PlayerPrefs.Save();
+        LudoNX.UI.StatsService.ResetStatics();
+        LudoNX.UI.EnergyService.ResetStatics();
+        if (Instance != null)
+        {
+            Instance.coins = 0;
+            Instance.nxPoints = 0;
+            Instance.matchesPlayed = 0;
+            Instance.matchesWon = 0;
+            Instance.Load();
+        }
+    }
+
+    private void CheckFreshStart()
+    {
+        if (PlayerPrefs.GetInt(KeyFreshStart, 0) == 0)
+        {
+            ResetAllToFreshStart();
+        }
+    }
+
     private void Load()
     {
+        CheckFreshStart();
         playerName = PlayerPrefs.GetString(KeyName, "Player");
-        coins = PlayerPrefs.GetInt(KeyCoins, 500);   // a small starting float so the shop isn't empty on day one
+        coins = PlayerPrefs.GetInt(KeyCoins, 0);   // fresh starting points: 0
         nxPoints = PlayerPrefs.GetInt(KeyNX, 0);
         matchesPlayed = PlayerPrefs.GetInt(KeyPlayed, 0);
         matchesWon = PlayerPrefs.GetInt(KeyWon, 0);

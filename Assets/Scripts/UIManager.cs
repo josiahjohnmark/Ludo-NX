@@ -54,7 +54,7 @@ public class UIManager : MonoBehaviour
     // must be white or it stains the art — an orange tint over the cyan pill turned it olive.
     // Disabled just drains it rather than recolouring it.
     public Color rollButtonActiveColor = Color.white;
-    public Color rollButtonDisabledColor = new Color(0.55f, 0.58f, 0.60f, 0.75f);
+    public Color rollButtonDisabledColor = new Color(0.48f, 0.48f, 0.48f, 0.70f);
 
     [Header("Setup Menu Panel")]
     public GameObject playerSetupPanel;
@@ -279,6 +279,17 @@ public class UIManager : MonoBehaviour
     /// </summary>
     public void StartTurnTimer()
     {
+        var session = LudoNXSession.Instance;
+        // Non-online game modes (VS Computer, Pass & Play) do NOT need a countdown.
+        // Only online mode (QuickMatch) gets a turn timer countdown!
+        bool isOnline = session != null && session.pendingMode == LudoNXSession.Mode.QuickMatch;
+        if (!isOnline)
+        {
+            StopTurnTimer();
+            if (timerText != null) timerText.text = "";
+            return;
+        }
+
         if (turnTimerCoroutine != null) StopCoroutine(turnTimerCoroutine);
         isTurnTimerPaused = false;
         turnTimerCoroutine = StartCoroutine(TurnTimerRoutine());
@@ -436,7 +447,7 @@ public class UIManager : MonoBehaviour
 
         if (rollButtonImage != null)
         {
-            rollButtonImage.color = enabled ? rollButtonActiveColor : rollButtonDisabledColor;
+            rollButtonImage.color = enabled ? Color.white : new Color(0.55f, 0.55f, 0.55f, 0.70f);
         }
 
         if (extraRollButtons != null)

@@ -258,42 +258,23 @@ public static class LudoHomeScreenFigmaImporter
         coinsTxtRt.anchoredPosition = new Vector2(8f, 0f);
         coinsTxtRt.sizeDelta = new Vector2(130f, 40f);
         TextMeshProUGUI coinsTxt = coinsTxtObj.GetComponent<TextMeshProUGUI>();
-        coinsTxt.text = "12,000";
+        coinsTxt.text = "0";
         coinsTxt.fontSize = 28f;
         coinsTxt.font = fonts != null ? fonts.numeric : null;
         coinsTxt.alignment = TextAlignmentOptions.Center;
-        coinsTxt.color = Color.white;
-        ApplyTextStroke(coinsTxt, Color.black, 0.5f);
+        coinsTxt.color = Color.black;
         home.coinsChipLabel = coinsTxt;
 
-        // Coins Plus Button (Single, placed cleanly on right)
-        GameObject coinsPlusObj = new GameObject("PlusBtn", typeof(RectTransform), typeof(Image));
-        coinsPlusObj.transform.SetParent(coinsPillObj.transform, false);
-        RectTransform coinsPlusRt = coinsPlusObj.GetComponent<RectTransform>();
-        coinsPlusRt.anchoredPosition = new Vector2(106f, 0f);
-        coinsPlusRt.sizeDelta = new Vector2(52f, 52f);
-        Image coinsPlusImg = coinsPlusObj.GetComponent<Image>();
-        Sprite plusSprite = LoadSprite("plus_button.png");
-        if (plusSprite != null) coinsPlusImg.sprite = plusSprite;
-        coinsPlusImg.raycastTarget = false;
+        // Plus button removed per user request: coin is now a point, starting fresh from 0
 
-        // ── Energy Pill (Electric blue chassis, centered at X = +165) ──
+        // ── Energy Pill (Icon and text float cleanly on wood bar) ──
         GameObject energyPillObj = new GameObject("EnergyPill", typeof(RectTransform), typeof(Image), typeof(Button));
         energyPillObj.transform.SetParent(topBar.transform, false);
         RectTransform energyPillRt = energyPillObj.GetComponent<RectTransform>();
         energyPillRt.anchoredPosition = new Vector2(165f, 0f);
         energyPillRt.sizeDelta = new Vector2(245f, 92f);
         Image energyBg = energyPillObj.GetComponent<Image>();
-        Sprite energyChassisSprite = LoadSprite("energy_chassis_clean.png") ?? LoadSprite("energy_bar.png");
-        if (energyChassisSprite != null)
-        {
-            energyBg.sprite = energyChassisSprite;
-            energyBg.type = Image.Type.Simple;
-        }
-        else
-        {
-            energyBg.color = new Color32(0x00, 0x52, 0xD7, 0xFF);
-        }
+        energyBg.color = new Color(0f, 0f, 0f, 0f);
         home.energyChipButton = energyPillObj.GetComponent<Button>();
 
         // Energy Bolt Icon (Single, placed cleanly on left)
@@ -314,12 +295,11 @@ public static class LudoHomeScreenFigmaImporter
         energyTxtRt.anchoredPosition = new Vector2(-12f, 0f);
         energyTxtRt.sizeDelta = new Vector2(85f, 36f);
         TextMeshProUGUI energyTxt = energyTxtObj.GetComponent<TextMeshProUGUI>();
-        energyTxt.text = "7/20";
+        energyTxt.text = "50";
         energyTxt.fontSize = 26f;
         energyTxt.font = fonts != null ? fonts.numeric : null;
         energyTxt.alignment = TextAlignmentOptions.Center;
-        energyTxt.color = Color.white;
-        ApplyTextStroke(energyTxt, Color.black, 0.5f);
+        energyTxt.color = Color.black;
         home.energyChipLabel = energyTxt;
 
         // Energy Timer Text (Gold/Amber, aligned on right blue tab)
@@ -355,18 +335,7 @@ public static class LudoHomeScreenFigmaImporter
         if (menuSprite != null) menuIconImg.sprite = menuSprite;
         menuIconImg.color = Color.white;
         menuIconImg.preserveAspect = true;
-
-        // Menu Notification Red Dot
-        GameObject menuDotObj = new GameObject("NotificationDot", typeof(RectTransform), typeof(Image));
-        menuDotObj.transform.SetParent(menuBtnObj.transform, false);
-        RectTransform dotRt = menuDotObj.GetComponent<RectTransform>();
-        dotRt.anchorMin = new Vector2(1f, 1f);
-        dotRt.anchorMax = new Vector2(1f, 1f);
-        dotRt.pivot = new Vector2(0.5f, 0.5f);
-        dotRt.anchoredPosition = new Vector2(-6f, -6f);
-        dotRt.sizeDelta = new Vector2(22f, 22f);
-        Image dotImg = menuDotObj.GetComponent<Image>();
-        dotImg.color = new Color32(0xDC, 0x26, 0x26, 0xFF); // Vibrant crimson red
+        // Red notification dot removed per user request
 
         // ══════════════════════════════════════════════════════════════════════
         // 2. LIVE-OPS EVENT RAIL (Missions Left, Tournament Right - Generous Breathing Room)

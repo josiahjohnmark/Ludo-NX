@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3998555545542726891
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5986780194051887808}
+  - component: {fileID: 2639436063530186798}
+  m_Layer: 0
+  m_Name: StickerPackOpener
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &5986780194051887808
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3998555545542726891}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2639436063530186798
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3998555545542726891}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1667476064fda1c499570ab45157188e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LudoNX.UI.StickerPackOpener
+  textures:
+  - {fileID: 2800000, guid: 912d0aab824e7024d8d737503cc4aee7, type: 3}
+  - {fileID: 2800000, guid: 5c9553b84a7a3664ba443fcd2995be11, type: 3}
+  - {fileID: 2800000, guid: 05a9b9f4da1b0454eb2222b069595d13, type: 3}
+  - {fileID: 2800000, guid: 1410f190c85abd8428f351db47a3456b, type: 3}
+  - {fileID: 2800000, guid: 537ba8b2568beb848961402804727977, type: 3}
+  - {fileID: 2800000, guid: c2b558811c783b949b1115bff7232c5d, type: 3}
+  - {fileID: 2800000, guid: 3afdae9c3cc4f86408f27a46ab190076, type: 3}
+  - {fileID: 2800000, guid: f9f71819df4267044b999fd6ff2ef990, type: 3}
+  - {fileID: 2800000, guid: b24d9108ddc2794468ca6eecbfd68d70, type: 3}
+  - {fileID: 2800000, guid: e0c4d7f23c80bdb4b87797f4ea996fb9, type: 3}
+  - {fileID: 2800000, guid: 653e8442c49d4504d9363db849c005ba, type: 3}
+  - {fileID: 2800000, guid: c9940a22de7864547addcbb0ef5c25cc, type: 3}
+  - {fileID: 2800000, guid: 0bfc6fa16e59fe6448eb753eac3cfbec, type: 3}
+  - {fileID: 2800000, guid: 0759432663c6de34285f1e5e9c69daa0, type: 3}
+  - {fileID: 2800000, guid: 81da506ae8fdcea47bd94625fa8fa1f9, type: 3}
+  - {fileID: 2800000, guid: b363f11e59a081342bd6892ba76f036f, type: 3}
+  - {fileID: 2800000, guid: 94afd711287d4934fadae79d685f4936, type: 3}
+  - {fileID: 2800000, guid: f4b0631d3df5b1b4585943b3a92c291c, type: 3}
+  packFrame: {fileID: 21300000, guid: 86aebbc345a5a374f92e4877a3d985e5, type: 3}
+  ribbon: {fileID: 21300000, guid: 57a27f23d68a5fc499d62d52aed66cf1, type: 3}
+  circle: {fileID: -3947563801781270653, guid: df6662a5f9cc4834b8f96b26ad60e564, type: 3}
+  glow: {fileID: 21300000, guid: 45e25e1def9dfc846af872c9ada01804, type: 3}
+  button: {fileID: 21300000, guid: 07ffbea029620544c8b8baa92f275c59, type: 3}
+  newChip: {fileID: 21300000, guid: e6dac1be11a7d64468fccaa49d5e7c1d, type: 3}
+  shine: {fileID: 2100000, guid: 160585c96e7308d4b8c253ce5191d5c5, type: 2}
+  font: {fileID: 11400000, guid: 3ddc25e4ddb4b534f8ccac026dc31c4d, type: 2}

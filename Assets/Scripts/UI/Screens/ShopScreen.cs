@@ -167,7 +167,12 @@ namespace LudoNX.UI
             var rc = LudoNX.Shop.RevenueCatManager.Instance;
             if (rc == null || !rc.StoreReady)
             {
-                // Fallback granting for sandbox / editor
+#if !UNITY_EDITOR
+                // Never grant without a confirmed purchase on a device.
+                Toast.Instance.Show("Store is still loading. Try again in a moment.");
+                return;
+#endif
+                // Editor only: the SDK is a no-op here, so grant to exercise the flow.
                 if (row.energyGranted > 0)
                 {
                     EnergyService.Grant(row.energyGranted, allowOverfill: true);

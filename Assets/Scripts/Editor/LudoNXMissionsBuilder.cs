@@ -53,8 +53,12 @@ public static class LudoNXMissionsBuilder
 
         var bg = Make("Background", root, typeof(Image));
         Stretch(bg);
-        bg.GetComponent<Image>().color = Slate;
-        bg.GetComponent<Image>().raycastTarget = false;
+        var bgImg = bg.GetComponent<Image>();
+        bgImg.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/Backgrounds/bg_match_emboss.jpg");
+        bgImg.color = Color.white;
+        bgImg.raycastTarget = false;
+        var cover = bg.gameObject.AddComponent<BackgroundCoverFitter>();
+        cover.overscan = 1.05f;
 
         BuildBody(root, screen);
         BuildHeader(root, screen);

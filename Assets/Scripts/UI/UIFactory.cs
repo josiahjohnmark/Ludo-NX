@@ -105,6 +105,24 @@ namespace LudoNX.UI
             // 1. Solid Ash Ground Layer
             Ground(parent, T.groundTop);
 
+            // 1b. Game Background Wallpaper (bg_match_emboss)
+            Sprite bgSprite = customBg != null ? customBg : Resources.Load<Sprite>("bg_match_emboss");
+            if (bgSprite != null)
+            {
+                var bgGo = new GameObject("Wallpaper", typeof(RectTransform), typeof(Image));
+                bgGo.transform.SetParent(parent, false);
+                var bgRt = (RectTransform)bgGo.transform;
+                bgRt.anchorMin = Vector2.zero;
+                bgRt.anchorMax = Vector2.one;
+                bgRt.offsetMin = bgRt.offsetMax = Vector2.zero;
+                var bgImg = bgGo.GetComponent<Image>();
+                bgImg.sprite = bgSprite;
+                bgImg.color = Color.white;
+                bgImg.raycastTarget = false;
+                var fitter = bgGo.AddComponent<BackgroundCoverFitter>();
+                fitter.overscan = 1.05f;
+            }
+
             // 2. Corner Vignette / Glow Washes
             Sprite glow = UIIconSet.Current != null ? UIIconSet.Current.softGlow : null;
             if (glow != null)

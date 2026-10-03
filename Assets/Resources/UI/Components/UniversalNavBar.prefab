@@ -311,6 +311,7 @@ GameObject:
   - component: {fileID: 6179212995556542323}
   - component: {fileID: 6635494004758693351}
   - component: {fileID: 5629933230510413657}
+  - component: {fileID: 8081027134460574899}
   m_Layer: 0
   m_Name: UniversalNavBar
   m_TagString: Untagged
@@ -436,6 +437,27 @@ MonoBehaviour:
   selectedScale: 1
   unselectedAlpha: 1
   activeTab: 2
+--- !u!114 &8081027134460574899
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2777361452221989724}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d34277883e5eef429d8f742b08620f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LudoNX.UI.IconShine
+  targets: []
+  firstDelay: 2
+  interval: 5
+  sweepDuration: 0.85
+  stagger: 0.1
+  intensity: 0.6
+  width: 0.1
+  angle: 25
+  shineColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &3082238851027116109
 GameObject:
   m_ObjectHideFlags: 0

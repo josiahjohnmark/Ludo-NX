@@ -53,6 +53,32 @@ namespace LudoNX.UI
             set { Load(); _vibration = value; PlayerPrefs.SetInt(KeyVibration, value ? 1 : 0); Commit(); }
         }
 
+        /// <summary>
+        /// The language list — the one copy every picker reads (owner, 27 Sep 2026: "the major
+        /// languages, 7 to 10"). Written in their own names where the UI font (Lilita One: Latin
+        /// + Cyrillic) can draw them; Hindi, Arabic and Chinese use English names until a Noto
+        /// fallback font ships with the real translations. The stored value is the label.
+        /// </summary>
+        public static readonly string[] Languages =
+        {
+            "English", "Español", "Français", "Português", "Deutsch",
+            "Русский", "Hindi", "Arabic", "Chinese", "Hausa",
+        };
+
+        /// <summary>No translations exist yet; the choice is saved for when they do.</summary>
+        public const string LanguagePendingNote = "Saved. Translations arrive in a later update.";
+
+        /// <summary>
+        /// Shown by the Privacy rows. Accurate for this build: local profile/stats, and purchases
+        /// through Google Play + RevenueCat. Update when Firebase (Phase A) ships.
+        /// </summary>
+        public const string PrivacyText =
+            "Your profile, settings and match statistics are stored on this device.\n\n" +
+            "Purchases are processed by Google Play and RevenueCat, which receive your purchase " +
+            "history and an anonymous app user ID so purchases can be verified and restored.\n\n" +
+            "Replace this text with your published privacy policy before release — Google Play " +
+            "requires a reachable privacy policy.";
+
         public static string Language
         {
             get { Load(); return _language; }
@@ -70,9 +96,8 @@ namespace LudoNX.UI
         public static void ApplyToEngine()
         {
             Load();
-            // AudioManager has no volume API, so drive the global mixer instead — that also
-            // covers any AudioSource added later without needing to know about it.
-            AudioListener.volume = _sound || _music ? 1f : 0f;
+            AudioListener.volume = 1f;
+            AudioListener.pause = false;
         }
 
         /// <summary>Short haptic tap, honouring the vibration preference. Mobile only.</summary>

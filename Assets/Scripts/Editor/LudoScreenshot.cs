@@ -3,6 +3,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
+using LudoNX.UI;
 
 /// <summary>
 /// Renders the game to a PNG at an exact device size, without the Game view and without play mode.
@@ -39,6 +40,139 @@ public static class LudoScreenshot
     public static void CaptureShopScreen()
     {
         CaptureScreenPrefab("Assets/Resources/UI/Screens/Shop.prefab", "screen_shop_ash", 1080, 1920);
+    }
+
+    [MenuItem("Ludo NX/Capture Rules Modal")]
+    public static void CaptureRulesModal()
+    {
+        CaptureScreenPrefab("Assets/Resources/UI/Modals/Rules.prefab", "rules_modal_1080x2400", 1080, 2400);
+    }
+
+    [MenuItem("Ludo NX/Capture Menu Modal")]
+    public static void CaptureMenuModal()
+    {
+        CaptureScreenPrefab("Assets/Resources/UI/Modals/Menu.prefab", "menu_modal_1080x2400", 1080, 2400);
+    }
+
+    [MenuItem("Ludo NX/Capture Match HUD (All 4 House Turns)")]
+    public static void CaptureMatchHudAllTurns()
+    {
+        CaptureMatchHudTurn(GameManager.PlayerColor.RED, "match_hud_red_turn_1080x2400");
+        CaptureMatchHudTurn(GameManager.PlayerColor.GREEN, "match_hud_green_turn_1080x2400");
+        CaptureMatchHudTurn(GameManager.PlayerColor.YELLOW, "match_hud_yellow_turn_1080x2400");
+        CaptureMatchHudTurn(GameManager.PlayerColor.BLUE, "match_hud_blue_turn_1080x2400");
+    }
+
+    public static string CaptureMatchHudTurn(GameManager.PlayerColor turnHouse, string outputName)
+    {
+        string prefabPath = "Assets/Resources/UI/Components/MatchHud.prefab";
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        if (prefab == null)
+        {
+            Debug.LogError($"[LudoScreenshot] Prefab not found: {prefabPath}");
+            return null;
+        }
+
+        var camGo = new GameObject("TempCam", typeof(Camera));
+        var cam = camGo.GetComponent<Camera>();
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = new Color(0.12f, 0.13f, 0.15f, 1f);
+        cam.nearClipPlane = 0.1f;
+        cam.farClipPlane = 100f;
+
+        int width = 1080;
+        int height = 2400;
+        RenderTexture rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+        cam.targetTexture = rt;
+
+        var instance = Object.Instantiate(prefab);
+        var canvas = instance.GetComponent<Canvas>();
+        if (canvas != null)
+        {
+            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera = cam;
+            canvas.planeDistance = 10f;
+        }
+        var scaler = instance.GetComponent<CanvasScaler>();
+        if (scaler != null)
+        {
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(440, 956);
+            scaler.matchWidthOrHeight = 0f;
+        }
+
+        var view = instance.GetComponent<MatchHudView>();
+        if (view != null)
+        {
+            Color tint = turnHouse switch
+            {
+                GameManager.PlayerColor.RED => new Color(0.906f, 0.216f, 0.208f, 0.48f),
+                GameManager.PlayerColor.GREEN => new Color(0.302f, 0.682f, 0.318f, 0.45f),
+                GameManager.PlayerColor.YELLOW => new Color(0.984f, 0.753f, 0.169f, 0.39f),
+                _ => new Color(0.106f, 0.537f, 0.906f, 0.51f),
+            };
+            if (view.houseTintStrips != null)
+                foreach (var strip in view.houseTintStrips)
+                    if (strip != null) strip.color = tint;
+            view.UpdateTintHole();
+
+            if (view.cards != null)
+            {
+                string[] names = { "YOU", "ALEX", "SARAH", "LEO" };
+                int[] levels = { 5, 3, 7, 2 };
+                string[] points = { "3,450", "1,820", "4,100", "950" };
+
+                for (int i = 0; i < view.cards.Length; i++)
+                {
+                    if (view.cards[i] != null)
+                    {
+                        var card = view.cards[i];
+                        bool isTurn = card.house == turnHouse;
+                        card.ApplyHouse(card.house, isBot: i > 0);
+                        if (card.nameLabel != null) card.nameLabel.text = names[i % names.Length];
+                        if (card.levelLabel != null) card.levelLabel.text = $"LEVEL {levels[i % levels.Length]}";
+                        if (card.nxPointsLabel != null) card.nxPointsLabel.text = points[i % points.Length];
+                        card.SetActive(isTurn, 0f);
+                    }
+                }
+            }
+
+            if (view.turnLabel != null) view.turnLabel.text = $"{turnHouse}'S TURN";
+            if (view.rollSubLabel != null)
+            {
+                view.rollSubLabel.text = (turnHouse == GameManager.PlayerColor.RED) ? "TAP TO ROLL" : $"{turnHouse}'S TURN";
+            }
+        }
+
+        Canvas.ForceUpdateCanvases();
+        foreach (var band in instance.GetComponentsInChildren<DesignBand>(true))
+        {
+            band.Apply(force: true);
+        }
+        Canvas.ForceUpdateCanvases();
+
+        cam.Render();
+
+        RenderTexture.active = rt;
+        Texture2D shot = new Texture2D(width, height, TextureFormat.RGB24, false);
+        shot.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+        shot.Apply();
+
+        RenderTexture.active = null;
+        cam.targetTexture = null;
+        rt.Release();
+        Object.DestroyImmediate(rt);
+        Object.DestroyImmediate(camGo);
+        Object.DestroyImmediate(instance);
+
+        Directory.CreateDirectory(OutDir);
+        string outPath = $"{OutDir}/{outputName}.png";
+        File.WriteAllBytes(outPath, shot.EncodeToPNG());
+        Object.DestroyImmediate(shot);
+
+        AssetDatabase.ImportAsset(outPath, ImportAssetOptions.ForceUpdate);
+        Debug.Log($"[LudoScreenshot] Captured Match HUD turn to {outPath}");
+        return outPath;
     }
 
     public static string CaptureScreenPrefab(string prefabPath, string outputName, int width, int height)
@@ -131,22 +265,11 @@ public static class LudoScreenshot
         if (framer != null) framer.Frame();
 
         MatchHudLayout hud = Object.FindAnyObjectByType<MatchHudLayout>();
-        if (hud != null) hud.Apply();
+        if (hud != null && hud.isActiveAndEnabled) hud.Apply();
 
         // ── overlay canvases have to go through the camera to be captured ──
         List<(Canvas canvas, RenderMode mode, Camera worldCam, float plane)> restore =
             new List<(Canvas, RenderMode, Camera, float)>();
-
-        foreach (Canvas c in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
-        {
-            if (c.renderMode != RenderMode.ScreenSpaceOverlay) continue;
-            restore.Add((c, c.renderMode, c.worldCamera, c.planeDistance));
-            c.renderMode = RenderMode.ScreenSpaceCamera;
-            c.worldCamera = cam;
-            c.planeDistance = 1f;
-        }
-
-        Canvas.ForceUpdateCanvases();
 
         RenderTexture rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32)
         {
@@ -160,6 +283,24 @@ public static class LudoScreenshot
         try
         {
             cam.targetTexture = rt;
+
+            foreach (Canvas c in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            {
+                if (c.renderMode != RenderMode.ScreenSpaceOverlay) continue;
+                restore.Add((c, c.renderMode, c.worldCamera, c.planeDistance));
+                c.renderMode = RenderMode.ScreenSpaceCamera;
+                c.worldCamera = cam;
+                c.planeDistance = 10f;
+            }
+
+            Canvas.ForceUpdateCanvases();
+            foreach (var band in Object.FindObjectsByType<DesignBand>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            {
+                band.Apply(force: true);
+            }
+            Canvas.ForceUpdateCanvases();
+            if (framer != null) framer.Frame();
+
             cam.Render();
 
             RenderTexture.active = rt;

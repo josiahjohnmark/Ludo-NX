@@ -1,4 +1,4 @@
-﻿using LudoNX.UI;
+using LudoNX.UI;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -162,8 +162,8 @@ public static class LudoNXMatchHudAuthor
         uiManager.timerSafeColor = T.InkOn(T.panel);
         uiManager.timerWarnColor = T.goldDeep;
         uiManager.timerDangerColor = T.primary;
-        uiManager.rollButtonActiveColor = T.gold;
-        uiManager.rollButtonDisabledColor = T.neutral;
+        uiManager.rollButtonActiveColor = Color.white;
+        uiManager.rollButtonDisabledColor = new Color(0.48f, 0.48f, 0.48f, 0.70f);
 
         EditorUtility.SetDirty(uiManager);
         EditorUtility.SetDirty(canvasGo);

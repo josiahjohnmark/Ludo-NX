@@ -30,6 +30,22 @@ namespace LudoNX.UI
         /// <summary>Total time spent in matches, seconds. Fed by RecordMatch.</summary>
         public int totalPlaySeconds;
 
+        // Single-match bests, for the profile.
+        public int mostCapturesInGame;
+        public int mostTokensHomeInGame;
+
+        /// <summary>
+        /// NX earned from matches over the whole career. Only ever grows: a staked loss takes NX
+        /// off the balance, but it does not un-earn what was won before. Fed by RecordNx.
+        /// </summary>
+        public int nxEarned;
+
+        /// <summary>Most NX earned from a single match. Fed by RecordNx.</summary>
+        public int bestNxInGame;
+
+        /// <summary>Tournaments won. Stays 0 until tournaments exist; fed by RecordTournamentWin.</summary>
+        public int tournamentWins;
+
         // Finish positions 1st..4th
         public int finish1, finish2, finish3, finish4;
 
@@ -47,6 +63,9 @@ namespace LudoNX.UI
         public float CasualWinRate      => casualMatches     == 0 ? 0f : casualWins     / (float)casualMatches;
         public float RankedWinRate      => rankedMatches     == 0 ? 0f : rankedWins     / (float)rankedMatches;
         public float PrivateWinRate     => privateMatches    == 0 ? 0f : privateWins    / (float)privateMatches;
+
+        public float CapturesPerGame => matches == 0 ? 0f : captures / (float)matches;
+        public float NxPerGame       => matches == 0 ? 0f : nxEarned / (float)matches;
 
         /// <summary>Alias for highestScore so screens can use a self-describing name.</summary>
         public int bestScore => highestScore;
@@ -105,6 +124,8 @@ namespace LudoNX.UI
             d.tokensHome += Mathf.Max(0, tokensHome);
             if (wasMvp) d.mvps++;
             if (score > d.highestScore) d.highestScore = score;
+            if (captures > d.mostCapturesInGame) d.mostCapturesInGame = captures;
+            if (tokensHome > d.mostTokensHomeInGame) d.mostTokensHomeInGame = tokensHome;
 
             switch (Mathf.Clamp(placement, 1, 4))
             {
@@ -130,6 +151,25 @@ namespace LudoNX.UI
                 d.currentStreak = 0;
             }
 
+            Save();
+        }
+
+        /// <summary>
+        /// Banks the NX a match paid out. Called after the session settles the stake, because
+        /// that is where the multiplier is applied. A loss (negative NX) earns nothing.
+        /// </summary>
+        public static void RecordNx(int nxFromMatch)
+        {
+            if (nxFromMatch <= 0) return;
+            var d = Data;
+            d.nxEarned += nxFromMatch;
+            if (nxFromMatch > d.bestNxInGame) d.bestNxInGame = nxFromMatch;
+            Save();
+        }
+
+        public static void RecordTournamentWin()
+        {
+            Data.tournamentWins++;
             Save();
         }
 

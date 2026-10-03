@@ -1,0 +1,1111 @@
+﻿2LUDO NX — COMPLETE SCREEN ARCHITECTURE
+01. SPLASH SCREEN
+Contains
+Ludo NX logo
+Game loading
+Version information
+Initial game/data loading
+Connection check
+Local player data loading
+Game configuration loading
+Leads to
+Home
+02. HOME / MAIN MENU
+The main hub of the entire game.
+Contains
+Player profile shortcut
+Player level
+Player name
+Current currency balances
+Energy/lives
+Play button
+Collection
+Shop
+Missions
+Events
+Leaderboard
+Profile
+Settings
+Notifications
+Inbox/mail
+Main navigation
+Home
+Play
+Collection
+Clan
+Shop
+Profile
+03. PLAY SCREEN
+The central game-mode selection screen.
+Contains
+Quick Match
+2-player match
+4-player match
+Casual/normal gameplay
+Ranked
+2-player ranked
+4-player ranked
+Rank progression
+Rank points
+Rank history
+Private Match
+Create room
+Join room
+Room code
+Invite friends
+Player slots
+Match settings
+04. QUICK MATCH SETUP
+Contains
+Number of players
+2 players
+4 players
+Game type
+Classic
+Safe Zone
+Difficulty
+Easy
+Normal
+Hard
+Player assignment
+Human player
+CPU players
+Selected board
+Selected dice
+Game rules
+Match confirmation
+Start match
+07. MATCH LOBBY / PLAYER WAITING ROOM
+Contains
+Match players
+Player names
+Player avatars
+Player colors
+Ready status
+Host status
+Player slots
+Game mode
+Board
+Rules
+Invite option
+Start match
+Leave lobby
+For online matches:
+Connection status
+Ping/connection indicator
+Player joining/leaving notifications
+08. MATCH INTRO / MATCH SETUP
+Contains
+Participating players
+Player order
+Player colors
+Player names
+Player avatars
+Match type
+Board selected
+Match rules
+Starting player
+Match countdown
+09. GAMEPLAY / LUDO BOARD
+The primary gameplay screen.
+Contains
+Board
+15×15 Ludo board
+Four player home areas
+52-track tiles
+Safe tiles
+Home columns
+Center victory area
+Player starting positions
+Player pieces
+Four tokens per player
+Token positions
+Tokens in base
+Tokens on board
+Tokens in home path
+Tokens completed
+Dice
+Dice
+Dice results
+Roll action
+Current roll
+Available moves
+Player information
+Player names
+Player colors
+Current player
+Turn order
+Player scores
+Token status
+Game information
+Match timer
+Current turn
+Turn countdown
+Match status
+Ludo NX scoring
+Kill/capture: +2
+Reach home: +5
+Captured: -1
+Win probability
+Player win probability
+Probability changes based on game state
+Relative probability between players
+Gameplay events
+Token capture
+Token reaching home
+Token leaving base
+Extra turn
+Player elimination/completion
+Winning condition
+10. PAUSE SCREEN
+Contains
+Resume
+Restart
+Settings
+Rules
+Quit match
+Confirmation screens
+Restart confirmation
+Quit confirmation
+11. MATCH RESULT SCREEN
+Contains
+Winner
+Final ranking
+Player positions
+Final scores
+Match duration
+Tokens completed
+Captures
+Times captured
+Points earned
+Win probability
+Match statistics
+Actions
+Play again
+Return home
+View detailed statistics
+Share result
+12. POST-MATCH REWARDS SCREEN
+Separate from the basic result screen.
+Contains
+XP earned
+NX Points earned
+Coins earned
+Gold earned
+Event currency earned
+Ranked points gained/lost
+Mission progress
+Season Pass progress
+Achievement progress
+Reward multipliers
+Match performance summary
+13. PROFILE SCREEN
+The player's complete identity/progression screen.
+Contains
+Avatar
+Player name
+Player ID
+Level
+XP
+Rank
+Current league
+Country
+Region
+Join date
+Total games
+Wins
+Losses
+Win rate
+Total points
+Total captures
+Tokens brought home
+Best score
+Current streak
+Longest win streak
+Profile sections
+Overview
+Statistics
+Match history
+Achievements
+Collection
+Ranked history
+Season history
+14. PLAYER STATISTICS SCREEN
+Detailed gameplay analytics.
+Overall statistics
+Total games
+Total wins
+Total losses
+Win percentage
+Total points
+Average points
+Total captures
+Times captured
+Tokens completed
+Average game duration
+Separate statistics
+2-player statistics
+4-player statistics
+Casual statistics
+Ranked statistics
+Private-match statistics
+Records
+Highest score
+Most captures
+Fastest victory
+Longest match
+Longest win streak
+Most tokens home in one match
+15. MATCH HISTORY SCREEN
+Contains
+Previous matches
+Match date
+Match type
+Number of players
+Opponents
+Result
+Score
+Duration
+Captures
+Points gained/lost
+Match detail
+Selecting a match opens:
+Full result
+Player standings
+Match statistics
+Score breakdown
+16. LEADERBOARD SCREEN
+This is the broader competitive ranking system.
+Leaderboard categories
+Global
+Worldwide ranking
+Country
+Country ranking
+Friends
+Friends ranking
+Clan
+Clan ranking
+Time periods
+Weekly
+Monthly
+Season
+Ranking information
+Rank
+Player
+Score
+Wins
+Points
+Rank change
+Player position
+Current player's rank
+Rank movement
+Nearby competitors
+17. RANKED SCREEN
+Contains
+Current rank
+Rank points
+League
+Current division
+Progress to next rank
+Wins
+Losses
+Ranked win rate
+Current streak
+Season ranking
+Rank history
+Rank progression
+Promotion requirements
+Demotion requirements
+Rank rewards
+18. WORLD SCREEN
+This is the larger geographical/progression system we planned.
+Structure
+World
+→ Continent
+→ Country
+→ State/Region
+→ Land/territory
+Contains
+World map
+Unlocked locations
+Locked locations
+Player's current location/progression
+Regional rankings
+Location statistics
+Location rewards
+Location challenges
+Location collection progress
+19. WORLD / CONTINENT SCREEN
+Contains
+Continents
+Continent progress
+Continent ranking
+Unlocked countries
+Locked countries
+Continent challenges
+Continent rewards
+20. COUNTRY SCREEN
+Contains
+Country information
+Country leaderboard
+Player's country rank
+Country progression
+Regional locations
+Country challenges
+Country rewards
+Country collection items
+21. STATE / REGION SCREEN
+Contains
+States/regions
+Regional leaderboard
+Player's regional ranking
+Region progression
+Regional challenges
+Regional rewards
+Regional locations
+22. LAND / LOCATION SCREEN
+The smallest geographical progression layer.
+Contains
+Location information
+Location progression
+Local leaderboard
+Local challenges
+Local achievements
+Location rewards
+Location collectibles
+23. COLLECTION / ATLAS SCREEN
+This is the game's collectible system.
+Contains
+Atlas
+Collection categories
+Collected items
+Uncollected items
+Collection progress
+Completion percentage
+Collection rewards
+Possible collectible categories
+Boards
+Dice
+Pawns
+Themes
+Location cards
+Event items
+Special items
+24. ATLAS CARD DETAIL SCREEN
+When a player selects a collectible.
+Contains
+Item/card name
+Item description
+Rarity
+Collection category
+Acquisition method
+Collection status
+Upgrade/progression information
+Related collection
+Completion reward
+25. BOARD COLLECTION SCREEN
+Contains
+Owned boards
+Locked boards
+Equipped board
+Board categories
+Board rarity
+Board acquisition method
+Board preview
+Board details
+26. DICE COLLECTION SCREEN
+Contains
+Owned dice
+Locked dice
+Equipped dice
+Dice sets
+Dice rarity
+Dice details
+Acquisition method
+27. PAWN / TOKEN COLLECTION SCREEN
+Contains
+Owned pawns
+Locked pawns
+Equipped pawn
+Pawn sets
+Rarity
+Acquisition method
+Collection progress
+28. SHOP
+The central marketplace.
+Main categories
+Boards
+Dice
+Pawns
+Cosmetics
+Bundles
+Currency
+Limited-time items
+Contains
+Featured items
+New items
+Popular items
+Limited items
+Item categories
+Prices
+Purchase buttons
+Owned status
+Item details
+29. SHOP ITEM DETAIL SCREEN
+Contains
+Item
+Item name
+Description
+Category
+Rarity
+Price
+Ownership status
+Preview
+Purchase
+Equip
+Related items
+30. CURRENCY / WALLET SCREEN
+Because we planned multiple currencies.
+Contains
+Coins
+Current balance
+Ways to earn
+Ways to spend
+Gold
+Current balance
+Ways to earn
+Ways to spend
+NX Points / XP
+Current amount
+Progression
+Event Currency
+Current event balance
+Event expiration
+Ways to earn
+Event shop usage
+31. ENERGY / LIVES SCREEN
+This was part of the game's progression/retention system.
+Contains
+Current energy/lives
+Maximum capacity
+Time until next recharge
+Full recharge time
+Ways to earn additional energy
+Energy usage
+Energy history if needed
+Planned concept
+The earlier V1 concept included a universal life system, but this belongs to the broader game architecture rather than necessarily the first release.
+32. MISSIONS SCREEN
+Contains
+Daily missions
+Mission objectives
+Progress
+Rewards
+Completion status
+Weekly missions
+Objectives
+Progress
+Rewards
+Season missions
+Objectives
+Progress
+Rewards
+Mission examples
+Play matches
+Win matches
+Capture tokens
+Bring tokens home
+Earn points
+33. EVENTS SCREEN
+The rotating live-content hub.
+Contains
+Active events
+Upcoming events
+Completed events
+Event countdown
+Event objectives
+Event leaderboard
+Event rewards
+Event currency
+Event shop access
+34. EVENT DETAIL SCREEN
+Contains
+Event name
+Event description
+Start date
+End date
+Rules
+Objectives
+Progress
+Ranking
+Rewards
+Event currency
+Event-specific gameplay mode
+35. MINI-GAMES SCREEN
+We had discussed monthly mini-games/events as part of the broader ecosystem.
+Contains
+Available mini-games
+Locked mini-games
+Event mini-games
+Rewards
+Scores
+Mini-game leaderboard
+Entry requirements
+36. CLAN SCREEN
+The player's clan headquarters.
+Contains
+Clan name
+Clan logo
+Clan level
+Clan members
+Clan rank
+Clan points
+Clan activity
+Clan contribution
+Clan missions
+Clan rewards
+Clan chat
+Clan battles
+Navigation
+Clan Home
+Members
+Clan Chat
+Clan Missions
+Clan Wars
+Clan Leaderboard
+Clan Settings
+37. CLAN DISCOVERY SCREEN
+Contains
+Search clan
+Recommended clans
+Clan rankings
+Clan requirements
+Member count
+Clan level
+Join/request button
+Create clan
+38. CREATE CLAN SCREEN
+Contains
+Clan name
+Clan description
+Clan logo
+Country/region
+Join requirements
+Minimum level
+Public/private status
+Create confirmation
+39. CLAN MEMBERS SCREEN
+Contains
+Member list
+Member names
+Roles
+Levels
+Contributions
+Clan points
+Activity
+Online status
+Management
+Promote
+Demote
+Remove
+Invite
+Manage permissions
+40. CLAN CHAT SCREEN
+Contains
+Clan messages
+Player names
+Message timestamps
+System messages
+Chat moderation
+Message deletion/reporting
+Member activity
+41. CLAN MISSIONS SCREEN
+Contains
+Current clan missions
+Mission objectives
+Clan-wide progress
+Individual contribution
+Mission rewards
+Mission deadline
+42. CLAN WAR SCREEN
+Contains
+Current clan war
+Opposing clan
+Clan scores
+Match count
+Individual contribution
+Remaining battles
+War objectives
+War timer
+War rewards
+War history
+43. CLAN LEADERBOARD
+Contains
+Clan rankings
+Global clan ranking
+Regional clan ranking
+Country clan ranking
+Clan score
+Wins
+War performance
+Rank movement
+44. SEASON PASS SCREEN
+The NX Season Pass system.
+Contains
+Current season
+Season name
+Season countdown
+Season level
+XP progress
+Free rewards
+Premium rewards
+Reward tiers
+Claimed rewards
+Unlocked rewards
+Locked rewards
+45. SEASON DETAIL SCREEN
+Contains
+Season theme
+Season duration
+Season missions
+Season rewards
+Season leaderboard
+Season progression
+Season achievements
+46. ACHIEVEMENTS SCREEN
+Contains
+Achievements
+Completed achievements
+Locked achievements
+Achievement requirements
+Progress
+Rewards
+Achievement categories
+Examples:
+First win
+Capture milestones
+Win streak
+Games played
+Tokens completed
+47. REWARDS SCREEN
+Central place for claimable rewards.
+Contains
+Unclaimed rewards
+Daily rewards
+Mission rewards
+Event rewards
+Season rewards
+Achievement rewards
+Rank rewards
+Clan rewards
+48. DAILY REWARD SCREEN
+Contains
+Daily login reward
+Current day
+Previous claimed rewards
+Upcoming rewards
+Streak
+Claim button
+Missed-day handling
+49. NOTIFICATIONS SCREEN
+Contains
+Friend requests
+Clan invitations
+Clan activity
+Event announcements
+Rewards
+Tournament announcements
+Rank changes
+System notifications
+50. INBOX / MAIL SCREEN
+Contains
+System messages
+Reward messages
+Event messages
+Clan messages
+Announcements
+Gift/reward attachments
+Read/unread state
+51. FRIENDS SCREEN
+Contains
+Friends list
+Online friends
+Offline friends
+Friend requests
+Add friend
+Search player
+Remove friend
+Invite to match
+View profile
+52. PLAYER SEARCH SCREEN
+Contains
+Search by player name
+Search by player ID
+Search results
+Player profile preview
+Add friend
+View profile
+Invite
+53. PLAYER PROFILE / PUBLIC PROFILE
+Different from the user's own Profile screen.
+Contains
+Avatar
+Name
+Level
+Country
+Rank
+Statistics
+Wins
+Games
+Win rate
+Achievements
+Collection summary
+Clan
+Recent matches
+Actions
+Add friend
+Invite
+Report
+Block
+54. TOURNAMENTS SCREEN
+Contains
+Active tournaments
+Upcoming tournaments
+Completed tournaments
+Tournament categories
+Entry requirements
+Prize pools
+Player count
+Tournament status
+55. TOURNAMENT DETAIL SCREEN
+Contains
+Tournament rules
+Entry requirements
+Start time
+End time
+Bracket
+Participants
+Current position
+Matches
+Rewards
+Prize distribution
+56. TOURNAMENT BRACKET SCREEN
+Contains
+Players
+Matchups
+Round progression
+Winners
+Current round
+Next round
+Final
+Champion
+57. TRADING / EXCHANGE SCREEN
+This belongs to the broader future economy system.
+Contains
+Tradable items
+Player inventory
+Available trades
+Trade requests
+Trade history
+Trade confirmation
+Trading categories
+Collectibles
+Cosmetics
+Other eligible items
+58. INVENTORY SCREEN
+Contains
+Boards
+Dice
+Pawns
+Cosmetics
+Collectibles
+Event items
+Owned consumables
+Equipped items
+Actions
+Equip
+Unequip
+Inspect
+Trade where permitted
+59. CUSTOMIZATION / LOADOUT SCREEN
+Contains
+Selected board
+Selected dice
+Selected pawn
+Player avatar
+Profile cosmetics
+Other equipped cosmetic items
+Actions
+Equip
+Preview
+Change loadout
+60. SETTINGS SCREEN
+Contains
+Account
+Account information
+Player ID
+Account connection
+Audio
+Music
+Sound effects
+Gameplay
+Gameplay preferences
+Notifications
+Controls
+Graphics
+Quality
+Performance settings
+Language
+Language selection
+Notifications
+Push notifications
+Event notifications
+Clan notifications
+Privacy
+Profile visibility
+Friend settings
+Online status
+Support
+Help
+FAQ
+Contact support
+Report problem
+Legal
+Terms
+Privacy policy
+Licenses
+Account
+Logout
+Delete/reset account where applicable
+61. HELP / RULES SCREEN
+Contains
+How to play
+Movement rules
+Dice rules
+Safe zones
+Capturing
+Getting tokens home
+Winning
+Scoring
+Special rules
+Game modes
+62. SUPPORT SCREEN
+Contains
+FAQ
+Common problems
+Contact support
+Report bug
+Report player
+Account issues
+Payment issues
+Gameplay issues
+63. REPORT PLAYER SCREEN
+Contains
+Player information
+Reason for report
+Description
+Evidence where applicable
+Submit report
+Block player
+64. ACCOUNT SCREEN
+Contains
+Player ID
+Account status
+Linked account
+Account recovery
+Data management
+Logout
+Account deletion
+65. PURCHASE CONFIRMATION SCREEN
+Contains
+Item being purchased
+Quantity
+Currency required
+Current balance
+Remaining balance
+Confirm purchase
+Cancel
+66. REWARD CLAIM SCREEN
+Contains
+Reward source
+Reward items
+Quantity
+Claim button
+Continue
+67. LEVEL-UP SCREEN
+Triggered when the player reaches a new level.
+Contains
+Previous level
+New level
+XP gained
+Unlocked features
+Rewards
+Continue
+68. RANK PROMOTION SCREEN
+Contains
+Previous rank
+New rank
+Rank points
+Promotion result
+Rewards
+New unlocks
+69. SEASON END SCREEN
+At the end of a season.
+Contains
+Final season rank
+Season statistics
+Season rewards
+Leaderboard position
+Achievements
+Next season information
+70. CONNECTION / NETWORK SCREEN
+For online functionality.
+Contains
+Connection status
+Reconnecting
+Connection lost
+Server unavailable
+Retry
+Return to menu
+71. MATCHMAKING SCREEN
+Contains
+Selected game mode
+Searching for players
+Players found
+Player count
+Search timer
+Cancel search
+72. ONLINE MATCH STATUS
+During online gameplay.
+Contains
+Connection status
+Opponent connection
+Match synchronization
+Reconnection state
+Turn timeout
+Server status
+73. UPDATE / MAINTENANCE SCREEN
+Contains
+Game update notification
+Maintenance notification
+Server status
+Required update
+Update instructions
+74. ONBOARDING / FIRST-TIME PLAYER
+Contains
+Welcome
+Player name
+Avatar
+Country/region
+Tutorial
+Basic rules
+First match
+First reward
+Initial unlocks
+75. TUTORIAL SCREEN
+Contains
+Board explanation
+Tokens
+Dice
+Movement
+Safe zones
+Capturing
+Home path
+Winning
+Scoring
+Tutorial can be divided into short interactive steps rather than one giant information page.
+76. NEW CONTENT / UPDATE SCREEN
+Contains
+New boards
+New dice
+New modes
+New events
+New features
+Balance changes
+Patch notes
+77. NEWS / ANNOUNCEMENTS SCREEN
+Contains
+Game announcements
+Event announcements
+New content
+Community news
+Season announcements
+Maintenance notices
+78. GIFT / REWARD SEND SCREEN
+For systems that eventually allow gifting.
+Contains
+Friend selection
+Item selection
+Quantity
+Gift message
+Confirmation
+Gift history
+79. GIFT RECEIVED SCREEN
+Contains
+Sender
+Gift
+Message
+Claim
+Inventory destination
+80. EVENT SHOP
+Separate shop attached to a specific event.
+Contains
+Event currency
+Event-exclusive boards
+Dice
+Pawns
+Cosmetics
+Bundles
+Limited items
+Purchase/claim
+81. CLAN SHOP
+If clan-specific rewards are implemented.
+Contains
+Clan currency
+Clan-exclusive items
+Rewards
+Requirements
+Purchase/claim
+82. RANK REWARDS SCREEN
+Contains
+Current rank
+Rank reward tiers
+Rewards earned
+Rewards available
+Season-end rewards
+83. DAILY / WEEKLY LEADERBOARD DETAIL
+Contains
+Current ranking
+Previous ranking
+Rank movement
+Top players
+Player's position
+Rewards
+Time remaining
+84. PLAYER ACHIEVEMENT DETAIL
+Contains
+Achievement title
+Description
+Requirement
+Current progress
+Completion status
+Reward
+Date completed
+85. COLLECTION COMPLETION SCREEN
+Contains
+Collection name
+Items collected
+Items missing
+Completion percentage
+Completion reward
+Collection milestones
+86. FUTURE SOCIAL HUB
+This eventually connects:
+Friends
+Clan
+Chat
+Events
+Challenges
+Invites
+Player discovery
+

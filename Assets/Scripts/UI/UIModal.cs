@@ -56,7 +56,12 @@ namespace LudoNX.UI
             return modal;
         }
 
-        private void PlayOpen()
+        public void SetDismissCallback(Action onDismissed)
+        {
+            _onDismissed = onDismissed;
+        }
+
+        public void PlayOpen()
         {
             float dur = UITheme.Current.modalTransition;
             Group.alpha = 0f;
@@ -93,7 +98,11 @@ namespace LudoNX.UI
         /// <summary>Wired to the scrim button by the builder.</summary>
         public void OnScrimTapped()
         {
-            if (dismissOnScrimTap) Dismiss();
+            if (dismissOnScrimTap)
+            {
+                if (AudioManager.Instance != null) AudioManager.Instance.PlayButton();
+                Dismiss();
+            }
         }
     }
 }

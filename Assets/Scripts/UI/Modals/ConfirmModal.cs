@@ -1,6 +1,7 @@
 using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace LudoNX.UI
 {
@@ -18,21 +19,39 @@ namespace LudoNX.UI
         public TextMeshProUGUI bodyLabel;
         public TextMeshProUGUI confirmLabel;
         public TextMeshProUGUI cancelLabel;
-        public ClayButton confirmButton;
-        public ClayButton cancelButton;
+        public Button confirmButton;
+        public Button cancelButton;
 
         private Action _onConfirm;
 
         private void Awake()
         {
-            if (confirmButton != null) confirmButton.onClick.AddListener(() =>
+            WireButtons();
+        }
+
+        public void WireButtons()
+        {
+            if (confirmButton != null)
             {
-                Action cb = _onConfirm;
-                _onConfirm = null;
-                Dismiss();
-                if (cb != null) cb();
-            });
-            if (cancelButton != null) cancelButton.onClick.AddListener(Dismiss);
+                confirmButton.onClick.RemoveAllListeners();
+                confirmButton.onClick.AddListener(() =>
+                {
+                    if (AudioManager.Instance != null) AudioManager.Instance.PlayButton();
+                    Action cb = _onConfirm;
+                    _onConfirm = null;
+                    Dismiss();
+                    if (cb != null) cb();
+                });
+            }
+            if (cancelButton != null)
+            {
+                cancelButton.onClick.RemoveAllListeners();
+                cancelButton.onClick.AddListener(() =>
+                {
+                    if (AudioManager.Instance != null) AudioManager.Instance.PlayButton();
+                    Dismiss();
+                });
+            }
         }
 
         /// <summary>
@@ -46,6 +65,7 @@ namespace LudoNX.UI
             if (confirmLabel != null) confirmLabel.text = confirmText;
             if (cancelLabel != null) cancelLabel.text = cancelText;
             _onConfirm = onConfirm;
+            WireButtons();
         }
     }
 }

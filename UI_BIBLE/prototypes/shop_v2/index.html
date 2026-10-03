@@ -1,0 +1,921 @@
+<title>Ludo NX Shop v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: dark;
+  --page:#0F1115; --page-line:#262B33; --page-text:#E9DFCB; --page-muted:#A9A396;
+  --ground:#1E2229; --ground-deep:#14171C;
+  --cream50:#FBF4E6; --cream:#F3E4C9; --tan:#CFAE84; --tan3:#C09666; --tan4:#A27E57;
+  --brown6:#7A5E40; --brown7:#5A4227; --brown8:#3E2C19;
+  --ink:#2A1E14; --ink-muted:#6B5234; --plaque:#F0D3A6;
+  --play:#FF3930; --play-lip:#B7271F; --play-hi:#FF7A6E;
+  --go:#2DA830; --go-lip:#1B6E1E; --go-hi:#6ED36F;
+  --info:#0051D5; --info-lip:#00307F; --info-hi:#4D8CF0;
+  --opt:#FCAB1E; --opt-lip:#B8720A; --opt-hi:#FFD07A;
+  --neu:#C09666; --neu-lip:#8A6A45; --neu-hi:#DDBB8E;
+  --dis:#BDB3A3; --dis-lip:#8F8676; --dis-hi:#D9D1C4;
+  --common:#9A7148; --rare:#1B89E7; --epic:#8E44D6; --legend:#F2B51F;
+  --nx:#9C0C33; --sale:#E7302A;
+  --display:'Lilita One','Arial Rounded MT Bold','Trebuchet MS',system-ui,sans-serif;
+  --body:'Nunito','Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{background:var(--page);color:var(--page-text);font-family:var(--body);font-weight:700;padding-inline:16px;padding-block:28px 56px;line-height:1.45}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible{outline:3px solid var(--opt-hi);outline-offset:2px}
+img{max-width:100%}
+
+/* ---------------- page chrome ---------------- */
+.wrap{max-width:1160px;margin:0 auto;display:grid;gap:26px}
+.eyebrow{margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--tan)}
+.intro h1{margin:.15em 0 .2em;font-family:var(--display);font-weight:400;font-size:clamp(34px,5vw,50px);line-height:1;color:var(--cream);text-wrap:balance}
+.intro p{margin:0;max-width:64ch;color:var(--page-muted);font-size:15px}
+.layout{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:36px;align-items:start}
+@media (max-width:920px){.layout{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------------- phone ---------------- */
+.phone{width:100%;max-width:430px;justify-self:center;border-radius:46px;padding:10px;background:linear-gradient(#2B3039,#14171C);box-shadow:0 30px 60px rgba(0,0,0,.6),inset 0 0 0 2px #3A404A}
+.screen{position:relative;height:800px;border-radius:37px;overflow:hidden;isolation:isolate;background:var(--ground) url(img/ground.jpg) center/cover;
+  --house:#E73735; --house-d:color-mix(in srgb,var(--house) 60%,#000); --house-l:color-mix(in srgb,var(--house) 55%,#fff)}
+@media (max-width:520px){.phone{padding:6px;border-radius:34px}.screen{height:740px;border-radius:29px}}
+.screen::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 80% at 50% 40%,transparent 55%,rgba(10,12,16,.55));z-index:0}
+
+.topbar{position:absolute;left:0;right:0;top:0;z-index:6;display:flex;align-items:center;gap:6px;padding:16px 12px 14px;background:linear-gradient(rgba(16,19,24,.96) 60%,rgba(16,19,24,0))}
+.avatar{flex:none;width:46px;height:46px;border-radius:50%;background:url(img/mascot.png) center/cover;box-shadow:0 0 0 3px #3C8BFF,0 0 0 5px #6A3BD8,0 4px 8px rgba(0,0,0,.5)}
+.pill{position:relative;flex:1;min-width:0;display:flex;align-items:center;height:32px;margin-left:16px;padding:0 4px 0 24px;border-radius:16px;background:rgba(14,17,23,.86);box-shadow:inset 0 2px 3px rgba(0,0,0,.65),inset 0 0 0 1px rgba(255,255,255,.08)}
+.pill>img{position:absolute;left:-15px;top:50%;width:38px;height:38px;object-fit:contain;translate:0 -50%;filter:drop-shadow(0 2px 2px rgba(0,0,0,.55))}
+.pill .val{flex:1;text-align:center;font-family:var(--display);font-size:16px;color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill .val small{font-size:11px;color:#B9B2A4}
+.mini-plus{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-size:18px;line-height:1;color:#fff;background:linear-gradient(var(--go-hi),var(--go) 55%);box-shadow:0 2px 0 var(--go-lip)}
+.menu{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(var(--neu-hi),var(--neu) 55%);box-shadow:0 3px 0 var(--neu-lip)}
+.menu i{display:block;width:16px;height:2.5px;border-radius:2px;background:#FFF3E1;box-shadow:0 5px 0 #FFF3E1,0 -5px 0 #FFF3E1}
+
+.scroll{position:absolute;inset:0;z-index:2;overflow-y:auto;padding:70px 12px 118px;scrollbar-width:none;overscroll-behavior:contain}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ---------------- featured stage ---------------- */
+.featured{position:relative;height:196px;border-radius:20px;overflow:hidden;box-shadow:0 10px 18px rgba(0,0,0,.5),0 0 0 3px #F3E4C9}
+.slides{position:absolute;inset:0;display:flex;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.slide{position:relative;flex:0 0 100%;display:grid;grid-template-columns:46% 54%;align-items:center;padding:12px 14px 22px}
+.slide.deal{background:radial-gradient(90% 120% at 26% 20%,#8A5A32,#3A2314 72%)}
+.slide.starter{background:radial-gradient(90% 120% at 30% 30%,#1D3E73,#101B33 75%)}
+.slide.club{background:radial-gradient(90% 120% at 28% 30%,#4B2A7A,#1A1030 75%)}
+.spot{position:absolute;left:6%;top:-10%;width:40%;height:100%;background:linear-gradient(rgba(255,236,190,.38),rgba(255,236,190,0) 80%);clip-path:polygon(38% 0,62% 0,100% 100%,0 100%);pointer-events:none}
+.plinth{position:absolute;left:12%;bottom:26px;width:28%;height:16px;border-radius:50%;background:radial-gradient(#6B4A2A,#2E1C0F 70%);box-shadow:0 6px 10px rgba(0,0,0,.5)}
+.stagebox{position:relative;height:100%;display:grid;place-items:center}
+.fmascot{position:absolute;left:-6px;bottom:-4px;width:62px;height:62px;border-radius:50%;background:url(img/mascot.png) center/cover;box-shadow:0 4px 8px rgba(0,0,0,.5);animation:bob 2.4s ease-in-out infinite}
+.fcopy{display:grid;gap:4px;justify-items:start;position:relative;z-index:1}
+.logo{margin:0;font-family:var(--display);font-weight:400;font-size:25px;line-height:.95;color:#FFD24A;letter-spacing:.01em;
+  text-shadow:2px 0 #1E2229,-2px 0 #1E2229,0 2px #1E2229,0 -2px #1E2229,1.5px 1.5px #1E2229,-1.5px 1.5px #1E2229,1.5px -1.5px #1E2229,-1.5px -1.5px #1E2229,0 4px 0 #1E2229}
+.logo.cream{color:#FFF3E1}
+.fsub{margin:0;font-size:12.5px;color:#F3E4C9}
+.was{font-family:var(--display);font-size:14px;color:#D7C3A3;text-decoration:line-through;text-decoration-color:#FF6A5E;text-decoration-thickness:2px}
+.frow{display:flex;align-items:center;gap:8px}
+.timer{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:11px;background:rgba(0,0,0,.45);font-size:12px;color:#F3E4C9;font-variant-numeric:tabular-nums}
+.timer.late{color:#FF8A80}
+.dots{position:absolute;left:0;right:0;bottom:7px;display:flex;justify-content:center;gap:6px;z-index:2}
+.dots button{width:8px;height:8px;border-radius:50%;background:rgba(243,228,201,.35)}
+.dots button[aria-current="true"]{width:20px;border-radius:4px;background:#F3E4C9}
+.perks{margin:0;padding:0;list-style:none;display:grid;gap:2px;font-size:12px;color:#F3E4C9}
+.perks li::before{content:"✓ ";color:var(--go-hi)}
+.fan{position:relative;width:120px;height:110px}
+.fan>*{position:absolute;animation:pop 2.6s ease-in-out infinite}
+.crown{width:92px;height:92px;filter:drop-shadow(0 0 16px rgba(255,210,90,.55));animation:bob 2.4s ease-in-out infinite}
+
+/* ---------------- buttons ---------------- */
+.btn{--f:var(--go);--l:var(--go-lip);--h:var(--go-hi);position:relative;display:inline-flex;align-items:center;justify-content:center;gap:4px;height:30px;padding:0 12px 1px;border-radius:15px;
+  font-family:var(--display);font-size:15px;color:#fff;white-space:nowrap;background:linear-gradient(var(--h),var(--f) 52%);box-shadow:0 4px 0 var(--l),0 6px 6px rgba(0,0,0,.28);
+  text-shadow:0 1.4px 0 var(--l),1px 0 var(--l),-1px 0 var(--l),0 -1px var(--l);transition:translate .08s,box-shadow .08s}
+.btn::before{content:"";position:absolute;left:5px;right:5px;top:2px;height:44%;border-radius:12px;background:linear-gradient(rgba(255,255,255,.42),rgba(255,255,255,.06));pointer-events:none}
+.btn:active{translate:0 3px;box-shadow:0 1px 0 var(--l),0 2px 3px rgba(0,0,0,.25)}
+.btn img{width:17px;height:17px;object-fit:contain;filter:drop-shadow(0 1px 0 rgba(0,0,0,.35))}
+.btn.opt{--f:var(--opt);--l:var(--opt-lip);--h:var(--opt-hi)}
+.btn.info{--f:var(--info);--l:var(--info-lip);--h:var(--info-hi)}
+.btn.neu{--f:var(--neu);--l:var(--neu-lip);--h:var(--neu-hi);color:#FFF3E1}
+.btn.dis,.btn:disabled{--f:var(--dis);--l:var(--dis-lip);--h:var(--dis-hi);color:#F4EFE7;cursor:default}
+.btn.big{height:40px;border-radius:20px;font-size:19px;padding:0 20px 1px;box-shadow:0 5px 0 var(--l),0 8px 8px rgba(0,0,0,.3)}
+.spin{width:16px;height:16px;border-radius:50%;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;animation:rot .7s linear infinite}
+
+/* ---------------- shop panel ---------------- */
+.shop{position:relative;margin-top:36px;padding:10px;border-radius:22px;background:linear-gradient(#FDF5E4,#EBD9B8);box-shadow:0 10px 18px rgba(0,0,0,.55),inset 0 1.5px 0 rgba(255,255,255,.85)}
+.field{position:relative;overflow:hidden;border-radius:12px;background:var(--tan);box-shadow:inset 0 0 0 1px var(--tan4),inset 0 4px 5px rgba(70,45,20,.37);padding:30px 10px 26px;min-height:420px}
+.notch{position:absolute;width:48px;height:48px;border-radius:50%;background:linear-gradient(#FBF1DE,#EFDDBC);box-shadow:inset 0 0 0 1px var(--tan4);z-index:1}
+.n1{left:-24px;top:-24px}.n2{right:-24px;top:-24px}.n3{left:-24px;bottom:-24px}.n4{right:-24px;bottom:-24px}
+.die{position:absolute;width:17px;height:17px;z-index:3}
+.dm1{left:5.5px;top:5.5px;rotate:-16deg}.dm2{right:5.5px;top:5.5px;rotate:16deg}.dm3{left:5.5px;bottom:5.5px;rotate:16deg}.dm4{right:5.5px;bottom:5.5px;rotate:-16deg}
+.plaque{position:absolute;left:50%;top:-21px;z-index:4;translate:-50% 0;display:flex;align-items:center;gap:14px;height:40px;padding:0 22px;border-radius:13px;
+  background:linear-gradient(#735638,#5A4227 55%,#44311C);box-shadow:0 0 0 3px #D8B584,0 0 0 4px #A07A4C,0 4px 5px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,230,190,.35);
+  font-family:var(--display);font-size:22px;color:var(--plaque);text-shadow:0 1.6px 0 #2A1D10}
+.plaque::before,.plaque::after{content:"";width:8px;height:8px;rotate:45deg;background:#E3C394}
+
+.tabs{position:relative;z-index:2;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 20px 6px}
+.tab{--f:var(--neu);--l:var(--neu-lip);--h:var(--neu-hi);height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:4px;
+  font-family:var(--display);font-size:13px;color:#FFF3E1;background:linear-gradient(var(--h),var(--f) 55%);box-shadow:0 3px 0 var(--l);opacity:.88;
+  text-shadow:0 1.2px 0 var(--l);transition:translate .18s cubic-bezier(.3,1.5,.5,1),opacity .18s}
+.tab[aria-selected="true"]{--f:var(--opt);--l:var(--opt-lip);--h:var(--opt-hi);color:#fff;opacity:1;translate:0 -6px}
+.tab svg{width:14px;height:14px}
+
+.sec{display:flex;align-items:center;gap:7px;margin:16px 6px 10px;font-family:var(--display);font-size:13px;letter-spacing:.06em;color:var(--ink-muted)}
+.sec::before,.sec::after{content:"";flex:1;height:1.5px;background:var(--tan4)}
+.sec svg{width:14px;height:14px;flex:none}
+
+.shelf{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 2px 22px}
+.shelf::after{content:"";position:absolute;left:-6px;right:-6px;bottom:0;height:13px;border-radius:4px;z-index:0;background:linear-gradient(#A5825A,#7A5E40 45%,#5A4227);box-shadow:0 6px 8px rgba(40,25,10,.45),inset 0 1px 0 rgba(255,230,190,.55)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 8px;padding-bottom:18px}
+
+/* ---------------- product cards ---------------- */
+.card{--rc:var(--common);position:relative;z-index:1;display:block;width:100%;aspect-ratio:112/158;padding:5px;border-radius:14px;text-align:center;
+  background:linear-gradient(#FFF3D6,#E9D3AA);box-shadow:0 5px 8px rgba(40,25,10,.42);transition:scale .14s cubic-bezier(.3,1.6,.5,1)}
+.card:active{scale:.97;transition-duration:.08s}
+.card.r-rare{--rc:var(--rare)}.card.r-epic{--rc:var(--epic)}
+.card.r-legend{--rc:var(--legend);background:linear-gradient(#FFE9A6,#F2B51F 50%,#B97F0B)}
+.in{position:absolute;inset:5px;overflow:hidden;border-radius:10px;background:var(--tan);box-shadow:inset 0 2px 4px rgba(70,45,20,.35)}
+.r-rare .in,.r-epic .in,.r-legend .in{box-shadow:inset 0 0 0 1.6px var(--rc),inset 0 2px 4px rgba(70,45,20,.35)}
+.rv{position:absolute;width:6px;height:6px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFF0D0 0 20%,var(--brown6) 26%);z-index:2}
+.rv.a{left:4px;top:4px}.rv.b{right:4px;top:4px}.rv.c{left:4px;bottom:4px}.rv.d{right:4px;bottom:4px}
+.glow{position:absolute;left:50%;top:38%;width:130%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--rc) 70%,transparent),transparent 62%);opacity:.75}
+.r-common .glow{display:none}
+.r-epic .glow{animation:breathe 2s ease-in-out infinite}
+.rays{position:absolute;left:50%;top:38%;width:170%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;
+  background:repeating-conic-gradient(rgba(255,238,170,.55) 0 8deg,transparent 8deg 30deg);-webkit-mask:radial-gradient(circle,#000 18%,transparent 66%);mask:radial-gradient(circle,#000 18%,transparent 66%);animation:rot 30s linear infinite}
+.holo{position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.6) 47%,rgba(255,236,170,.35) 52%,transparent 63%);background-size:320% 100%;background-position:160% 0;animation:sheen 4s ease-in-out infinite;mix-blend-mode:screen}
+.tw{position:absolute;z-index:3;width:12px;height:12px;background:#fff;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);opacity:0;animation:twinkle 3s ease-in-out infinite;filter:drop-shadow(0 0 3px #fff)}
+.art{position:absolute;left:0;right:0;top:6%;height:60%;display:grid;place-items:center;z-index:2}
+.art img{width:62%;filter:drop-shadow(0 6px 4px rgba(40,25,10,.4))}
+.ribbon{position:absolute;left:-4px;right:-4px;top:61%;z-index:4;height:22px;border-radius:5px;display:grid;place-items:center;
+  font-family:var(--display);font-size:12.5px;color:#fff;letter-spacing:.02em;box-shadow:0 2px 3px rgba(0,0,0,.3);
+  background:repeating-linear-gradient(115deg,var(--rc) 0 13px,color-mix(in srgb,var(--rc) 74%,#000) 13px 20px);
+  --o:color-mix(in srgb,var(--rc) 55%,#000);text-shadow:1px 0 var(--o),-1px 0 var(--o),0 1px var(--o),0 -1px var(--o),0 1.5px 0 var(--o)}
+.foot{position:absolute;left:50%;bottom:-13px;z-index:5;translate:-50% 0;width:86%;display:flex;justify-content:center}
+.foot .btn{width:100%;padding:0 6px 1px}
+.chip-eq{display:inline-flex;align-items:center;justify-content:center;width:100%;height:26px;border-radius:13px;background:#FFF3D6;box-shadow:0 0 0 2px var(--opt);font-family:var(--display);font-size:12px;color:var(--opt-lip)}
+.card.equipped{box-shadow:0 0 0 3px var(--opt),0 0 14px 2px rgba(252,171,30,.65),0 5px 8px rgba(40,25,10,.42)}
+.tag{position:absolute;left:-6px;top:-7px;z-index:6;height:20px;padding:0 7px;border-radius:9px;display:grid;place-items:center;font-family:var(--display);font-size:11.5px;color:#fff;background:var(--info);box-shadow:0 2px 3px rgba(0,0,0,.35);animation:wiggle 1s ease-in-out 1 .6s}
+.tag.sale{background:var(--sale)}
+.own{position:absolute;right:-5px;top:-6px;z-index:6;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--go);box-shadow:0 0 0 2px #FFF3D6,0 2px 3px rgba(0,0,0,.35);color:#fff;font-size:13px;font-family:var(--display)}
+
+/* showcase (legendary spotlight) */
+.showcase{--rc:var(--legend);position:relative;z-index:1;display:grid;grid-template-columns:44% 56%;align-items:center;width:100%;min-height:150px;padding:6px;border-radius:16px;text-align:left;
+  background:linear-gradient(#FFE9A6,#F2B51F 50%,#B97F0B);box-shadow:0 6px 10px rgba(40,25,10,.45);margin-bottom:22px;transition:scale .14s cubic-bezier(.3,1.6,.5,1)}
+.showcase:active{scale:.98}
+.showcase .in{inset:6px;background:radial-gradient(120% 120% at 25% 40%,#6A4521,#2E1C0F 75%)}
+.showcase .rays,.showcase .glow{left:23%;top:50%}
+.showcase .rays{width:120%}
+.showcase .in::after{content:"";position:absolute;inset:0;z-index:2;background:linear-gradient(90deg,transparent 34%,rgba(28,16,7,.82) 58%)}
+.sc-desc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.showcase .art{position:relative;top:auto;height:138px}
+.sc-copy{position:relative;z-index:4;display:grid;gap:5px;padding:10px 10px 12px 4px;justify-items:start}
+.rchip{display:inline-flex;align-items:center;height:18px;padding:0 8px;border-radius:9px;font-family:var(--display);font-size:11px;letter-spacing:.06em;color:#3A2400;background:linear-gradient(#FFE9A6,#F2B51F)}
+.sc-name{margin:0;font-family:var(--display);font-weight:400;font-size:22px;line-height:1;color:#FFF3E1;text-shadow:0 2px 0 #2A1D10}
+.sc-desc{margin:0;font-size:12px;color:#E9D6B4;line-height:1.35}
+
+/* energy & coin cards */
+.ecard{position:relative;z-index:1;display:grid;justify-items:center;gap:2px;width:100%;padding:8px 6px 22px;border-radius:14px;background:linear-gradient(#FFF3D6,#E9D3AA);box-shadow:0 5px 8px rgba(40,25,10,.42);transition:scale .14s cubic-bezier(.3,1.6,.5,1)}
+.ecard:active{scale:.97}
+.big{font-family:var(--display);font-size:28px;line-height:1;color:#fff;
+  text-shadow:2px 0 var(--ink),-2px 0 var(--ink),0 2px var(--ink),0 -2px var(--ink),1.5px 1.5px var(--ink),-1.5px 1.5px var(--ink),1.5px -1.5px var(--ink),-1.5px -1.5px var(--ink),0 3.5px 0 var(--ink)}
+.more{font-size:11.5px;color:var(--ink-muted);min-height:16px}
+.stack{position:relative;width:86px;height:64px}
+.stack img{position:absolute;width:40px;filter:drop-shadow(0 4px 3px rgba(40,25,10,.4))}
+.ecard .foot{bottom:-13px}
+.adcard{position:relative;z-index:1;display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:14px;background:linear-gradient(#FFF3D6,#E9D3AA);box-shadow:0 5px 8px rgba(40,25,10,.42);margin-bottom:6px;text-align:left}
+.adcard .t{flex:1;display:grid;gap:1px}
+.adcard b{font-family:var(--display);font-weight:400;font-size:16px;color:var(--ink)}
+.adcard span{font-size:12px;color:var(--ink-muted)}
+
+/* emoji */
+.wells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:6px}
+.well{aspect-ratio:1;border-radius:12px;display:grid;place-items:center;background:var(--tan3);box-shadow:inset 0 2.5px 3px rgba(60,35,10,.5)}
+.flip{width:46px;height:46px;background-repeat:no-repeat;background-size:auto 100%;animation:flip var(--t,1s) steps(var(--n)) infinite}
+@keyframes flip{from{background-position:0 0}to{background-position:calc(-46px * var(--n)) 0}}
+.flip.sm{width:34px;height:34px}
+.flip.sm{animation-name:flipsm}
+@keyframes flipsm{from{background-position:0 0}to{background-position:calc(-34px * var(--n)) 0}}
+.sticker{font-family:var(--display);font-size:17px;line-height:1;color:#fff;rotate:-8deg;padding:4px 6px;
+  text-shadow:2.5px 0 #0A7A3E,-2.5px 0 #0A7A3E,0 2.5px #0A7A3E,0 -2.5px #0A7A3E,2px 2px #0A7A3E,-2px 2px #0A7A3E,2px -2px #0A7A3E,-2px -2px #0A7A3E,0 4px 0 #064A26}
+.sticker.pop{animation:stickerpop .45s cubic-bezier(.3,1.7,.5,1)}
+.duo{display:grid;grid-template-columns:repeat(2,34px);gap:2px}
+
+/* pawns */
+.pawn{width:58%;overflow:visible;filter:drop-shadow(0 5px 4px rgba(40,25,10,.4))}
+.flame{transform-origin:50% 100%;animation:flicker .5s ease-in-out infinite alternate}
+.ember{animation:ember 1.6s ease-in infinite}
+.houses{display:flex;justify-content:center;gap:10px;margin:4px 0 2px}
+.houses button{width:28px;height:28px;border-radius:50%;box-shadow:0 0 0 2px #FFF3D6,0 2px 3px rgba(0,0,0,.3)}
+.houses button[aria-pressed="true"]{box-shadow:0 0 0 2px #FFF3D6,0 0 0 5px var(--opt),0 2px 3px rgba(0,0,0,.3)}
+.hint{margin:0 0 4px;text-align:center;font-size:12px;color:var(--ink-muted)}
+
+.restore{display:block;margin:22px auto 0;font-size:12.5px;color:#D9CDB6;text-decoration:underline;text-underline-offset:3px}
+.small-note{margin:8px 0 0;text-align:center;font-size:11.5px;color:#9C958A}
+
+/* ---------------- bottom nav ---------------- */
+.nav{position:absolute;left:0;right:0;bottom:0;z-index:7;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;height:88px;padding:0 6px 12px;
+  background:linear-gradient(#C8A070,#B88C5C);box-shadow:0 -7px 10px rgba(0,0,0,.4),inset 0 2px 0 rgba(255,240,210,.5);border-radius:18px 18px 0 0}
+.nav a{display:grid;justify-items:center;gap:2px;font-family:var(--display);font-size:10.5px;color:#FFF3E1;text-decoration:none;text-shadow:0 1.2px 0 #8A6A45}
+.nav svg{width:30px;height:30px}
+.nav a.on{translate:0 -12px}
+.nav a.on span.ic{display:grid;place-items:center;width:52px;height:52px;border-radius:16px;background:linear-gradient(var(--opt-hi),var(--opt) 55%);box-shadow:0 4px 0 var(--opt-lip),0 6px 10px rgba(0,0,0,.35)}
+
+/* ---------------- overlays ---------------- */
+#fx{position:absolute;inset:0;z-index:40;pointer-events:none;width:100%;height:100%}
+.flyer{position:absolute;left:-16px;top:-16px;width:32px;height:32px;z-index:41;pointer-events:none;filter:drop-shadow(0 3px 2px rgba(0,0,0,.45))}
+.flash{position:absolute;inset:0;z-index:8;border-radius:inherit;background:#fff;pointer-events:none}
+.stamp{position:absolute;left:50%;top:40%;z-index:9;padding:2px 9px;border-radius:8px;font-family:var(--display);font-size:20px;color:#fff;background:var(--go);box-shadow:0 0 0 3px #FFF3D6,0 4px 8px rgba(0,0,0,.4);text-shadow:0 1.5px 0 var(--go-lip);pointer-events:none;white-space:nowrap}
+.toast{position:absolute;left:50%;top:70px;z-index:50;translate:-50% -140%;display:flex;align-items:center;gap:10px;max-width:88%;padding:9px 14px;border-radius:18px;background:rgba(14,17,23,.94);color:#F3E4C9;font-size:13px;box-shadow:0 6px 14px rgba(0,0,0,.5);transition:translate .28s cubic-bezier(.3,1.4,.5,1),opacity .2s;opacity:0}
+.toast.show{translate:-50% 0;opacity:1}
+.toast .btn{height:26px;font-size:13px}
+
+.modal{position:absolute;inset:0;z-index:30;display:grid;place-items:center;padding:0 22px}
+.scrim{position:absolute;inset:0;background:rgba(11,13,18,.72)}
+.sheet{position:relative;width:100%;max-width:340px;padding:10px;border-radius:22px;background:linear-gradient(#FDF5E4,#EBD9B8);box-shadow:0 12px 24px rgba(0,0,0,.6)}
+.sheet .field{min-height:0;padding:34px 16px 38px;display:grid;justify-items:center;gap:8px;text-align:center}
+.mstage{position:relative;width:100%;height:170px;border-radius:14px;overflow:hidden;background:radial-gradient(90% 100% at 50% 40%,#6A4521,#2E1C0F 78%);box-shadow:inset 0 3px 6px rgba(0,0,0,.45)}
+.mstage .art{top:4%;height:84%}
+.mstage .plin{position:absolute;left:50%;bottom:14px;width:46%;height:18px;translate:-50% 0;border-radius:50%;background:radial-gradient(#8A6238,#3A2414 72%)}
+.mdesc{margin:0;font-size:13.5px;color:var(--ink-muted);line-height:1.4}
+.mfacts{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.mfacts li{padding:3px 9px;border-radius:10px;background:var(--tan3);font-size:11.5px;color:#FFF3E1;box-shadow:inset 0 1.5px 2px rgba(60,35,10,.45)}
+.mbuywrap{position:absolute;left:50%;bottom:-24px;translate:-50% 0;z-index:5;padding:6px;border-radius:26px;background:linear-gradient(#FFF8EA,#EAD6B2);box-shadow:0 4px 6px rgba(0,0,0,.35)}
+.closex{position:relative;margin-top:44px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(#FFF8EA,#E4CFA8);box-shadow:0 0 0 2.5px var(--tan3),0 4px 6px rgba(0,0,0,.45);font-family:var(--display);font-size:22px;color:var(--brown7)}
+.mcol{position:relative;display:grid;justify-items:center;width:100%}
+
+/* ---------------- CSS 3D dice ---------------- */
+.stage3d{perspective:520px;display:grid;place-items:center}
+.cube{--s:54px;--h:calc(var(--s) / 2);position:relative;width:var(--s);height:var(--s);transform-style:preserve-3d;animation:spin 10s linear infinite;transform:rotateX(-24deg) rotateY(35deg)}
+.cube.fast{animation:spinfast 1.3s cubic-bezier(.15,.85,.3,1) 1,spin 10s linear 1.3s infinite}
+.face,.core{position:absolute;inset:0}
+.face{display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:13%;border-radius:17%;backface-visibility:hidden;background:var(--fbg);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35),inset 0 -3px 6px rgba(0,0,0,.18)}
+.core{background:var(--edge)}
+.pip{width:78%;height:78%;place-self:center;border-radius:50%;background:var(--pipc);box-shadow:inset 0 1.5px 2px rgba(0,0,0,.35)}
+.f1{transform:translateZ(var(--h))}.f6{transform:rotateY(180deg) translateZ(var(--h))}.f3{transform:rotateY(90deg) translateZ(var(--h))}.f4{transform:rotateY(-90deg) translateZ(var(--h))}.f2{transform:rotateX(90deg) translateZ(var(--h))}.f5{transform:rotateX(-90deg) translateZ(var(--h))}
+.c1{transform:translateZ(calc(var(--h) - 1.5px))}.c6{transform:rotateY(180deg) translateZ(calc(var(--h) - 1.5px))}.c3{transform:rotateY(90deg) translateZ(calc(var(--h) - 1.5px))}.c4{transform:rotateY(-90deg) translateZ(calc(var(--h) - 1.5px))}.c2{transform:rotateX(90deg) translateZ(calc(var(--h) - 1.5px))}.c5{transform:rotateX(-90deg) translateZ(calc(var(--h) - 1.5px))}
+.nxmark{grid-area:1/1/4/4;place-self:center;font-family:var(--display);font-size:calc(var(--s) * .34);color:#6B440A;text-shadow:0 1px 0 rgba(255,245,200,.7)}
+.sk-golden{--fbg:linear-gradient(135deg,#FFF1B8,#F2B51F 46%,#C98A0E);--edge:#B97F0B;--pipc:radial-gradient(circle at 40% 35%,#8A5A10,#3F2604)}
+.sk-cowrie{--fbg:linear-gradient(135deg,#FFF8EA,#E9D6B2);--edge:#CDB68C;--pipc:linear-gradient(90deg,#FFF7E6,#DDBF8E)}
+.sk-cowrie .pip{width:62%;height:86%;border-radius:50%/55%;position:relative;box-shadow:inset 0 0 0 1px #A8864F}
+.sk-cowrie .pip::after{content:"";position:absolute;left:44%;top:16%;width:12%;height:68%;border-radius:3px;background:repeating-linear-gradient(#5E3F1C 0 2px,#8C6636 2px 3px)}
+.sk-crystal{--fbg:linear-gradient(135deg,rgba(210,240,255,.75),rgba(80,150,255,.45));--edge:rgba(90,160,240,.55);--pipc:#fff}
+.sk-crystal .face{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.8),inset 0 0 14px rgba(170,225,255,.9)}
+.sk-crystal .pip{box-shadow:0 0 6px 1px #CFF3FF}
+.sk-lava{--fbg:radial-gradient(circle at 30% 25%,#4F2819,#1B0D08 70%);--edge:#140905;--pipc:radial-gradient(#FFE08A,#FF7A1A 55%,#C02A0A)}
+.sk-lava .pip{box-shadow:0 0 7px 2px rgba(255,110,20,.85)}
+.sk-galaxy{--fbg:radial-gradient(1.2px 1.2px at 22% 30%,#fff,transparent),radial-gradient(1px 1px at 70% 60%,#fff,transparent),radial-gradient(1.4px 1.4px at 40% 80%,#fff,transparent),radial-gradient(circle at 75% 20%,#7B4DD6,transparent 45%),radial-gradient(circle at 20% 85%,#2F6FD6,transparent 50%),#150C2E;--edge:#120A26;--pipc:#fff}
+.sk-galaxy .pip{box-shadow:0 0 5px #C9B8FF}
+.sk-marble{--fbg:linear-gradient(120deg,transparent 40%,rgba(120,120,132,.35) 42%,transparent 46%),linear-gradient(35deg,transparent 58%,rgba(120,120,132,.28) 60%,transparent 64%),linear-gradient(#FFFFFF,#E7E7EC);--edge:#D2D2D9;--pipc:radial-gradient(circle at 40% 35%,#F6D57A,#B8861C)}
+.sk-pearl{--fbg:conic-gradient(from 200deg,#FFF4F8,#E7F0FF,#FFF9E8,#F3E6FF,#FFF4F8);--edge:#E3DAEE;--pipc:#8A7A9A}
+.sk-wood{--fbg:repeating-linear-gradient(95deg,#7A3E1D 0 4px,#8E4A24 4px 7px,#6C3517 7px 10px);--edge:#4F240F;--pipc:#F3E4C9}
+
+/* ---------------- spec panel ---------------- */
+.spec{display:grid;gap:22px}
+.spec h2{margin:0 0 8px;font-family:var(--display);font-weight:400;font-size:22px;color:var(--cream);letter-spacing:.01em}
+.plan{margin:0;padding:0;list-style:none;display:grid;gap:8px;font-size:14px;color:var(--page-text)}
+.plan li{display:grid;grid-template-columns:22px 1fr;gap:6px}
+.plan li::before{content:"";width:9px;height:9px;margin-top:6px;rotate:45deg;background:var(--tan)}
+.group h3{margin:0 0 8px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--tan)}
+.fxlist{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.fx{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px;align-items:center;padding:12px 14px;border-radius:14px;background:#171A20;box-shadow:inset 0 0 0 1px var(--page-line)}
+.fx b{font-size:14.5px;color:var(--cream)}
+.fx p{grid-column:1;margin:0;font-size:13px;color:var(--page-muted)}
+.fx .times{grid-column:1;display:flex;flex-wrap:wrap;gap:5px}
+.fx .times span{padding:1px 8px;border-radius:8px;background:#232833;font-size:11.5px;color:#D9CDB6;font-variant-numeric:tabular-nums}
+.fx .play{grid-column:2;grid-row:1/4;height:34px;padding:0 14px;border-radius:17px;font-family:var(--display);font-size:14px;color:#fff;background:linear-gradient(var(--opt-hi),var(--opt) 55%);box-shadow:0 3px 0 var(--opt-lip);text-shadow:0 1.2px 0 var(--opt-lip)}
+.fx .play:active{translate:0 2px;box-shadow:0 1px 0 var(--opt-lip)}
+.note{margin:0;padding:12px 14px;border-radius:12px;background:#171A20;box-shadow:inset 0 0 0 1px var(--page-line);font-size:13px;color:var(--page-muted)}
+
+/* ---------------- keyframes ---------------- */
+@keyframes rot{to{rotate:360deg}}
+@keyframes spin{from{transform:rotateX(-24deg) rotateY(0deg)}to{transform:rotateX(-24deg) rotateY(360deg)}}
+@keyframes spinfast{from{transform:rotateX(-24deg) rotateY(0deg)}to{transform:rotateX(-24deg) rotateY(720deg)}}
+@keyframes bob{50%{translate:0 -3px}}
+@keyframes breathe{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes sheen{0%{background-position:160% 0}35%,100%{background-position:-60% 0}}
+@keyframes twinkle{0%,70%,100%{opacity:0;scale:.3}82%{opacity:1;scale:1}}
+@keyframes wiggle{25%{rotate:-8deg}50%{rotate:7deg}75%{rotate:-4deg}}
+@keyframes pop{0%,100%{scale:1}50%{scale:1.06}}
+@keyframes flicker{from{transform:scaleY(.9) skewX(-3deg)}to{transform:scaleY(1.1) skewX(3deg)}}
+@keyframes ember{from{transform:translateY(0);opacity:1}to{transform:translateY(-26px);opacity:0}}
+@keyframes stickerpop{from{scale:.3;opacity:0}to{scale:1;opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+</style>
+
+<main class="wrap">
+  <header class="intro">
+    <p class="eyebrow">Ludo NX · UI bible v1 · playable prototype</p>
+    <h1>Shop v2</h1>
+    <p>Tap anything inside the phone. Tap a price to buy, tap a card to see it close up. Buying is simulated, so nothing is charged. The list next to the phone plays each animation on its own and shows its timing.</p>
+  </header>
+
+  <div class="layout">
+    <section class="phone" aria-label="Shop prototype" id="phone">
+      <div class="screen" id="screen">
+        <div class="topbar">
+          <span class="avatar" aria-hidden="true"></span>
+          <div class="pill" id="coinPill"><img src="img/coin.png" alt=""><span class="val" id="coinVal">12,000</span><button class="mini-plus" id="coinPlus" aria-label="Get coins">+</button></div>
+          <div class="pill" id="energyPill"><img src="img/bolt.png" alt=""><span class="val"><span id="energyVal">18</span><small>/20</small></span><button class="mini-plus" id="energyPlus" aria-label="Get energy">+</button></div>
+          <button class="menu" aria-label="Menu"><i></i></button>
+        </div>
+
+        <div class="scroll" id="scroll">
+          <div class="featured" id="featured">
+            <div class="slides" id="slides">
+              <div class="slide deal">
+                <div class="stagebox"><span class="spot"></span><span class="plinth"></span><div id="dealCube"></div><span class="fmascot" aria-hidden="true"></span></div>
+                <div class="fcopy">
+                  <p class="logo">DAILY<br>DEAL</p>
+                  <p class="fsub">Golden NX Dice · Legendary</p>
+                  <div class="frow"><span class="was">$4.99</span><button class="btn big" id="dealBuy">$2.99</button></div>
+                  <span class="timer" id="timer">Ends in 9h 24m</span>
+                </div>
+              </div>
+              <div class="slide starter">
+                <div class="stagebox"><div class="fan" id="fan"></div></div>
+                <div class="fcopy">
+                  <p class="logo">STARTER<br>PACK</p>
+                  <p class="fsub">One time only · 5× value</p>
+                  <ul class="perks"><li>Golden NX dice</li><li>Ceramic tokens</li><li>Naija Vibes emoji + 100 energy</li></ul>
+                  <button class="btn big" id="starterBuy">$1.99</button>
+                </div>
+              </div>
+              <div class="slide club">
+                <div class="stagebox"><svg class="crown" viewBox="0 0 100 100" aria-hidden="true"><path d="M14 72 L20 30 L38 50 L50 20 L62 50 L80 30 L86 72 Z" fill="#F2B51F" stroke="#8A5A10" stroke-width="3" stroke-linejoin="round"/><rect x="14" y="70" width="72" height="12" rx="4" fill="#E3A632" stroke="#8A5A10" stroke-width="3"/><circle cx="50" cy="56" r="6" fill="#E73735"/><circle cx="32" cy="62" r="4" fill="#1B89E7"/><circle cx="68" cy="62" r="4" fill="#4DAE51"/></svg></div>
+                <div class="fcopy">
+                  <p class="logo">NX CLUB</p>
+                  <ul class="perks"><li>+10 energy every day</li><li>A club-only dice each month</li><li>Double mission rewards</li></ul>
+                  <button class="btn big" id="clubBuy">JOIN · $2.99/mo</button>
+                </div>
+              </div>
+            </div>
+            <div class="dots" id="dots"><button aria-label="Daily deal" aria-current="true"></button><button aria-label="Starter pack"></button><button aria-label="NX Club"></button></div>
+          </div>
+
+          <div class="shop" id="shop">
+            <div class="plaque">SHOP</div>
+            <div class="field">
+              <span class="notch n1"></span><span class="notch n2"></span><span class="notch n3"></span><span class="notch n4"></span>
+              <div class="tabs" role="tablist" id="tabs">
+                <button class="tab" role="tab" aria-selected="true" data-tab="dice">DICE</button>
+                <button class="tab" role="tab" aria-selected="false" data-tab="tokens">TOKENS</button>
+                <button class="tab" role="tab" aria-selected="false" data-tab="emoji">EMOJIS</button>
+                <button class="tab" role="tab" aria-selected="false" data-tab="energy">ENERGY</button>
+              </div>
+              <div id="panel-dice" class="tabpanel"></div>
+              <div id="panel-tokens" class="tabpanel" hidden></div>
+              <div id="panel-emoji" class="tabpanel" hidden></div>
+              <div id="panel-energy" class="tabpanel" hidden></div>
+            </div>
+            <span class="die dm1"></span><span class="die dm2"></span><span class="die dm3"></span><span class="die dm4"></span>
+          </div>
+          <button class="restore" id="restore">Restore purchases</button>
+          <p class="small-note">Prices are examples. The real shop shows RevenueCat prices in your currency.</p>
+        </div>
+
+        <nav class="nav" aria-label="Main">
+          <a href="#phone"><span class="ic"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="8" width="17" height="17" rx="3" fill="#FFF3E1" stroke="#8A6A45" stroke-width="2"/><rect x="10" y="4" width="17" height="17" rx="3" fill="#F3E4C9" stroke="#8A6A45" stroke-width="2"/><circle cx="16" cy="11" r="2.4" fill="#C09666"/></svg></span>ALBUM</a>
+          <a href="#phone"><span class="ic"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="12" cy="11" r="5" fill="#FFF3E1" stroke="#8A6A45" stroke-width="2"/><circle cx="22" cy="12" r="4" fill="#F3E4C9" stroke="#8A6A45" stroke-width="2"/><path d="M3 27c1-6 5-9 9-9s8 3 9 9z" fill="#FFF3E1" stroke="#8A6A45" stroke-width="2"/><path d="M19 27c.6-4 2.4-7 5-7s5 3 5 7z" fill="#F3E4C9" stroke="#8A6A45" stroke-width="2"/></svg></span>FRIENDS</a>
+          <a href="#phone"><span class="ic"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 15 16 4l12 11v13H4z" fill="#FFF3E1" stroke="#8A6A45" stroke-width="2" stroke-linejoin="round"/><rect x="11" y="15" width="10" height="10" rx="2" fill="#C09666"/><circle cx="14" cy="18" r="1.3" fill="#FFF3E1"/><circle cx="18" cy="22" r="1.3" fill="#FFF3E1"/></svg></span>HOME</a>
+          <a href="#phone" class="on" aria-current="page"><span class="ic"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 12h22l-2 15H7z" fill="#FFF3E1" stroke="#8A6A45" stroke-width="2" stroke-linejoin="round"/><path d="M4 12l3-7h18l3 7" fill="#F3E4C9" stroke="#8A6A45" stroke-width="2" stroke-linejoin="round"/><path d="M13 17l3 4 3-4" fill="none" stroke="#C09666" stroke-width="2.4" stroke-linecap="round"/></svg></span>SHOP</a>
+          <a href="#phone"><span class="ic"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3l3.6 7.6 8.2 1-6 5.7 1.6 8.2L16 21.4l-7.4 4.1 1.6-8.2-6-5.7 8.2-1z" fill="#FFF3E1" stroke="#8A6A45" stroke-width="2" stroke-linejoin="round"/></svg></span>LEVELS</a>
+        </nav>
+
+        <canvas id="fx" aria-hidden="true"></canvas>
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+        <div class="modal" id="modal" hidden>
+          <div class="scrim" data-close></div>
+          <div class="mcol">
+            <div class="sheet" id="sheet">
+              <div class="plaque" id="mTitle">COWRIE</div>
+              <div class="field">
+                <span class="notch n1"></span><span class="notch n2"></span><span class="notch n3"></span><span class="notch n4"></span>
+                <span class="rchip" id="mRar">LEGENDARY</span>
+                <div class="mstage" id="mStage"></div>
+                <p class="mdesc" id="mDesc"></p>
+                <ul class="mfacts" id="mFacts"></ul>
+              </div>
+              <span class="die dm1"></span><span class="die dm2"></span><span class="die dm3"></span><span class="die dm4"></span>
+              <div class="mbuywrap"><button class="btn big" id="mBuy">$4.99</button></div>
+            </div>
+            <button class="closex" data-close aria-label="Close">✕</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="spec" aria-label="Plan and animations">
+      <section>
+        <h2>The plan</h2>
+        <ul class="plan">
+          <li>A featured stage at the top rotates three offers: the Daily Deal with a timer, the one-time Starter Pack, and the NX Club subscription.</li>
+          <li>Four tabs: Dice, Tokens, Emojis, Energy. Items stand on wooden shelves grouped by rarity, with the best item on a spotlight showcase.</li>
+          <li>Rarity is visible before you read anything: common is calm, rare sparkles, epic glows, legendary shines with rays.</li>
+          <li>Common and rare items cost coins you earn by playing. Epic, legendary, packs, the Starter Pack and NX Club are real-money purchases through RevenueCat.</li>
+          <li>Tap the price to buy. Tap the card to see the item turning on a plinth first. After buying, the price becomes EQUIP.</li>
+          <li>Tokens preview in your house colour, so you see exactly how they will look on the board.</li>
+        </ul>
+      </section>
+
+      <section class="group">
+        <h3>Always moving</h3>
+        <ul class="fxlist">
+          <li class="fx"><b>Legendary shine</b><p>Rays turn behind the item, a light sweep crosses the card, the dice spins.</p><div class="times"><span>rays 12°/s</span><span>sweep every 4 s</span><span>spin 10 s</span></div><button class="play" data-play="legend">Play</button></li>
+          <li class="fx"><b>Epic glow</b><p>A soft glow in the rarity colour breathes behind the item.</p><div class="times"><span>2 s loop</span></div><button class="play" data-play="epic">Play</button></li>
+          <li class="fx"><b>Rare sparkle</b><p>One small sparkle appears on the card now and then.</p><div class="times"><span>every 3 s</span></div><button class="play" data-play="rare">Play</button></li>
+          <li class="fx"><b>Featured stage</b><p>Slides to the next offer on its own; the timer ticks every second and turns red in the last hour.</p><div class="times"><span>every 5 s</span><span>slide 350 ms</span></div><button class="play" data-play="featured">Play</button></li>
+        </ul>
+      </section>
+
+      <section class="group">
+        <h3>When you tap</h3>
+        <ul class="fxlist">
+          <li class="fx"><b>Card press</b><p>The card sinks slightly and springs back.</p><div class="times"><span>97% in 80 ms</span><span>back in 140 ms</span></div><button class="play" data-play="press">Play</button></li>
+          <li class="fx"><b>Tab switch</b><p>The new tab rises; its items slide up and fade in one after another.</p><div class="times"><span>tab 180 ms</span><span>items 220 ms</span><span>30 ms apart</span></div><button class="play" data-play="tab">Play</button></li>
+          <li class="fx"><b>Close-up</b><p>The screen dims, the card grows past full size and settles, and the item spins fast before slowing down.</p><div class="times"><span>dim 180 ms</span><span>86% → 104% → 100% in 260 ms</span><span>spin 1.3 s</span></div><button class="play" data-play="detail">Play</button></li>
+        </ul>
+      </section>
+
+      <section class="group">
+        <h3>When you buy</h3>
+        <ul class="fxlist">
+          <li class="fx"><b>Real-money purchase</b><p>A spinner while Google Play's payment sheet is open, then a flash, a burst in the rarity colour, an OWNED stamp, and the price turns into EQUIP.</p><div class="times"><span>flash 100 ms</span><span>burst 600 ms</span><span>stamp 220 ms</span></div><button class="play" data-play="iap">Play</button></li>
+          <li class="fx"><b>Coin purchase</b><p>Coins fly out of your coin pill into the card while the number counts down.</p><div class="times"><span>fly 500 ms</span><span>count 500 ms</span></div><button class="play" data-play="coins">Play</button></li>
+          <li class="fx"><b>Not enough coins</b><p>The price shakes, the coin pill flashes red, and a message offers more coins.</p><div class="times"><span>shake 240 ms</span><span>flash 600 ms</span></div><button class="play" data-play="deny">Play</button></li>
+          <li class="fx"><b>Energy or coin pack</b><p>Ten bolts or coins arc into the top bar, the number counts up and the pill bounces.</p><div class="times"><span>fly 700 ms</span><span>count 800 ms</span><span>bounce 320 ms</span></div><button class="play" data-play="pack">Play</button></li>
+          <li class="fx"><b>Equip</b><p>The item gets an amber outline and the one you used before loses it.</p><div class="times"><span>instant</span><span>toast 2.2 s</span></div><button class="play" data-play="equip">Play</button></li>
+        </ul>
+      </section>
+
+      <p class="note">Cowrie, Crystal, Lava, Galaxy, Marble, Pearl and Mahogany dice, all token skins and the Naija Vibes stickers are drawn in code as stand-ins. Final art comes from the Gemini prompts in <code>UI_BIBLE/IMPLEMENTATION_PLAN.md</code> §6. Emoji animations are the ones already in the game; check their licence before selling them.</p>
+    </aside>
+  </div>
+</main>
+
+<script>
+(() => {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const fmt = n => n.toLocaleString('en-US');
+  const screen = $('#screen'), scroller = $('#scroll');
+  const COIN = 'img/coin.png', BOLT = 'img/bolt.png';
+  const RC = { common: '#9A7148', rare: '#1B89E7', epic: '#8E44D6', legend: '#F2B51F' };
+  const RNAME = { common: 'COMMON', rare: 'RARE', epic: 'EPIC', legend: 'LEGENDARY' };
+  const HOUSES = [['red', '#E73735'], ['green', '#4DAE51'], ['yellow', '#FBC02B'], ['blue', '#1B89E7']];
+
+  const state = { coins: 12000, energy: 18, owned: new Set(['d_classic', 'd_ruby', 't_classic']), equipped: { dice: 'd_classic', tokens: 't_classic' }, club: false };
+
+  const DICE = [
+    { id: 'd_cowrie', name: 'Cowrie', rar: 'legend', skin: 'cowrie', usd: '$4.99', showcase: true, desc: 'Ivory dice with cowrie-shell pips. Every roll leaves a trail of gold sparks.', facts: ['Used in every match', 'Animated roll trail', 'Shop exclusive'] },
+    { id: 'd_crystal', name: 'Crystal', rar: 'epic', skin: 'crystal', usd: '$1.99', desc: 'Clear crystal with a blue glow inside.', facts: ['Glows when you roll a six'] },
+    { id: 'd_lava', name: 'Lava', rar: 'epic', skin: 'lava', usd: '$2.99', tag: 'NEW', desc: 'Black stone with glowing lava pips.', facts: ['Smoke puff on every roll'] },
+    { id: 'd_galaxy', name: 'Galaxy', rar: 'epic', skin: 'galaxy', usd: '$1.99', desc: 'A night sky you can roll.', facts: ['Stars trail behind it'] },
+    { id: 'd_marble', name: 'Marble', rar: 'rare', skin: 'marble', coins: 3500, desc: 'White marble with gold pips.' },
+    { id: 'd_pearl', name: 'Pearl', rar: 'rare', skin: 'pearl', coins: 4000, desc: 'A soft pearl shine that changes colour as it turns.' },
+    { id: 'd_wood', name: 'Mahogany', rar: 'rare', skin: 'wood', coins: 2500, desc: 'Polished mahogany with ivory pips.' },
+    ...[['classic', 'Classic'], ['ruby', 'Ruby'], ['sapphire', 'Sapphire'], ['emerald', 'Emerald'], ['gold', 'Gold'], ['amethyst', 'Amethyst'], ['onyx', 'Onyx'], ['blossom', 'Blossom'], ['teal', 'Teal']]
+      .map(([k, n], i) => ({ id: 'd_' + k, name: n, rar: 'common', img: `img/dice_${String(i < 6 ? i + 1 : i + 1).padStart(2, '0')}_${k}.png`, coins: 1200, desc: 'A classic glossy die.' }))
+  ];
+  const GOLDEN = { id: 'd_golden', name: 'Golden NX', rar: 'legend', skin: 'golden', usd: '$2.99', desc: 'Polished gold with NX engraved on the one.', facts: ['Daily Deal', 'Gold sparkle trail'] };
+  const TOKENS = [
+    { id: 't_flame', name: 'Flame', rar: 'legend', skin: 'flame', usd: '$4.99', showcase: true, desc: 'Your pawns burn bright, and every capture leaves embers.', facts: ['All four of your pawns', 'Ember burst on capture'] },
+    { id: 't_crown', name: 'Crown', rar: 'epic', skin: 'crown', usd: '$1.99', desc: 'Every pawn wears a gold crown.' },
+    { id: 't_chef', name: 'Chef', rar: 'epic', skin: 'chef', usd: '$1.99', desc: 'Chef hats for the whole team.' },
+    { id: 't_fila', name: 'Fila', rar: 'epic', skin: 'fila', usd: '$1.99', tag: 'NEW', desc: 'A proud Yoruba fila on every pawn.' },
+    { id: 't_ceramic', name: 'Ceramic', rar: 'rare', skin: 'ceramic', coins: 3000, desc: 'The NX mascot’s own glaze, tinted to your house colour, with a gold rim.' },
+    { id: 't_chrome', name: 'Chrome', rar: 'rare', skin: 'chrome', coins: 3000, desc: 'Mirror chrome in your house colour.' },
+    { id: 't_pearl', name: 'Pearl', rar: 'rare', skin: 'pearl', coins: 2500, desc: 'Soft pearl in your house colour.' },
+    { id: 't_classic', name: 'Classic', rar: 'common', skin: 'classic', coins: 0, desc: 'The glossy pawn every player starts with.' },
+    { id: 't_matte', name: 'Matte', rar: 'common', skin: 'matte', coins: 1200, desc: 'Flat and calm.' },
+    { id: 't_wood', name: 'Stained Wood', rar: 'common', skin: 'wood', coins: 1500, desc: 'Wood stained in your house colour.' }
+  ];
+  const EMOJI = [
+    { id: 'e_mascot', name: 'NX Mascot', rar: 'legend', usd: '$1.99', showcase: true, art: 'mascot', desc: 'The NX pawn laughs, cries, cheers and dances for you. (Stand-in: the final poses come from the mascot prompts.)', facts: ['8 animated emotes'] },
+    { id: 'e_naija', name: 'Naija Vibes', rar: 'epic', usd: '$0.99', art: 'naija', tag: 'NEW', desc: 'Six animated stickers: WAHALA!, OYA ROLL!, E DON CAST!, NO SHAKING, SHOW ME SIX!, JUST WAIT.', facts: ['6 animated stickers'] },
+    { id: 'e_hype', name: 'Hype', rar: 'rare', coins: 2000, art: ['fire', 'party', 16], desc: 'Fire and party, for when you are on a roll.' },
+    { id: 'e_sport', name: 'Good Sport', rar: 'rare', coins: 2000, art: ['clap', 'cool', 10], desc: 'Clap and cool shades, for a good game.' }
+  ];
+  const ENERGY = [
+    { id: 'en_50', amount: 50, usd: '$0.99', n: 1 },
+    { id: 'en_250', amount: 250, usd: '$1.99', n: 2, more: '+25% MORE', tag: 'POPULAR' },
+    { id: 'en_1000', amount: 1000, usd: '$4.99', n: 3, more: '+60% MORE', tag: 'BEST VALUE', sale: true },
+    { id: 'en_5000', amount: 5000, usd: '$14.99', n: 4, more: '+100% MORE' }
+  ];
+  const COINS = [
+    { id: 'c_1000', amount: 1000, usd: '$0.99', n: 1 },
+    { id: 'c_5500', amount: 5500, usd: '$4.99', n: 2, more: '+10% MORE' },
+    { id: 'c_12000', amount: 12000, usd: '$9.99', n: 3, more: '+20% MORE' }
+  ];
+  const ALL = new Map([...DICE, GOLDEN, ...TOKENS, ...EMOJI].map(x => [x.id, x]));
+  const kindOf = id => id.startsWith('d_') ? 'dice' : id.startsWith('t_') ? 'tokens' : 'emoji';
+
+  /* ---------- art builders ---------- */
+  const PIPS = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
+  function cube(skin, size, cls = '') {
+    let h = '';
+    for (let c = 1; c <= 6; c++) h += `<b class="core c${c}"></b>`;
+    for (let v = 1; v <= 6; v++) {
+      if (skin === 'golden' && v === 1) { h += `<div class="face f1"><span class="nxmark">NX</span></div>`; continue; }
+      h += `<div class="face f${v}">` + PIPS[v].map(p => `<i class="pip" style="grid-area:${Math.ceil(p / 3)}/${(p - 1) % 3 + 1}"></i>`).join('') + `</div>`;
+    }
+    return `<div class="stage3d"><div class="cube sk-${skin} ${cls}" style="--s:${size}px">${h}</div></div>`;
+  }
+  let gid = 0;
+  function pawn(skin) {
+    const g = 'p' + (++gid);
+    let body = `url(#${g}a)`, extra = '', defs = '', trim = '';
+    const stops = {
+      classic: `<stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".22" style="stop-color:var(--house-l)"/><stop offset=".55" style="stop-color:var(--house)"/><stop offset="1" style="stop-color:var(--house-d)"/>`,
+      matte: `<stop offset="0" style="stop-color:var(--house-l)"/><stop offset=".5" style="stop-color:var(--house)"/><stop offset="1" style="stop-color:var(--house-d)"/>`,
+      ceramic: `<stop offset="0" stop-color="#fff"/><stop offset=".3" style="stop-color:color-mix(in srgb,var(--house) 45%,#F6EBD6)"/><stop offset="1" style="stop-color:color-mix(in srgb,var(--house) 60%,#6E5A40)"/>`,
+      pearl: `<stop offset="0" stop-color="#fff"/><stop offset=".35" style="stop-color:color-mix(in srgb,var(--house) 38%,#FFF4FB)"/><stop offset=".7" style="stop-color:color-mix(in srgb,var(--house) 55%,#D8D0FF)"/><stop offset="1" style="stop-color:color-mix(in srgb,var(--house) 70%,#6E6090)"/>`,
+      wood: `<stop offset="0" style="stop-color:color-mix(in srgb,var(--house) 55%,#C58A5A)"/><stop offset="1" style="stop-color:color-mix(in srgb,var(--house) 55%,#4A2410)"/>`
+    };
+    const s = ['crown', 'chef', 'fila', 'flame'].includes(skin) ? 'classic' : skin;
+    if (s === 'chrome') {
+      defs = `<linearGradient id="${g}a" x1="0" x2="1"><stop offset="0" style="stop-color:color-mix(in srgb,var(--house) 50%,#1B1E24)"/><stop offset=".3" stop-color="#fff"/><stop offset=".5" style="stop-color:color-mix(in srgb,var(--house) 70%,#fff)"/><stop offset=".72" style="stop-color:color-mix(in srgb,var(--house) 60%,#111)"/><stop offset="1" style="stop-color:color-mix(in srgb,var(--house) 40%,#E8E8EE)"/></linearGradient>`;
+    } else {
+      defs = `<radialGradient id="${g}a" cx="38%" cy="28%" r="80%">${stops[s]}</radialGradient>`;
+    }
+    if (skin === 'wood') {
+      defs += `<pattern id="${g}w" width="6" height="120" patternUnits="userSpaceOnUse"><rect width="6" height="120" fill="none"/><path d="M1 0 Q3 60 1 120" stroke="rgba(40,18,6,.35)" stroke-width="1.2" fill="none"/></pattern>`;
+      extra += `<path d="M30 94 C33 74 41 64 44 54 L56 54 C59 64 67 74 70 94 Z" fill="url(#${g}w)"/><circle cx="50" cy="35" r="18" fill="url(#${g}w)"/>`;
+    }
+    if (skin === 'ceramic') trim = `stroke="#F2B51F" stroke-width="2.4"`;
+    if (skin === 'crown') extra += `<path d="M33 22 L36 7 L44 16 L50 3 L56 16 L64 7 L67 22 Z" fill="#F2B51F" stroke="#8A5A10" stroke-width="1.8" stroke-linejoin="round"/><circle cx="50" cy="15" r="2.6" fill="#E73735"/><circle cx="40" cy="18" r="1.8" fill="#1B89E7"/><circle cx="60" cy="18" r="1.8" fill="#4DAE51"/>`;
+    if (skin === 'chef') extra += `<path d="M33 25 Q27 10 39 8 Q43 -1 52 3 Q61 -2 65 8 Q76 10 67 25 Z" fill="#fff" stroke="#CFC6B6" stroke-width="1.5"/><rect x="34" y="20" width="32" height="8" rx="2.5" fill="#F4F1EA" stroke="#CFC6B6" stroke-width="1.2"/>`;
+    if (skin === 'fila') {
+      defs += `<pattern id="${g}f" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="#3B2A6B"/><circle cx="3.5" cy="3.5" r="1.1" fill="#F2B51F"/></pattern>`;
+      extra += `<path d="M31 27 Q31 8 52 7 Q72 7 70 20 Q64 15 51 16 Q39 17 31 27Z" fill="url(#${g}f)" stroke="#231845" stroke-width="1.5"/><path d="M70 20 Q76 23 73 29 Q69 25 66 24Z" fill="#3B2A6B" stroke="#231845" stroke-width="1.2"/>`;
+    }
+    if (skin === 'flame') {
+      defs += `<linearGradient id="${g}fl" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FF5A0E"/><stop offset=".6" stop-color="#FFB02E"/><stop offset="1" stop-color="#FFF3A0"/></linearGradient>`;
+      extra += `<g class="flame"><path d="M50 -4 C60 8 68 13 64 24 C62 31 56 33 50 33 C44 33 38 31 36 24 C32 13 41 8 50 -4Z" fill="url(#${g}fl)"/><path d="M50 8 C55 15 58 19 56 25 C55 29 52 30 50 30 C48 30 45 29 44 25 C42 19 45 15 50 8Z" fill="#FFF6C8" opacity=".85"/></g>
+        <circle class="ember" cx="40" cy="40" r="1.6" fill="#FFB02E"/><circle class="ember" cx="61" cy="46" r="1.3" fill="#FF7A1A" style="animation-delay:.5s"/><circle class="ember" cx="52" cy="60" r="1.2" fill="#FFD24A" style="animation-delay:1s"/>`;
+    }
+    return `<svg class="pawn" viewBox="0 -8 100 128" aria-hidden="true"><defs>${defs}</defs>
+      <ellipse cx="50" cy="111" rx="34" ry="6.5" fill="rgba(0,0,0,.28)"/>
+      <path d="M18 103 Q18 93 30 91 L70 91 Q82 93 82 103 Q82 109 50 109 Q18 109 18 103Z" fill="${body}" ${trim}/>
+      <path d="M30 94 C33 74 41 64 44 54 L56 54 C59 64 67 74 70 94 Z" fill="${body}"/>
+      <ellipse cx="50" cy="54" rx="15" ry="5" fill="${body}" ${trim}/>
+      <circle cx="50" cy="35" r="18" fill="${body}"/>
+      <ellipse cx="44" cy="27" rx="6" ry="4" fill="#fff" opacity="${skin === 'matte' || skin === 'wood' ? '.15' : '.55'}"/>${extra}</svg>`;
+  }
+  const flip = (name, frames, sm) => `<span class="flip${sm ? ' sm' : ''}" style="background-image:url(img/emoji_${name}.png);--n:${frames};--t:${frames > 10 ? 1.5 : 1}s"></span>`;
+  const NAIJA = ['WAHALA!', 'OYA ROLL!', 'E DON CAST!', 'SHOW ME SIX!', 'NO SHAKING', 'JUST WAIT'];
+  function art(item, big) {
+    if (item.skin && item.id.startsWith('d_')) return cube(item.skin, big ? 96 : (item.showcase ? 74 : 50));
+    if (item.img) return `<img src="${item.img}" alt="">`;
+    if (item.id.startsWith('t_')) return pawn(item.skin);
+    if (item.art === 'mascot') return `<img src="img/mascot.png" alt="" style="width:${big ? 44 : 70}%;border-radius:50%;animation:bob 1.6s ease-in-out infinite">`;
+    if (item.art === 'naija') return `<span class="sticker" data-naija>WAHALA!</span>`;
+    if (Array.isArray(item.art)) return `<span class="duo">${flip(item.art[0], item.art[0] === 'party' ? 16 : 10, true)}${flip(item.art[1], item.art[1] === 'party' ? 16 : 10, true)}</span>`;
+    return '';
+  }
+  const dieSvg = (body = '#7A5E40', pip = '#F3E4C9') => `<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="1" y="1" width="18" height="18" rx="4.4" fill="${body}"/>${[[6, 5.5], [14, 5.5], [6, 10], [14, 10], [6, 14.5], [14, 14.5]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.75" fill="${pip}"/>`).join('')}</svg>`;
+
+  function priceHTML(item) {
+    if (state.owned.has(item.id)) {
+      const k = kindOf(item.id);
+      if (state.equipped[k] === item.id) return `<span class="chip-eq">EQUIPPED</span>`;
+      if (k === 'emoji') return `<span class="chip-eq">OWNED</span>`;
+      return `<button class="btn" data-equip="${item.id}">EQUIP</button>`;
+    }
+    if (item.coins != null) return `<button class="btn" data-buy="${item.id}"><img src="${COIN}" alt="">${fmt(item.coins)}</button>`;
+    return `<button class="btn" data-buy="${item.id}">${item.usd}</button>`;
+  }
+  const decor = (rar) => `<span class="rv a"></span><span class="rv b"></span><span class="rv c"></span><span class="rv d"></span><span class="glow"></span>${rar === 'legend' ? '<span class="rays"></span><span class="holo"></span>' : ''}${rar === 'rare' ? `<span class="tw" style="left:${20 + Math.random() * 55}%;top:${10 + Math.random() * 35}%;animation-delay:${(Math.random() * 3).toFixed(2)}s"></span>` : ''}`;
+  function card(item) {
+    const own = state.owned.has(item.id);
+    const eq = own && state.equipped[kindOf(item.id)] === item.id;
+    return `<div class="card r-${item.rar}${eq ? ' equipped' : ''}" data-id="${item.id}" role="button" tabindex="0" aria-label="${item.name}, ${RNAME[item.rar].toLowerCase()}">
+      <span class="in">${decor(item.rar)}</span><span class="art">${art(item)}</span>
+      <span class="ribbon">${item.name.toUpperCase()}</span>
+      ${item.tag && !own ? `<span class="tag">${item.tag}</span>` : ''}${own ? '<span class="own">✓</span>' : ''}
+      <span class="foot">${priceHTML(item)}</span></div>`;
+  }
+  function showcase(item) {
+    const own = state.owned.has(item.id);
+    return `<div class="showcase" data-id="${item.id}" role="button" tabindex="0" aria-label="${item.name}, legendary">
+      <span class="in"><span class="glow"></span><span class="rays"></span><span class="holo"></span></span>
+      <span class="art">${art(item)}</span>
+      <span class="sc-copy"><span class="rchip">LEGENDARY</span><span class="sc-name">${item.name}</span><span class="sc-desc">${item.desc}</span><span class="foot" style="position:static;translate:none;width:auto;margin-top:4px">${priceHTML(item)}</span></span>
+      ${own ? '<span class="own">✓</span>' : ''}</div>`;
+  }
+  const sec = (label, icon) => `<div class="sec">${icon || ''}${label}${icon || ''}</div>`;
+  const shelves = (items, icon) => {
+    const by = r => items.filter(x => x.rar === r && !x.showcase);
+    const sc = items.find(x => x.showcase);
+    let h = sc ? sec('LEGENDARY', icon) + showcase(sc) : '';
+    for (const r of ['epic', 'rare', 'common']) {
+      const list = by(r);
+      if (!list.length) continue;
+      h += sec(RNAME[r], icon);
+      for (let i = 0; i < list.length; i += 3) h += `<div class="shelf">${list.slice(i, i + 3).map(card).join('')}</div>`;
+    }
+    return h;
+  };
+  function packCard(p, kind) {
+    const src = kind === 'energy' ? BOLT : COIN;
+    const pos = [[23, 14], [4, 22], [42, 22], [23, 30]].slice(0, p.n);
+    return `<div class="ecard" data-pack="${p.id}" role="button" tabindex="0" aria-label="${fmt(p.amount)} ${kind}">
+      ${p.tag ? `<span class="tag${p.sale ? ' sale' : ''}">${p.tag}</span>` : ''}
+      <span class="big">${fmt(p.amount)}</span><span class="more">${p.more || ''}</span>
+      <span class="stack">${pos.map(([x, y], i) => `<img src="${src}" alt="" style="left:${x}px;top:${y - i * 3}px;rotate:${(i - 1) * 9}deg">`).join('')}</span>
+      <span class="foot"><button class="btn" data-packbuy="${p.id}">${p.usd}</button></span></div>`;
+  }
+
+  /* ---------- render tabs ---------- */
+  const diceIcon = dieSvg();
+  function renderDice() { $('#panel-dice').innerHTML = shelves(DICE, diceIcon); }
+  function renderTokens() {
+    $('#panel-tokens').innerHTML = `<div class="houses" role="group" aria-label="Preview in your house colour">${HOUSES.map(([n, c], i) => `<button aria-label="${n}" aria-pressed="${i === 0}" data-house="${c}" style="background:${c}"></button>`).join('')}</div><p class="hint">Preview in your house colour</p>` + shelves(TOKENS, diceIcon);
+  }
+  function renderEmoji() {
+    const load = [['grinning', 10], ['laughing', 10], ['thinking', 10], ['flex', 10], ['clap', 10], ['cool', 10], ['fire', 10], ['party', 16]];
+    const packs = EMOJI.filter(x => !x.showcase);
+    $('#panel-emoji').innerHTML = sec('YOUR EMOJIS', diceIcon) + `<div class="wells">${load.map(([n, f]) => `<span class="well">${flip(n, f)}</span>`).join('')}</div>`
+      + sec('LEGENDARY', diceIcon) + showcase(EMOJI.find(x => x.showcase))
+      + sec('PACKS', diceIcon) + `<div class="shelf">${packs.map(card).join('')}</div>`;
+  }
+  function renderEnergy() {
+    $('#panel-energy').innerHTML = sec('FREE', diceIcon) + `<div class="adcard"><img src="${BOLT}" alt="" width="36" height="36"><span class="t"><b>Watch a short ad</b><span>+3 energy · 4 left today</span></span><button class="btn opt" id="adBtn">WATCH</button></div>`
+      + sec('ENERGY', diceIcon) + `<div class="grid2">${ENERGY.map(p => packCard(p, 'energy')).join('')}</div>`
+      + sec('COINS', diceIcon) + `<div class="shelf">${COINS.map(p => packCard(p, 'coins')).join('')}</div>`;
+  }
+  renderDice(); renderTokens(); renderEmoji(); renderEnergy();
+  $$('.die').forEach(d => d.innerHTML = dieSvg());
+  $('#dealCube').innerHTML = cube('golden', 60);
+  $('#fan').innerHTML = `<img src="img/dice_05_gold.png" alt="" style="width:46px;left:4px;top:28px;animation-delay:0s">
+    <span style="left:40px;top:6px;width:44px;display:block;animation-delay:.3s">${pawn('ceramic')}</span>
+    <span style="left:74px;top:40px;animation-delay:.6s">${flip('party', 16)}</span>
+    <img src="${BOLT}" alt="" style="width:34px;left:40px;top:66px;animation-delay:.9s">`;
+  $('#fan').querySelector('.pawn').style.width = '100%';
+
+  /* ---------- helpers: fx ---------- */
+  const canvas = $('#fx'), ctx = canvas.getContext('2d');
+  let parts = [], running = false;
+  function sizeFx() { const r = screen.getBoundingClientRect(), d = window.devicePixelRatio || 1; canvas.width = r.width * d; canvas.height = r.height * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
+  sizeFx(); window.addEventListener('resize', sizeFx);
+  function center(el) { const r = el.getBoundingClientRect(), s = screen.getBoundingClientRect(); return { x: r.left - s.left + r.width / 2, y: r.top - s.top + r.height / 2 }; }
+  function burst(el, colors, n = 38) {
+    if (reduce) return;
+    const c = center(el);
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, v = 2 + Math.random() * 5.5;
+      parts.push({ x: c.x, y: c.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 2.5, life: 1, decay: .014 + Math.random() * .02, size: 3 + Math.random() * 5, color: colors[i % colors.length], rot: Math.random() * 6, vr: (Math.random() - .5) * .35, shape: i % 3 });
+    }
+    if (!running) { running = true; requestAnimationFrame(tick); }
+  }
+  function star(r) { ctx.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, rr = i % 2 ? r * .45 : r; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } ctx.closePath(); ctx.fill(); }
+  function tick() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    parts = parts.filter(p => p.life > 0);
+    for (const p of parts) {
+      p.vy += .13; p.x += p.vx; p.y += p.vy; p.vx *= .985; p.life -= p.decay; p.rot += p.vr;
+      ctx.save(); ctx.globalAlpha = Math.max(0, p.life); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.color;
+      if (p.shape === 0) ctx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * .66);
+      else if (p.shape === 1) { ctx.beginPath(); ctx.arc(0, 0, p.size / 2.2, 0, 7); ctx.fill(); }
+      else star(p.size / 1.6);
+      ctx.restore();
+    }
+    if (parts.length) requestAnimationFrame(tick); else { running = false; ctx.clearRect(0, 0, canvas.width, canvas.height); }
+  }
+  function fly(fromEl, toEl, src, n, dur, onArrive, onDone) {
+    const a = center(fromEl), b = center(toEl);
+    if (reduce) { for (let i = 0; i < n; i++) onArrive && onArrive(i); onDone && onDone(); return; }
+    let done = 0;
+    for (let i = 0; i < n; i++) {
+      const img = document.createElement('img'); img.src = src; img.className = 'flyer'; img.alt = ''; screen.appendChild(img);
+      const jx = (Math.random() - .5) * 46, jy = (Math.random() - .5) * 34;
+      const mx = (a.x + b.x) / 2 + (Math.random() - .5) * 120, my = Math.min(a.y, b.y) - 50 - Math.random() * 70;
+      const anim = img.animate([
+        { transform: `translate(${a.x}px,${a.y}px) scale(.5)`, opacity: 0 },
+        { transform: `translate(${a.x + jx}px,${a.y + jy - 12}px) scale(1.15)`, opacity: 1, offset: .16 },
+        { transform: `translate(${mx}px,${my}px) scale(1)`, opacity: 1, offset: .56 },
+        { transform: `translate(${b.x}px,${b.y}px) scale(.55)`, opacity: .9 }
+      ], { duration: dur, delay: i * 45, easing: 'cubic-bezier(.45,0,.55,1)', fill: 'both' });
+      anim.onfinish = () => { img.remove(); onArrive && onArrive(i); if (++done === n && onDone) onDone(); };
+    }
+  }
+  function countTo(el, from, to, ms) {
+    if (reduce) { el.textContent = fmt(to); return; }
+    const t0 = performance.now();
+    const step = t => { const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(Math.round(from + (to - from) * e)); if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
+  const bump = el => el.animate([{ scale: 1 }, { scale: 1.14 }, { scale: 1 }], { duration: 320, easing: 'cubic-bezier(.3,1.6,.5,1)' });
+  const shake = el => el.animate([{ translate: '0 0' }, { translate: '-6px 0' }, { translate: '6px 0' }, { translate: '-6px 0' }, { translate: '6px 0' }, { translate: '0 0' }], { duration: 240, easing: 'ease-in-out', composite: 'add' });
+  function flash(el) { const f = document.createElement('span'); f.className = 'flash'; el.appendChild(f); f.animate([{ opacity: .9 }, { opacity: 0 }], { duration: reduce ? 1 : 260, easing: 'ease-out' }).onfinish = () => f.remove(); }
+  function stamp(el, text) {
+    const s = document.createElement('span'); s.className = 'stamp'; s.textContent = text; el.appendChild(s);
+    s.animate([{ transform: 'translate(-50%,-50%) rotate(-14deg) scale(1.9)', opacity: 0 }, { transform: 'translate(-50%,-50%) rotate(-10deg) scale(.92)', opacity: 1, offset: .7 }, { transform: 'translate(-50%,-50%) rotate(-10deg) scale(1)', opacity: 1 }], { duration: reduce ? 1 : 220, easing: 'ease-out', fill: 'forwards' });
+    setTimeout(() => s.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' }).onfinish = () => s.remove(), 1300);
+  }
+  let toastTimer;
+  function toast(msg, action) {
+    const t = $('#toast');
+    t.innerHTML = `<span>${msg}</span>` + (action ? `<button class="btn" id="toastAct">${action.label}</button>` : '');
+    if (action) $('#toastAct').onclick = () => { t.classList.remove('show'); action.run(); };
+    t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), action ? 3200 : 2200);
+  }
+  function loading(btn, on) {
+    if (on) { btn.dataset.label = btn.innerHTML; btn.style.width = btn.offsetWidth + 'px'; btn.innerHTML = '<span class="spin" aria-label="Waiting for Google Play"></span>'; btn.disabled = true; }
+    else { btn.innerHTML = btn.dataset.label; btn.disabled = false; btn.style.width = ''; }
+  }
+
+  /* ---------- buying ---------- */
+  function cardsFor(id) { return $$(`[data-id="${id}"]`); }
+  function refresh(id) {
+    const item = ALL.get(id); const own = state.owned.has(id); const eq = own && state.equipped[kindOf(id)] === id;
+    cardsFor(id).forEach(c => {
+      const foot = c.querySelector('.foot'); if (foot) foot.innerHTML = priceHTML(item);
+      c.classList.toggle('equipped', eq && c.classList.contains('card'));
+      c.querySelector('.tag')?.remove();
+      if (own && !c.querySelector('.own')) c.insertAdjacentHTML('beforeend', '<span class="own">✓</span>');
+    });
+    if (modalItem && modalItem.id === id) setModalBuy();
+  }
+  function succeed(item, el) {
+    state.owned.add(item.id);
+    flash(el); burst(el, item.rar === 'legend' ? ['#FFE9A6', '#F2B51F', '#fff', '#E3A632'] : [RC[item.rar], '#fff', '#FFE9A6']); stamp(el, 'OWNED!');
+    refresh(item.id);
+    toast(`${item.name} added to your set`);
+  }
+  function buy(item, btn, el) {
+    if (item.coins != null) {
+      if (state.coins < item.coins) return deny(btn);
+      const from = state.coins; state.coins -= item.coins;
+      fly($('#coinPill'), el, COIN, 6, reduce ? 1 : 500);
+      countTo($('#coinVal'), from, state.coins, 500);
+      setTimeout(() => succeed(item, el), reduce ? 0 : 560);
+    } else {
+      loading(btn, true);
+      setTimeout(() => { if (btn.isConnected) loading(btn, false); succeed(item, el); }, reduce ? 0 : 1000);
+    }
+  }
+  function deny(btn) {
+    shake(btn);
+    $('#coinPill').animate([{ backgroundColor: 'rgba(14,17,23,.86)' }, { backgroundColor: 'rgba(198,40,40,.92)' }, { backgroundColor: 'rgba(14,17,23,.86)' }], { duration: 600 });
+    toast('Not enough coins', { label: 'GET COINS', run: () => { closeModal(); setTab('energy'); setTimeout(() => scrollToEl($('[data-pack="c_1000"]')), 250); } });
+  }
+  function buyPack(p, btn, el) {
+    const isEnergy = p.id.startsWith('en_');
+    loading(btn, true);
+    setTimeout(() => {
+      if (btn.isConnected) loading(btn, false);
+      flash(el);
+      const pill = isEnergy ? $('#energyPill') : $('#coinPill'), val = isEnergy ? $('#energyVal') : $('#coinVal');
+      const from = isEnergy ? state.energy : state.coins, to = from + p.amount;
+      if (isEnergy) state.energy = to; else state.coins = to;
+      let started = false;
+      fly(el, pill, isEnergy ? BOLT : COIN, 10, 700, () => { if (!started) { started = true; countTo(val, from, to, 800); } bump(pill); }, () => toast(`+${fmt(p.amount)} ${isEnergy ? 'energy' : 'coins'}`));
+    }, reduce ? 0 : 900);
+  }
+  function equip(item) {
+    const k = kindOf(item.id), prev = state.equipped[k];
+    state.equipped[k] = item.id;
+    if (prev) refresh(prev);
+    refresh(item.id);
+    cardsFor(item.id).forEach(c => bump(c));
+    toast(`Equipped ${item.name}`);
+  }
+
+  /* ---------- modal ---------- */
+  let modalItem = null;
+  const modal = $('#modal'), sheet = $('#sheet');
+  function setModalBuy() {
+    const b = $('#mBuy'), it = modalItem, own = state.owned.has(it.id), k = kindOf(it.id);
+    b.className = 'btn big'; b.disabled = false;
+    if (own && state.equipped[k] === it.id) { b.textContent = 'EQUIPPED'; b.className = 'btn big dis'; b.disabled = true; }
+    else if (own && k !== 'emoji') b.textContent = 'EQUIP';
+    else if (own) { b.textContent = 'OWNED'; b.className = 'btn big dis'; b.disabled = true; }
+    else b.innerHTML = it.coins != null ? `<img src="${COIN}" alt="">${fmt(it.coins)}` : it.usd;
+  }
+  function openModal(item) {
+    modalItem = item;
+    $('#mTitle').textContent = item.name.toUpperCase();
+    const rc = $('#mRar'); rc.textContent = RNAME[item.rar]; rc.style.background = item.rar === 'legend' ? '' : `linear-gradient(color-mix(in srgb,${RC[item.rar]} 60%,#fff),${RC[item.rar]})`; rc.style.color = item.rar === 'legend' ? '' : '#fff';
+    let a = art(item, true);
+    if (a.includes('class="cube')) a = a.replace('class="cube ', 'class="cube fast ');
+    $('#mStage').innerHTML = `${item.rar === 'legend' ? '<span class="rays" style="width:120%"></span>' : `<span class="glow" style="--rc:${RC[item.rar]};width:90%"></span>`}<span class="plin"></span><span class="art" style="${item.id.startsWith('t_') ? '' : ''}">${a}</span>`;
+    const pw = $('#mStage .pawn'); if (pw) pw.style.width = '34%';
+    const imgc = $('#mStage .art > img'); if (imgc && item.img) imgc.style.width = '40%';
+    $('#mDesc').textContent = item.desc || '';
+    $('#mFacts').innerHTML = (item.facts || []).map(f => `<li>${f}</li>`).join('');
+    setModalBuy();
+    modal.hidden = false;
+    if (!reduce) {
+      $('.scrim', modal).animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: 'ease-out' });
+      $('.mcol', modal).animate([{ scale: .86, opacity: 0 }, { scale: 1.04, opacity: 1, offset: .7 }, { scale: 1, opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.3,1.3,.5,1)' });
+    }
+    if (item.art === 'naija') startNaija();
+  }
+  function closeModal() {
+    if (modal.hidden) return;
+    if (reduce) { modal.hidden = true; modalItem = null; return; }
+    $('.scrim', modal).animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' });
+    $('.mcol', modal).animate([{ scale: 1, opacity: 1 }, { scale: .92, opacity: 0 }], { duration: 160, easing: 'ease-in', fill: 'forwards' }).onfinish = e => { modal.hidden = true; modalItem = null; modal.getAnimations({ subtree: true }).forEach(a => a.cancel()); };
+  }
+  modal.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeModal(); });
+  $('#mBuy').addEventListener('click', () => {
+    const it = modalItem, own = state.owned.has(it.id);
+    if (own) { equip(it); return; }
+    buy(it, $('#mBuy'), $('#mStage'));
+  });
+
+  /* ---------- tabs ---------- */
+  function setTab(name) {
+    $$('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
+    $$('.tabpanel').forEach(p => p.hidden = p.id !== 'panel-' + name);
+    if (!reduce) $$(`#panel-${name} .card, #panel-${name} .showcase, #panel-${name} .ecard, #panel-${name} .adcard, #panel-${name} .well`).forEach((el, i) =>
+      el.animate([{ opacity: .25, translate: '0 16px' }, { opacity: 1, translate: '0 0' }], { duration: 220, delay: Math.min(i, 14) * 30, easing: 'cubic-bezier(.2,.9,.3,1.25)', fill: 'backwards' }));
+    if (name === 'emoji') startNaija();
+  }
+  $('#tabs').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t) setTab(t.dataset.tab); });
+
+  /* ---------- clicks inside the shop ---------- */
+  scroller.addEventListener('click', e => {
+    const b = e.target.closest('[data-buy]'), q = e.target.closest('[data-equip]'), pb = e.target.closest('[data-packbuy]'), h = e.target.closest('[data-house]');
+    if (b) { const it = ALL.get(b.dataset.buy); return buy(it, b, b.closest('.card,.showcase')); }
+    if (q) return equip(ALL.get(q.dataset.equip));
+    if (pb) { const p = [...ENERGY, ...COINS].find(x => x.id === pb.dataset.packbuy); return buyPack(p, pb, pb.closest('.ecard')); }
+    if (h) { $$('[data-house]').forEach(x => x.setAttribute('aria-pressed', String(x === h))); screen.style.setProperty('--house', h.dataset.house); return; }
+    if (e.target.closest('#adBtn')) { const ab = $('#adBtn'); loading(ab, true); setTimeout(() => { loading(ab, false); const from = state.energy; state.energy += 3; fly(ab, $('#energyPill'), BOLT, 3, 600, () => bump($('#energyPill')), () => { countTo($('#energyVal'), from, state.energy, 300); toast('+3 energy'); }); }, reduce ? 0 : 900); return; }
+    const c = e.target.closest('.card,.showcase'); if (c) return openModal(ALL.get(c.dataset.id));
+    const ec = e.target.closest('.ecard'); if (ec) { const btn = ec.querySelector('[data-packbuy]'); btn && btn.click(); }
+  });
+  scroller.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.card,.showcase,.ecard')) { e.preventDefault(); e.target.click(); } });
+  $('#restore').addEventListener('click', () => toast('Purchases restored'));
+  $('#coinPlus').addEventListener('click', () => { setTab('energy'); setTimeout(() => scrollToEl($('[data-pack="c_1000"]')), 200); });
+  $('#energyPlus').addEventListener('click', () => { setTab('energy'); setTimeout(() => scrollToEl($('[data-pack="en_250"]')), 200); });
+
+  /* ---------- featured ---------- */
+  let slide = 0, paused = false; const slidesEl = $('#slides'), dots = $$('#dots button');
+  function go(i) { slide = (i + 3) % 3; slidesEl.style.transform = `translateX(${-100 * slide}%)`; dots.forEach((d, k) => d.setAttribute('aria-current', String(k === slide))); }
+  dots.forEach((d, k) => d.addEventListener('click', () => go(k)));
+  const featured = $('#featured');
+  featured.addEventListener('pointerenter', () => paused = true); featured.addEventListener('pointerleave', () => paused = false);
+  if (!reduce) setInterval(() => { if (!paused && modal.hidden) go(slide + 1); }, 5000);
+  $('#dealBuy').addEventListener('click', e => { if (state.owned.has('d_golden')) return equip(GOLDEN); buyDeal(e.currentTarget); });
+  function buyDeal(btn) { loading(btn, true); setTimeout(() => { loading(btn, false); state.owned.add('d_golden'); flash($('#featured')); burst($('#dealCube'), ['#FFE9A6', '#F2B51F', '#fff']); stamp($('#featured'), 'OWNED!'); btn.textContent = 'EQUIP'; toast('Golden NX dice added to your set'); }, reduce ? 0 : 1000); }
+  $('#starterBuy').addEventListener('click', e => {
+    const btn = e.currentTarget; if (btn.disabled) return; loading(btn, true);
+    setTimeout(() => { loading(btn, false); btn.textContent = 'BOUGHT'; btn.className = 'btn big dis'; btn.disabled = true;
+      ['d_golden', 't_ceramic', 'e_naija'].forEach(id => { state.owned.add(id); if (ALL.get(id)) refresh(id); });
+      flash($('#featured')); burst($('#fan'), ['#E73735', '#4DAE51', '#FBC02B', '#1B89E7', '#fff'], 50);
+      const from = state.energy; state.energy += 100;
+      fly($('#fan'), $('#energyPill'), BOLT, 8, 700, () => bump($('#energyPill')), () => { countTo($('#energyVal'), from, state.energy, 600); toast('Starter Pack added: dice, tokens, emoji and 100 energy'); });
+    }, reduce ? 0 : 1000);
+  });
+  $('#clubBuy').addEventListener('click', e => {
+    const btn = e.currentTarget; if (state.club) return; loading(btn, true);
+    setTimeout(() => { loading(btn, false); state.club = true; btn.textContent = 'MEMBER'; btn.className = 'btn big opt'; burst($('.crown'), ['#FFE9A6', '#F2B51F', '#fff'], 44); toast('Welcome to NX Club'); }, reduce ? 0 : 1000);
+  });
+
+  /* timer: two units, red in the last hour */
+  const end = Date.now() + ((9 * 60 + 24) * 60 + 10) * 1000;
+  function tickTimer() {
+    const s = Math.max(0, Math.round((end - Date.now()) / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec2 = s % 60;
+    const t = $('#timer'); t.textContent = 'Ends in ' + (h ? `${h}h ${m}m` : `${m}m ${sec2}s`); t.classList.toggle('late', h < 1);
+  }
+  tickTimer(); setInterval(tickTimer, 1000);
+
+  /* Naija sticker cycling */
+  let naijaTimer = null, ni = 0;
+  function startNaija() {
+    if (naijaTimer || reduce) return;
+    naijaTimer = setInterval(() => { ni = (ni + 1) % NAIJA.length; $$('[data-naija]').forEach(s => { s.textContent = NAIJA[ni]; s.classList.remove('pop'); void s.offsetWidth; s.classList.add('pop'); }); }, 1400);
+  }
+
+  /* ---------- spec panel "Play" buttons ---------- */
+  function scrollToEl(el) {
+    if (!el) return;
+    const top = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 150;
+    scroller.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' });
+  }
+  function ensurePhoneVisible() {
+    const r = $('#phone').getBoundingClientRect();
+    if (r.bottom < 120 || r.top > window.innerHeight - 200) $('#phone').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  }
+  const wait = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
+  const firstNotOwned = (list, pred) => list.find(x => !state.owned.has(x.id) && pred(x));
+  const plays = {
+    async legend() { closeModal(); setTab('dice'); await wait(120); const sc = $('#panel-dice .showcase'); scrollToEl(sc); await wait(450); const h = sc.querySelector('.holo'); h.style.animation = 'none'; void h.offsetWidth; h.style.animation = ''; },
+    async epic() { closeModal(); setTab('dice'); await wait(120); const c = $('#panel-dice .card.r-epic'); scrollToEl(c); await wait(420); c.querySelector('.glow').animate([{ opacity: .4 }, { opacity: 1 }, { opacity: .4 }], { duration: 2000 }); },
+    async rare() { closeModal(); setTab('dice'); await wait(120); const c = $('#panel-dice .card.r-rare'); scrollToEl(c); await wait(420); const t = c.querySelector('.tw'); t.style.animation = 'none'; void t.offsetWidth; t.style.animation = 'twinkle 1s ease-in-out 1'; setTimeout(() => t.style.animation = '', 1100); },
+    async featured() { closeModal(); scroller.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); await wait(300); go(slide + 1); },
+    async press() { closeModal(); setTab('dice'); await wait(120); const c = $('#panel-dice .card:not(.r-legend)'); scrollToEl(c); await wait(420); c.animate([{ scale: 1 }, { scale: .97, offset: .3 }, { scale: 1.02, offset: .7 }, { scale: 1 }], { duration: 260, easing: 'ease-out' }); },
+    async tab() { closeModal(); const order = ['dice', 'tokens', 'emoji', 'energy']; const cur = $('.tab[aria-selected="true"]').dataset.tab; scrollToEl($('#shop')); await wait(300); setTab(order[(order.indexOf(cur) + 1) % 4]); },
+    async detail() { setTab('dice'); await wait(100); openModal(DICE[0]); },
+    async iap() { closeModal(); setTab('dice'); await wait(120); const it = firstNotOwned(DICE, x => x.usd && x.rar === 'epic') || firstNotOwned(DICE, x => x.usd); if (!it) return toast('Everything is owned. Reload the page to reset.'); const c = cardsFor(it.id)[0]; scrollToEl(c); await wait(450); buy(it, c.querySelector('[data-buy]'), c); },
+    async coins() { closeModal(); setTab('dice'); await wait(120); const it = firstNotOwned(DICE, x => x.coins != null && x.coins <= state.coins); if (!it) return toast('Out of coins. Try the coin pack demo first.'); const c = cardsFor(it.id)[0]; scrollToEl(c); await wait(450); buy(it, c.querySelector('[data-buy]'), c); },
+    async deny() { closeModal(); setTab('dice'); await wait(120); const it = firstNotOwned(DICE, x => x.coins != null) || DICE[4]; const c = cardsFor(it.id)[0]; scrollToEl(c); await wait(450); const b = c.querySelector('[data-buy]') || c.querySelector('.foot'); deny(b); },
+    async pack() { closeModal(); setTab('energy'); await wait(160); const c = $('[data-pack="en_250"]'); scrollToEl(c); await wait(450); buyPack(ENERGY[1], c.querySelector('[data-packbuy]'), c); },
+    async equip() { closeModal(); setTab('dice'); await wait(120); const it = DICE.find(x => state.owned.has(x.id) && state.equipped.dice !== x.id) || DICE.find(x => state.owned.has(x.id)); scrollToEl(cardsFor(it.id)[0]); await wait(450); equip(it); }
+  };
+  $$('[data-play]').forEach(b => b.addEventListener('click', () => { ensurePhoneVisible(); setTimeout(() => plays[b.dataset.play](), 250); }));
+})();
+</script>

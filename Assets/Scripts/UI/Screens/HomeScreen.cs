@@ -29,6 +29,8 @@ namespace LudoNX.UI
         public ClayGraphic levelBadge;
         public TextMeshProUGUI levelStageLabel;
         public TextMeshProUGUI energyTimerLabel;
+        [Tooltip("The pill on the NX MISSIONS badge: this level's missions done, n/5.")]
+        public TextMeshProUGUI missionsProgressLabel;
         public ClayButton streakButton;
 
         [Header("10-Tier Prestige Ranking Badges")]
@@ -59,32 +61,51 @@ namespace LudoNX.UI
 
         private void Awake()
         {
+            if (PlayerPrefs.GetInt("ludonx_fresh_start_v6", 0) == 0)
+            {
+                PlayerPrefs.SetInt("ludonx_fresh_start_v6", 1);
+                PlayerPrefs.Save();
+                LudoNXSession.ResetAllToFreshStart();
+            }
+
             if (playButton != null) playButton.onClick.AddListener(OnPlay);
             if (settingsButton != null) settingsButton.onClick.AddListener(OnSettings);
             if (avatarButton != null) avatarButton.onClick.AddListener(OnProfile);
 
             if (energyChipButton != null) energyChipButton.onClick.AddListener(OnEnergy);
-            if (coinsChipButton != null) coinsChipButton.onClick.AddListener(OnWallet);
+            if (coinsChipButton != null)
+            {
+                coinsChipButton.onClick.AddListener(OnWallet);
+                // Ensure no [+] button remains on the coins chip
+                for (int i = 0; i < coinsChipButton.transform.childCount; i++)
+                {
+                    var child = coinsChipButton.transform.GetChild(i);
+                    if (child.name.ToLowerInvariant().Contains("plus") || child.name.ToLowerInvariant().Contains("add"))
+                    {
+                        child.gameObject.SetActive(false);
+                    }
+                }
+            }
 
             if (tournamentsButton != null)
             {
-                tournamentsButton.onClick.AddListener(() => ScreenManager.Instance.Push(ScreenId.Events));
+                tournamentsButton.onClick.AddListener(() => { AudioManager.Instance?.PlayButton(); NxCupModal.Show(); });
             }
             if (missionsButton != null)
             {
-                missionsButton.onClick.AddListener(() => ScreenManager.Instance.Push(ScreenId.DailyMissions));
+                missionsButton.onClick.AddListener(() => { AudioManager.Instance?.PlayButton(); DoorTransition.Play(() => ScreenManager.Instance.Push(ScreenId.Levels)); });
             }
             if (streakButton != null)
             {
-                streakButton.onClick.AddListener(() => ScreenManager.Instance.Push(ScreenId.Events));
+                streakButton.onClick.AddListener(() => { AudioManager.Instance?.PlayButton(); ScreenManager.Instance.Push(ScreenId.Events); });
             }
             if (classicModeButton != null)
             {
-                classicModeButton.onClick.AddListener(() => ScreenManager.Instance.Push(ScreenId.QuickPlaySetup));
+                classicModeButton.onClick.AddListener(() => { AudioManager.Instance?.PlayButton(); ScreenManager.Instance.Push(ScreenId.QuickPlaySetup); });
             }
             if (quickModeButton != null)
             {
-                quickModeButton.onClick.AddListener(() => ScreenManager.Instance.Push(ScreenId.QuickPlaySetup));
+                quickModeButton.onClick.AddListener(() => { AudioManager.Instance?.PlayButton(); ScreenManager.Instance.Push(ScreenId.QuickPlaySetup); });
             }
             if (modeCarousel != null)
             {
@@ -112,6 +133,7 @@ namespace LudoNX.UI
         {
             RefreshTopBar();
             if (navBar != null) navBar.SetActiveTab(HomeNavBar.Tab.Home);
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayMenuMusic();
         }
 
         public void SetRankTier(RankTier tier)
@@ -156,7 +178,7 @@ namespace LudoNX.UI
         private void UpdateEnergyCountdown()
         {
             if (energyTimerLabel == null) return;
-            energyTimerLabel.text = EnergyService.UntilNextText;
+            energyTimerLabel.text = EnergyService.TimerText;
         }
 
         private void RefreshTopBar()
@@ -173,25 +195,44 @@ namespace LudoNX.UI
             // Default rank tier is Gold
             SetRankTier(RankTier.Gold);
 
+            if (missionsProgressLabel != null)
+                missionsProgressLabel.text = MissionService.IsChampion ? "MAX" : MissionService.DoneCount + "/5";
+
             if (energyChipLabel != null)
             {
-                energyChipLabel.text = EnergyService.Current + "/" + EnergyService.Max;
+                energyChipLabel.text = EnergyService.CountText;
+                energyChipLabel.color = Color.black;
             }
 
             UpdateEnergyCountdown();
 
             if (coinsChipLabel != null)
             {
-                int coins = session != null ? session.Coins : 500;
+                int coins = session != null ? session.Coins : 0;
                 coinsChipLabel.text = coins >= 10000 ? (coins / 1000f).ToString("0.#") + "k" : coins.ToString("N0");
+                coinsChipLabel.color = Color.black;
+            }
+
+            if (coinsChipButton != null)
+            {
+                for (int i = 0; i < coinsChipButton.transform.childCount; i++)
+                {
+                    var child = coinsChipButton.transform.GetChild(i);
+                    if (child.name.ToLowerInvariant().Contains("plus") || child.name.ToLowerInvariant().Contains("add"))
+                    {
+                        child.gameObject.SetActive(false);
+                    }
+                }
             }
         }
 
-        private void OnPlay() => ScreenManager.Instance.Push(ScreenId.PlayMenu);
-        private void OnProfile() => ScreenManager.Instance.Push(ScreenId.Profile);
-        private void OnSettings() => ScreenManager.Instance.Push(ScreenId.Settings);
-        private void OnEnergy() => ScreenManager.Instance.Push(ScreenId.Energy);
-        private void OnWallet() => ScreenManager.Instance.Push(ScreenId.Wallet);
+        private void OnPlay() { AudioManager.Instance?.PlayButton(); ScreenManager.Instance.Push(ScreenId.PlayMenu); }
+        private void OnProfile() { AudioManager.Instance?.PlayButton(); ScreenManager.Instance.Push(ScreenId.Profile); }
+        // The top-bar burger opens the quick-jump Menu popup, not Settings directly — Settings
+        // is one of the destinations inside it now (see MenuModal.cs).
+        private void OnSettings() { AudioManager.Instance?.PlayButton(); UIModal.Open("Menu"); }
+        private void OnEnergy() { AudioManager.Instance?.PlayButton(); ScreenManager.Instance.Push(ScreenId.Energy); }
+        private void OnWallet() { AudioManager.Instance?.PlayButton(); ScreenManager.Instance.Push(ScreenId.Wallet); }
 
         /// <summary>
         /// Every card leads to the one setup screen, which shapes itself to the mode. The old
@@ -201,16 +242,17 @@ namespace LudoNX.UI
         /// </summary>
         private void OnModeCardClicked(GameModeCarousel.Mode mode)
         {
+            AudioManager.Instance?.PlayButton();
             switch (mode)
             {
                 case GameModeCarousel.Mode.QuickPlay:
-                    ScreenManager.Instance.Push(ScreenId.MatchSetup, MatchSetupScreen.Flavour.VsComputer);
+                    MatchSetupModal.OpenFor(MatchSetupModal.Flavour.VsComputer);
                     break;
                 case GameModeCarousel.Mode.Online:
-                    ScreenManager.Instance.Push(ScreenId.MatchSetup, MatchSetupScreen.Flavour.QuickMatch);
+                    OnlineMatchModal.Open();
                     break;
                 case GameModeCarousel.Mode.LocalPlay:
-                    ScreenManager.Instance.Push(ScreenId.MatchSetup, MatchSetupScreen.Flavour.PassAndPlay);
+                    MatchSetupModal.OpenFor(MatchSetupModal.Flavour.PassAndPlay);
                     break;
             }
         }

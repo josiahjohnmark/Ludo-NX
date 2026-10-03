@@ -34,6 +34,7 @@ using UnityEngine.UI;
 ///   cards 180x280 slot, back scale 0.79, spacing 97, band centre y 560
 ///   nav plate 402x116 · icons bottom-aligned 36 above the screen bottom
 ///   nav shadow fitted to the reference: 6.5pt lift, 4pt softness, 38% black
+///   nav icons carry a faint light sweep (IconShine), one pass along the bar every 5s
 ///
 /// The bottom-nav icon PNGs have their labels baked in, so no TextMeshPro labels are added.
 /// </summary>
@@ -91,14 +92,20 @@ public static class LudoNXMainMenuBuilder
         var root = Make("Home", null, typeof(CanvasGroup), typeof(HomeScreen));
         Stretch(root);
         var screen = root.GetComponent<HomeScreen>();
+        // Without this the prefab keeps the enum default (Splash). ScreenManager and the nav bar
+        // then treat Home as "some other screen": tabs Replace it instead of Pushing over it, and
+        // every back arrow above Home has nothing to go back to.
+        screen.SetId(ScreenId.Home);
 
         // Background covers the whole screen and is cropped evenly, never stretched.
         var bg = Make("Background", root, typeof(Image));
         Stretch(bg);
         var bgImg = bg.GetComponent<Image>();
-        bgImg.sprite = Sprite("bg_main_menu");
+        bgImg.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/Backgrounds/bg_match_emboss.jpg");
+        bgImg.color = Color.white;
         bgImg.raycastTarget = false;
-        bg.gameObject.AddComponent<BackgroundCoverFitter>();
+        var cover = bg.gameObject.AddComponent<BackgroundCoverFitter>();
+        cover.overscan = 1.05f;
 
         var content = Band(root, "ContentBand", DesignBand.Edge.Fill, RefH);
         BuildBadges(content, screen);
@@ -159,17 +166,15 @@ public static class LudoNXMainMenuBuilder
     {
         var pill = Make("CoinPill", bar, typeof(Image), typeof(Button));
         Place(pill, H.Proportional, 139f, V.Top, 70f, 110f, 34f, TopBandH);
-        pill.GetComponent<Image>().sprite = Sprite("TopBar/NX_coins_bar");
+        Invisible(pill.GetComponent<Image>());
 
-        Art_(pill, "Inner", "TopBar/nx_coin_bar_inner_frame", -2f, 0f, 77f, 28f);
-        Art_(pill, "CoinIcon", "TopBar/NX_coin", -37f, -1f, 25f, 27f);
+        Art_(pill, "CoinIcon", "TopBar/NX_coin", -36f, -1f, 25f, 27f);
 
-        var label = Label(pill, "CoinAmount", "12,000", 17f);
-        AtCentre((RectTransform)label.transform, 1f, -1f, 56f, 22f);
+        var label = Label(pill, "CoinAmount", "0", 17f);
+        label.color = Color.black;
+        AtCentre((RectTransform)label.transform, 10f, -1f, 74f, 22f);
 
-        var add = Make("AddButton", pill, typeof(Image), typeof(Button));
-        AtCentre(add, 37f, -2f, 21f, 23f);
-        add.GetComponent<Image>().sprite = Sprite("TopBar/NX_coin_add_icon");
+        // Plus button removed per user request: coin is now a point, starting fresh from 0
 
         screen.coinsChipButton = pill.GetComponent<Button>();
         screen.coinsChipLabel = label;
@@ -179,16 +184,20 @@ public static class LudoNXMainMenuBuilder
     {
         var pill = Make("EnergyPill", bar, typeof(Image), typeof(Button));
         Place(pill, H.Proportional, 262.5f, V.Top, 70f, 91f, 34f, TopBandH);
-        pill.GetComponent<Image>().sprite = Sprite("TopBar/energy_bar_outer_frame");
+        Invisible(pill.GetComponent<Image>());
 
-        Art_(pill, "Inner", "TopBar/energy_bar_inner_frame", -10.5f, 0f, 64f, 28f);
         Art_(pill, "BoltIcon", "TopBar/energy_icon", -27.5f, 0f, 17f, 24f);
 
-        var label = Label(pill, "EnergyAmount", "7/20", 17f);
+        var label = Label(pill, "EnergyAmount", "50", 17f);
+        label.color = Color.black;
         AtCentre((RectTransform)label.transform, 3.5f, -1f, 42f, 22f);
+        // Bought energy can reach four digits ("2,500"); shrink rather than spill into the timer.
+        label.enableAutoSizing = true;
+        label.fontSizeMin = 9f;
+        label.fontSizeMax = 17f;
 
-        var timer = Label(pill, "EnergyTimer", "00:24", 9f);
-        timer.color = new Color32(214, 226, 245, 255);
+        var timer = Label(pill, "EnergyTimer", "00:00", 9f);
+        timer.color = new Color32(40, 40, 40, 255);
         AtCentre((RectTransform)timer.transform, 32.5f, 0f, 30f, 14f);
 
         screen.energyChipButton = pill.GetComponent<Button>();
@@ -203,7 +212,7 @@ public static class LudoNXMainMenuBuilder
         Invisible(btn.GetComponent<Image>());
 
         Art_(btn, "Icon", "TopBar/navigation_btn", 0f, 0f, 25f, 21f);
-        Art_(btn, "NotificationDot", "Branding/notification_icon", 10f, -13f, 10f, 10f);
+        // Red notification dot removed per user request
         return btn.GetComponent<Button>();
     }
 
@@ -211,13 +220,49 @@ public static class LudoNXMainMenuBuilder
     {
         var missions = Make("MissionsBadge", content, typeof(Image), typeof(Button));
         Place(missions, H.Proportional, 62f, V.Centre, 196f, 68f, 122f, RefH);
-        missions.GetComponent<Image>().sprite = Sprite("Badges/mission_btn");
+        // mission_btn.png with its daily-reset clock and "--:--" painted out — missions are a
+        // ladder now, not daily. The pill shows this level's progress; the star marks LEVELS.
+        missions.GetComponent<Image>().sprite = Sprite("Badges/mission_btn_levels");
         screen.missionsButton = missions.GetComponent<Button>();
+
+        var star = Make("LevelStar", missions, typeof(Image));
+        AtCentre(star, -18.5f, 46f, 17f, 16f);
+        var starImg = star.GetComponent<Image>();
+        starImg.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/Levels/door_emblem.png");
+        starImg.preserveAspect = true;
+        starImg.raycastTarget = false;
+
+        var progress = Label(missions, "MissionsProgress", "0/5", 9f);
+        AtCentre((RectTransform)progress.transform, 6.5f, 45.5f, 30f, 12f);
+        progress.enableAutoSizing = true;
+        progress.fontSizeMin = 6f;
+        progress.fontSizeMax = 9f;
+        screen.missionsProgressLabel = progress;
 
         var cup = Make("CupBadge", content, typeof(Image), typeof(Button));
         Place(cup, H.Proportional, 339f, V.Centre, 191f, 72f, 138f, RefH);
-        cup.GetComponent<Image>().sprite = Sprite("Badges/refrence_tournament_btn");
+        // refrence_tournament_btn.png claimed "1ST · YOU" and "ENDS IN --:--" — a rank and an
+        // event that do not exist. nx_cup_soon.png is it with both painted out; it says COMING
+        // SOON until tournaments ship with online play (the badge opens NxCupModal).
+        cup.GetComponent<Image>().sprite = Sprite("Badges/nx_cup_soon");
         screen.tournamentsButton = cup.GetComponent<Button>();
+
+        var coming = Label(cup, "Coming", "COMING", 7.5f);
+        coming.color = new Color32(75, 42, 12, 255);
+        AtCentre((RectTransform)coming.transform, 5f, 27f, 38f, 11f);
+        coming.enableAutoSizing = true; coming.fontSizeMin = 5f; coming.fontSizeMax = 7.5f;
+
+        var soon = Label(cup, "Soon", "SOON", 7.5f);
+        AtCentre((RectTransform)soon.transform, 7.5f, 56f, 26f, 9f);
+        soon.enableAutoSizing = true; soon.fontSizeMin = 5f; soon.fontSizeMax = 7.5f;
+
+        var trophy = Make("Trophy", cup, typeof(Image));
+        AtCentre(trophy, -16f, 51f, 13f, 13f);
+        var trophyImg = trophy.GetComponent<Image>();
+        trophyImg.sprite = UIIconSet.IconAny("emoji_events");
+        trophyImg.color = new Color32(27, 53, 90, 255);
+        trophyImg.preserveAspect = true;
+        trophyImg.raycastTarget = false;
     }
 
     private static void BuildLogo(RectTransform content)
@@ -244,7 +289,9 @@ public static class LudoNXMainMenuBuilder
 
         carousel.cards = new[]
         {
-            Card(root, "Card_Online",    "Cards/vs_cpu_btn",      GameModeCarousel.Mode.Online),
+            // QUICK MATCH, never ONLINE, until real online play ships (CLAUDE.md, home.json).
+            // quick_match_btn.png is vs_cpu_btn.png with the baked word repainted.
+            Card(root, "Card_Online",    "Cards/quick_match_btn", GameModeCarousel.Mode.Online),
             Card(root, "Card_QuickPlay", "Cards/quick_play_btn",  GameModeCarousel.Mode.QuickPlay),
             Card(root, "Card_LocalPlay", "Cards/loccal_play_btn", GameModeCarousel.Mode.LocalPlay),
         };
@@ -278,7 +325,7 @@ public static class LudoNXMainMenuBuilder
 
     private static GameObject BuildNavBar()
     {
-        var nav = Make("UniversalNavBar", null, typeof(DesignBand), typeof(HomeNavBar));
+        var nav = Make("UniversalNavBar", null, typeof(DesignBand), typeof(HomeNavBar), typeof(IconShine));
         ConfigureBand(nav.GetComponent<DesignBand>(), DesignBand.Edge.Bottom, NavBandH);
 
         // Shadow cast upward from the plate, so whatever sits above looks tucked behind the bar.

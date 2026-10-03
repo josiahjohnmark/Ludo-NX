@@ -14,7 +14,7 @@ namespace LudoNX.UI
         [Header("Wiring")]
         public TextMeshProUGUI titleLabel;
         public TextMeshProUGUI bodyLabel;
-        public ClayButton closeButton;
+        public UnityEngine.UI.Button closeButton;   // ClayButton on the old prefab, the X on the chassis one
 
         private void Awake()
         {

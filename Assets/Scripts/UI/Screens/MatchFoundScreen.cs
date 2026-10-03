@@ -61,10 +61,12 @@ namespace LudoNX.UI
         public Sprite defaultPortrait;
 
         [Header("Feel")]
-        public float searchMin = 1.1f;
-        public float searchMax = 2.3f;
+        public float searchMin = 3.0f;
+        public float searchMax = 3.0f;
         public float foundHold = 1.0f;
         public int countFrom = 3;
+        [Tooltip("How long the VS screen takes to fade away and reveal the board.")]
+        public float revealSeconds = 0.75f;
 
         /// <summary>
         /// Deeper than the board's house colours on purpose. At full saturation the two halves
@@ -85,7 +87,11 @@ namespace LudoNX.UI
 
         private void Awake()
         {
-            if (cancelButton != null) cancelButton.onClick.AddListener(OnCancel);
+            if (cancelButton != null) cancelButton.onClick.AddListener(() =>
+            {
+                if (AudioManager.Instance != null) AudioManager.Instance.PlayButton();
+                OnCancel();
+            });
         }
 
         public override void OnShow(object args)
@@ -166,8 +172,50 @@ namespace LudoNX.UI
             if (countdownNumber != null) countdownNumber.text = "GO";
             yield return new WaitForSecondsRealtime(0.35f);
 
-            // Replace rather than push: nobody should land back on a finished countdown.
-            ScreenManager.Instance.Replace(ScreenId.MatchIntro);
+            yield return StartCoroutine(RevealBoard());
+        }
+
+        /// <summary>
+        /// Hands over to the board without a cut: the match starts underneath while this screen is
+        /// still drawn, then the whole VS screen fades away to reveal it.
+        ///
+        /// The old flow pushed a second countdown screen here, which meant the player counted down
+        /// twice and then the board appeared abruptly. Starting the match with the menu still up
+        /// costs nothing — the board is already in the scene — and buys the reveal.
+        /// </summary>
+        private IEnumerator RevealBoard()
+        {
+            var bridge = MatchBridge.Instance;
+            if (bridge == null)
+            {
+                Debug.LogError("[MatchFound] No MatchBridge in the scene — falling back to the intro screen.");
+                ScreenManager.Instance.Replace(ScreenId.MatchIntro);
+                yield break;
+            }
+
+            bridge.StartPendingMatch(hideMenus: false);
+
+            // Drift the split apart slightly as it fades, so the reveal has a direction.
+            var group = Group;
+            float t = 0f;
+            while (t < revealSeconds)
+            {
+                t += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(t / revealSeconds);
+                float eased = 1f - (1f - k) * (1f - k);
+                group.alpha = 1f - eased;
+                if (splitTop != null)
+                    ((RectTransform)splitTop.transform).anchoredPosition = new Vector2(0f, eased * 60f);
+                if (splitBottom != null)
+                    ((RectTransform)splitBottom.transform).anchoredPosition = new Vector2(0f, -eased * 60f);
+                yield return null;
+            }
+
+            group.alpha = 0f;
+            ScreenManager.Instance.SetScreensVisible(false);
+            group.alpha = 1f;   // restored for the next time this screen is shown
+            if (splitTop != null) ((RectTransform)splitTop.transform).anchoredPosition = Vector2.zero;
+            if (splitBottom != null) ((RectTransform)splitBottom.transform).anchoredPosition = Vector2.zero;
         }
 
         private void FindOpponent()
@@ -176,7 +224,7 @@ namespace LudoNX.UI
             _opponent = BotRoster.Pick(rating);
 
             if (opponentName != null) opponentName.text = _opponent.name.ToUpperInvariant();
-            if (opponentRating != null) opponentRating.text = $"{_opponent.rating:n0} NX";
+            if (opponentRating != null) opponentRating.text = $"LVL {_opponent.level}   ·   {_opponent.rating:n0} NX";
             if (opponentStyle != null) opponentStyle.text = _opponent.StyleLabel;
             if (opponentPortrait != null && avatars != null && avatars.Length > 0)
                 opponentPortrait.sprite = avatars[Mathf.Abs(_opponent.avatar) % avatars.Length];
@@ -189,7 +237,7 @@ namespace LudoNX.UI
         {
             var s = LudoNXSession.Instance;
             if (yourName != null) yourName.text = (s != null ? s.PlayerName : "YOU").ToUpperInvariant();
-            if (yourRating != null) yourRating.text = $"{(s != null ? s.NXPoints : 0):n0} NX";
+            if (yourRating != null) yourRating.text = $"LVL {(s != null ? s.PlayerLevel : 1)}   ·   {(s != null ? s.NXPoints : 0):n0} NX";
             if (yourPortrait != null && defaultPortrait != null) yourPortrait.sprite = defaultPortrait;
         }
 

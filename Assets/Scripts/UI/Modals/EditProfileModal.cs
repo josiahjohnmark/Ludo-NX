@@ -19,8 +19,8 @@ namespace LudoNX.UI
     {
         [Header("Wiring")]
         public TMP_InputField nameField;
-        public ClayButton saveButton;
-        public ClayButton cancelButton;
+        public UnityEngine.UI.Button saveButton;     // ClayButton on the old prefab, plain Button on the chassis one
+        public UnityEngine.UI.Button cancelButton;
 
         [Tooltip("Empty container the picture grid is built into.")]
         public RectTransform pickerRoot;
@@ -50,9 +50,11 @@ namespace LudoNX.UI
 
         // ── Picture grid ──────────────────────────────────────────────────────────────────
 
-        private const float Cell = 128f;
-        private const float Gap = 18f;
-        private const int PerRow = 5;
+        [Header("Picture grid, in the picker's units (defaults: the Clay popup's 1080 frame)")]
+        public float Cell = 128f;
+        public float Gap = 18f;
+        public int PerRow = 5;
+        private float K => Cell / 128f;   // Clay shadow and glow sizes were tuned at 128
 
         private void BuildPicker()
         {
@@ -82,11 +84,11 @@ namespace LudoNX.UI
                 var btn = UIFactory.Button("Avatar" + i, pickerRoot, new Vector2(Cell, Cell),
                                            new Vector2(x, y), T.recessed, null,
                                            shape: ClayGraphic.Shape.Circle);
-                btn.Clay.shadowSpread = 14f;
+                btn.Clay.shadowSpread = 14f * K;
                 btn.Clay.shadowAlpha = 0.16f;
 
                 var photo = AvatarService.FitInto((RectTransform)btn.content, circle,
-                                                  AvatarService.At(i), Cell - 16f);
+                                                  AvatarService.At(i), Cell - 16f * K);
                 _photos.Add(photo);
                 _cells.Add(btn.Clay);
 
@@ -111,7 +113,7 @@ namespace LudoNX.UI
                 bool on = i == _picked;
                 _cells[i].color = on ? T.gold : T.recessed;
                 _cells[i].glowAlpha = on ? 0.30f : 0f;
-                _cells[i].glowSpread = on ? 22f : 0f;
+                _cells[i].glowSpread = on ? 22f * K : 0f;
                 _cells[i].SetVerticesDirty();
 
                 // Only a light knock-back on the unpicked faces: the gold ring already carries
